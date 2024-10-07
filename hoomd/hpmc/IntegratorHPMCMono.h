@@ -714,8 +714,19 @@ void IntegratorHPMCMono<Shape>::update(uint64_t timestep)
             Shape shape_old(shape_i.orientation, m_params[typ_i]);
             vec3<Scalar> pos_old = pos_i;
 
+            //gabby: hard coded angle
+            Scalar alpha = 1.57;
+            vec3<Scalar> axis(Scalar(0), Scalar(0), Scalar(1));
+            quat<Scalar> pos_rot_quat = quat<Scalar>::fromAxisAngle(axis, alpha);
+            quat<Scalar> neg_rot_quat = quat<Scalar>::fromAxisAngle(axis, -alpha);
+ 
+            //gabby: figure out where to actually put this flag
+            //bool use_rotated_boundaries = false;
+            bool use_rotated_boundaries = true;
             if (move_type_translate)
                 {
+
+
                 // skip if no overlap check is required
                 if (h_d.data[typ_i] == 0.0)
                     {
@@ -769,7 +780,7 @@ void IntegratorHPMCMono<Shape>::update(uint64_t timestep)
             double patch_field_energy_diff = 0;
 
             // check for overlaps with neighboring particle's positions (also calculate the new energy)
-            // All image boxes (including the primary)
+            // All image boxes (including the primary) 
             const unsigned int n_images = (unsigned int)m_image_list.size();
             for (unsigned int cur_image = 0; cur_image < n_images; cur_image++)
                 {
@@ -816,6 +827,19 @@ void IntegratorHPMCMono<Shape>::update(uint64_t timestep)
 
                                 // put particles in coordinate system of particle i
                                 vec3<Scalar> r_ij = vec3<Scalar>(postype_j) - pos_i_image;
+
+                                //gabby: using rotated boundaries
+                                if(use_rotated_boundaries && cur_image > 0){
+                                    //vec3<Scalar> r_ij = quat<Scalar>::rotate(pos_rot_quat, vec3<Scalar>(postype_j)) - pos_i_image;
+                                    if(r_ij.z < 0){
+                                    r_ij = rotate(neg_rot_quat, vec3<Scalar>(postype_j)) - pos_i_image;
+                                    }
+                                    else{
+                                    r_ij = rotate(pos_rot_quat, vec3<Scalar>(postype_j)) - pos_i_image;
+                                    }
+                                    //vec3<Scalar> rot_r_ij = quat<Scalar>::rotate(pos_rot_quat, r_ij)
+                                }
+ 
 
                                 unsigned int typ_j = __scalar_as_int(postype_j.w);
                                 Shape shape_j(orientation_j, m_params[typ_j]);
@@ -1072,6 +1096,7 @@ void IntegratorHPMCMono<Shape>::update(uint64_t timestep)
     \param early_exit exit at first overlap found if true
     \returns number of overlaps if early_exit=false, 1 if early_exit=true
 */
+//Gabby: you need to change overlap counter here as well for twist. Testing here is easier because there's no move or wrapping going on. 
 template <class Shape>
 unsigned int IntegratorHPMCMono<Shape>::countOverlaps(bool early_exit)
     {
@@ -1087,6 +1112,12 @@ unsigned int IntegratorHPMCMono<Shape>::countOverlaps(bool early_exit)
     ArrayHandle<Scalar4> h_postype(m_pdata->getPositions(), access_location::host, access_mode::read);
     ArrayHandle<Scalar4> h_orientation(m_pdata->getOrientationArray(), access_location::host, access_mode::read);
     ArrayHandle<unsigned int> h_tag(m_pdata->getTags(), access_location::host, access_mode::read);
+    bool use_rotated_boundaries = true;
+    Scalar alpha = 1.5707963267948966;
+    vec3<Scalar> axis(Scalar(0), Scalar(0), Scalar(1));
+    quat<Scalar> pos_rot_quat = quat<Scalar>::fromAxisAngle(axis, alpha);
+    quat<Scalar> neg_rot_quat = quat<Scalar>::fromAxisAngle(axis, -alpha);
+
 
     // access parameters and interaction matrix
     ArrayHandle<unsigned int> h_overlaps(m_overlaps, access_location::host, access_mode::read);
@@ -1132,6 +1163,20 @@ unsigned int IntegratorHPMCMono<Shape>::countOverlaps(bool early_exit)
 
                             // put particles in coordinate system of particle i
                             vec3<Scalar> r_ij = vec3<Scalar>(postype_j) - pos_i_image;
+
+                            if(use_rotated_boundaries && cur_image > 0){
+                                //std::cout << "Twisting the boundary to check for overlaps!" << std::endl;
+                                //std::cout << "r_ij is initially: [" << r_ij.x << ", " << r_ij.y << ", " << r_ij.z << "]" << std::endl;
+                                //vec3<Scalar> r_ij = quat<Scalar>::rotate(pos_rot_quat, vec3<Scalar>(postype_j)) - pos_i_image;
+                                if(r_ij.z < 0){
+                                r_ij = rotate(neg_rot_quat, vec3<Scalar>(postype_j)) - pos_i_image;
+                                }
+                                else{
+                                r_ij = rotate(pos_rot_quat, vec3<Scalar>(postype_j)) - pos_i_image;
+                                }
+                                //std::cout << "NOW!!!!!! r_ij is now: [" << r_ij.x << ", " << r_ij.y << ", " << r_ij.z << "]" << std::endl;
+                                //vec3<Scalar> rot_r_ij = quat<Scalar>::rotate(pos_rot_quat, r_ij)
+                            }
 
                             unsigned int typ_j = __scalar_as_int(postype_j.w);
                             Shape shape_j(quat<Scalar>(orientation_j), m_params[typ_j]);

@@ -217,9 +217,17 @@ struct ShapeSphere
         }
 
     /// Return the bounding box of the shape in world coordinates
+    // gabby:changing the width of the AABB tree to be at least the cylinder radius (should actually be the diameter)
     DEVICE hoomd::detail::AABB getAABB(const vec3<Scalar>& pos) const
         {
-        return hoomd::detail::AABB(pos, params.radius);
+        Scalar cylinder_radius = 5;
+        //return hoomd::detail::AABB(pos, params.radius);
+        if(cylinder_radius > params.radius){
+        return hoomd::detail::AABB(pos, 2*cylinder_radius);
+        }
+        else{
+            return hoomd::detail::AABB(pos, params.radius);
+        }
         }
 
     /// Return a tight fitting OBB around the shape

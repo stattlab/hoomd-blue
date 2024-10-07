@@ -461,6 +461,16 @@ struct
                 w.z -= L.z;
                 w.y -= L.z * m_yz;
                 w.x -= L.z * m_xz;
+
+                //gabby: hard coded angle
+                Scalar alpha = 1.57;
+                vec3<Scalar> axis(Scalar(0), Scalar(0), Scalar(1));
+                quat<Scalar> rot_quat = quat<Scalar>::fromAxisAngle(axis, alpha);
+                vec3<Scalar> rw = rotate(rot_quat, vec3<Scalar>(w));
+                w.x = rw.x;
+                w.y = rw.y;
+                w.z = rw.z;
+
                 img.z++;
                 }
             else if (((w.z < m_lo.z) && !flags.z) || flags.z == -1)
@@ -468,6 +478,16 @@ struct
                 w.z += L.z;
                 w.y += L.z * m_yz;
                 w.x += L.z * m_xz;
+
+                //gabby: hard coded angle
+                Scalar alpha = 1.57;
+                vec3<Scalar> axis(Scalar(0), Scalar(0), Scalar(1));
+                quat<Scalar> rot_quat = quat<Scalar>::fromAxisAngle(axis, -alpha);
+                vec3<Scalar> rw = rotate(rot_quat, vec3<Scalar>(w));
+                w.x = rw.x;
+                w.y = rw.y;
+                w.z = rw.z;
+
                 img.z--;
                 }
             }
