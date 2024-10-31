@@ -8,6 +8,8 @@
 #ifndef __BOXDIM_H__
 #define __BOXDIM_H__
 
+//gabby: remove this iostream at the end, just using printing to check some things in the meantime
+#include <iostream>
 #include "HOOMDMath.h"
 #include "VectorMath.h"
 
@@ -156,6 +158,23 @@ struct
         m_periodic = make_uchar3(1, 1, 1);
         }
 #endif
+
+    //! Get cylinder twist angle
+    /*! \return alpha 
+    */
+    HOSTDEVICE Scalar getAlpha() const
+        {
+        return m_alpha;
+        }
+
+    //! Update the box twist angle alpha, only
+    //! works in the z direction, with a cylinder
+    /*! \param alpha twist angle for the cylinder pbc
+    */
+    HOSTDEVICE void setAlpha(const Scalar& alpha)
+        {
+        m_alpha = alpha;
+        }
 
     //! Get the periodic flags
     /*! \return Periodic flags
@@ -458,35 +477,47 @@ struct
             {
             if (((w.z >= m_hi.z) && !flags.z) || flags.z == 1)
                 {
+                //std::cout << "Trying to wrap particles back into the box, z > high" << std::endl;
+                //std::cout << "img: " << img.z << std::endl;
+                //std::cout << "pos before: [" << w.x << ", " << w.y << ", " << w.z << "]" << std::endl;
                 w.z -= L.z;
                 w.y -= L.z * m_yz;
                 w.x -= L.z * m_xz;
+                //std::cout << "pos after wrap: [" << w.x << ", " << w.y << ", " << w.z << "]" << std::endl;
 
                 //gabby: hard coded angle
-                Scalar alpha = 1.57;
+                Scalar alpha = m_alpha;
                 vec3<Scalar> axis(Scalar(0), Scalar(0), Scalar(1));
                 quat<Scalar> rot_quat = quat<Scalar>::fromAxisAngle(axis, alpha);
+                //std::cout << "rot_quat: [" << rot_quat.s << ", " <<  rot_quat.v.x << ", " <<  rot_quat.v.y << ", " <<  rot_quat.v.z << "]" << std::endl;
                 vec3<Scalar> rw = rotate(rot_quat, vec3<Scalar>(w));
                 w.x = rw.x;
                 w.y = rw.y;
                 w.z = rw.z;
+                //std::cout << "pos after twist: [" << w.x << ", " << w.y << ", " << w.z << "]" << std::endl;
 
                 img.z++;
                 }
             else if (((w.z < m_lo.z) && !flags.z) || flags.z == -1)
                 {
+                //std::cout << "Trying to wrap particles back into the box, z < low" << std::endl;
+                //std::cout << "img: " << img.z << std::endl;
+                //std::cout << "pos before: [" << w.x << ", " << w.y << ", " << w.z << "]" << std::endl;
                 w.z += L.z;
                 w.y += L.z * m_yz;
                 w.x += L.z * m_xz;
+                //std::cout << "pos after wrap: [" << w.x << ", " << w.y << ", " << w.z << "]" << std::endl;
 
                 //gabby: hard coded angle
-                Scalar alpha = 1.57;
+                Scalar alpha = m_alpha;
                 vec3<Scalar> axis(Scalar(0), Scalar(0), Scalar(1));
                 quat<Scalar> rot_quat = quat<Scalar>::fromAxisAngle(axis, -alpha);
+                //std::cout << "rot_quat: [" << rot_quat.s << ", " <<  rot_quat.v.x << ", " <<  rot_quat.v.y << ", " <<  rot_quat.v.z << "]" << std::endl;
                 vec3<Scalar> rw = rotate(rot_quat, vec3<Scalar>(w));
                 w.x = rw.x;
                 w.y = rw.y;
                 w.z = rw.z;
+                //std::cout << "pos after twist: [" << w.x << ", " << w.y << ", " << w.z << "]" << std::endl;
 
                 img.z--;
                 }
@@ -675,6 +706,9 @@ struct
     Scalar m_xz;       //!< xz tilt factor
     Scalar m_yz;       //!< yz tilt factor
     uchar3 m_periodic; //!< 0/1 in each direction to tell if the box is periodic in that direction
+
+    Scalar m_alpha;       //!< cylinder twister pbc angle 
+
     };
 
     } // end namespace hoomd

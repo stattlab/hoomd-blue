@@ -31,11 +31,18 @@ class _ConfigurationData:
         L = b.getL()
         return (L.x, L.y, L.z, b.getTiltFactorXY(), b.getTiltFactorXZ(),
                 b.getTiltFactorYZ())
+        
+    @property
+    def boxAlpha(self):
+        b = self._cpp_obj._global_box
+        return b.getAlpha()
 
     @box.setter
     def box(self, box):
         try:
             new_box = hoomd.Box.from_box(box)
+            new_box.alpha = box.alpha
+                
         except Exception:
             raise ValueError(
                 f"{box} is not convertible to a hoomd.Box object using "

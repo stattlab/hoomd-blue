@@ -714,12 +714,6 @@ void IntegratorHPMCMono<Shape>::update(uint64_t timestep)
             Shape shape_old(shape_i.orientation, m_params[typ_i]);
             vec3<Scalar> pos_old = pos_i;
 
-            //gabby: hard coded angle
-            Scalar alpha = 1.57;
-            vec3<Scalar> axis(Scalar(0), Scalar(0), Scalar(1));
-            quat<Scalar> pos_rot_quat = quat<Scalar>::fromAxisAngle(axis, alpha);
-            quat<Scalar> neg_rot_quat = quat<Scalar>::fromAxisAngle(axis, -alpha);
- 
             //gabby: figure out where to actually put this flag
             //bool use_rotated_boundaries = false;
             bool use_rotated_boundaries = true;
@@ -782,6 +776,10 @@ void IntegratorHPMCMono<Shape>::update(uint64_t timestep)
             // check for overlaps with neighboring particle's positions (also calculate the new energy)
             // All image boxes (including the primary) 
             const unsigned int n_images = (unsigned int)m_image_list.size();
+
+            //gabby: counting number of images
+            //std::cout << "Number of images: " << n_images << std::endl;
+
             for (unsigned int cur_image = 0; cur_image < n_images; cur_image++)
                 {
                 vec3<Scalar> pos_i_image = pos_i + m_image_list[cur_image];
@@ -830,12 +828,22 @@ void IntegratorHPMCMono<Shape>::update(uint64_t timestep)
 
                                 //gabby: using rotated boundaries
                                 if(use_rotated_boundaries && cur_image > 0){
+
+                                    //gabby: hard coded angle
+                                    Scalar alpha = box.getAlpha();
+                                    vec3<Scalar> axis(Scalar(0), Scalar(0), Scalar(1));
+                                    quat<Scalar> pos_rot_quat = quat<Scalar>::fromAxisAngle(axis, alpha*cur_image);
+                                    quat<Scalar> neg_rot_quat = quat<Scalar>::fromAxisAngle(axis, -alpha*cur_image);
+
+                                    //quat<Scalar> pos_rot_quat = quat<Scalar>::fromAxisAngle(axis, alpha*cur_image);
+                                    //quat<Scalar> neg_rot_quat = quat<Scalar>::fromAxisAngle(axis, -alpha*cur_image);
+
                                     //vec3<Scalar> r_ij = quat<Scalar>::rotate(pos_rot_quat, vec3<Scalar>(postype_j)) - pos_i_image;
                                     if(r_ij.z < 0){
-                                    r_ij = rotate(neg_rot_quat, vec3<Scalar>(postype_j)) - pos_i_image;
+                                        r_ij = rotate(neg_rot_quat, vec3<Scalar>(postype_j)) - pos_i_image;
                                     }
                                     else{
-                                    r_ij = rotate(pos_rot_quat, vec3<Scalar>(postype_j)) - pos_i_image;
+                                        r_ij = rotate(pos_rot_quat, vec3<Scalar>(postype_j)) - pos_i_image;
                                     }
                                     //vec3<Scalar> rot_r_ij = quat<Scalar>::rotate(pos_rot_quat, r_ij)
                                 }
@@ -1112,8 +1120,10 @@ unsigned int IntegratorHPMCMono<Shape>::countOverlaps(bool early_exit)
     ArrayHandle<Scalar4> h_postype(m_pdata->getPositions(), access_location::host, access_mode::read);
     ArrayHandle<Scalar4> h_orientation(m_pdata->getOrientationArray(), access_location::host, access_mode::read);
     ArrayHandle<unsigned int> h_tag(m_pdata->getTags(), access_location::host, access_mode::read);
+    //gabby flag use_rot_boundaries
     bool use_rotated_boundaries = true;
-    Scalar alpha = 1.5707963267948966;
+    BoxDim box = m_pdata->getBox();
+    Scalar alpha = box.getAlpha();
     vec3<Scalar> axis(Scalar(0), Scalar(0), Scalar(1));
     quat<Scalar> pos_rot_quat = quat<Scalar>::fromAxisAngle(axis, alpha);
     quat<Scalar> neg_rot_quat = quat<Scalar>::fromAxisAngle(axis, -alpha);
@@ -1135,7 +1145,14 @@ unsigned int IntegratorHPMCMono<Shape>::countOverlaps(bool early_exit)
         // Check particle against AABB tree for neighbors
         hoomd::detail::AABB aabb_i_local = shape_i.getAABB(vec3<Scalar>(0,0,0));
 
+        //const unsigned int n_images = (unsigned int)m_image_list.size();
         const unsigned int n_images = (unsigned int)m_image_list.size();
+        //gabby: we really don't need to check more than two images in each direction. Maybe more than 3?? Just make move sizes less than the insphere/circumsphere, no random placements
+        //if(n_images > 3){
+        //    n_images = 3;
+        //}
+        //gabby: counting overlaps
+        //std::cout << "n_images:" << n_images << std::endl;
         for (unsigned int cur_image = 0; cur_image < n_images; cur_image++)
             {
             vec3<Scalar> pos_i_image = pos_i + m_image_list[cur_image];

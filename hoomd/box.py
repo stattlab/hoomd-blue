@@ -181,6 +181,7 @@ class Box:
             raise ValueError("Cannot set the xz or yz tilt factor on a 2D box.")
         self._cpp_obj = _hoomd.BoxDim(Lx, Ly, Lz)
         self._cpp_obj.setTiltFactors(xy, xz, yz)
+        self._cpp_obj.setAlpha(0)
 
     @classmethod
     def cube(cls, L):
@@ -604,6 +605,24 @@ class Box:
         neighboring ranks (`False`) and which are not (`True`).
         """
         return _vec3_to_array(self._cpp_obj.getPeriodic(), bool)
+    
+    
+    @property
+    def alpha(self):
+        """float: Alpha twist angle for cylinders
+
+        It rotates about the z-axis
+        .. rubric:: Example:
+
+        .. code-block:: python
+
+            box.alpha = np.pi/2 
+        """
+        return self._cpp_obj.getAlpha()
+
+    @alpha.setter
+    def alpha(self, alpha):
+        self._cpp_obj.setAlpha(alpha)
 
     @property
     def volume(self):
