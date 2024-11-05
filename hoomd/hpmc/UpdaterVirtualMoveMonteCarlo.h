@@ -224,6 +224,16 @@ class UpdaterVMMC : public Updater
             m_static_linking_mode = b;
             }
 
+        bool getRandomBetaFicticious()
+            {
+            return m_random_beta_ficticious;
+            }
+
+        void setRandomBetaFicticious(bool b)
+            {
+            m_random_beta_ficticious = b;
+            }
+
 
         /*! \param mode 0 -> Absolute count, 1 -> relative to the start of the run, 2 -> relative to the last executed step
             \return The current state of the acceptance counters
@@ -250,6 +260,7 @@ class UpdaterVMMC : public Updater
         std::string m_cluster_size_limit_mode;
         bool m_always_rebuild_tree;
         bool m_static_linking_mode;
+        bool m_random_beta_ficticious;
 
         detail::UpdateOrder m_update_order;
 
@@ -332,7 +343,7 @@ void UpdaterVMMC<Shape>::update(uint64_t timestep)
     m_count_step_start = m_count_total;
 
     // get stuff needed for the calculation
-    const LongReal current_beta_ficticious = m_static_linking_mode ? m_beta_ficticious->operator()(timestep) : 1.0;
+    LongReal current_beta_ficticious = m_static_linking_mode ? m_beta_ficticious->operator()(timestep) : 1.0;
     const LongReal min_core_radius = m_mc->getMinCoreDiameter() * LongReal(0.5);
     const auto& pair_energy_search_radius = m_mc->getPairEnergySearchRadius();
     ArrayHandle<Scalar4> h_postype(m_pdata->getPositions(), access_location::host, access_mode::readwrite);
@@ -395,6 +406,10 @@ void UpdaterVMMC<Shape>::update(uint64_t timestep)
             // generate the virtual move
             hoomd::RandomGenerator rng_i(hoomd::Seed(hoomd::RNGIdentifier::UpdaterVMMC, timestep, user_seed),
                                          hoomd::Counter(seed_idx, (m_exec_conf->getRank() << 16) + m_instance, i_trial));
+            if (m_static_linking_mode && m_random_beta_ficticious)
+                {
+                current_beta_ficticious = hoomd::UniformDistribution<LongReal>()(rng_i);
+                }
             LongReal move_type_select = hoomd::UniformDistribution<LongReal>()(rng_i);
             bool move_type_translate = move_type_select < m_translation_move_probability;
             vec3<Scalar> virtual_translate_move(0, 0, 0);
@@ -903,7 +918,7 @@ void UpdaterVMMC<Shape>::update(uint64_t timestep)
             if (m_static_linking_mode)
                 {
                 // the 1.0 in current_beta_ficticious - 1.0 is where we assume beta in 1.0 in HPMC
-                p_acc = std::min(1.0, exp((current_beta_ficticious - 1.0) * (beta_deltaU)));
+                p_acc = std::min(1.0, exp((current_beta_ficticious - 1.0) * beta_deltaU));
                 }
             else
                 {
@@ -1018,6 +1033,7 @@ template < class Shape> void export_UpdaterVirtualMoveMonteCarlo(pybind11::modul
         .def_property("always_rebuild_tree", &UpdaterVMMC<Shape>::getAlwaysRebuildTree, &UpdaterVMMC<Shape>::setAlwaysRebuildTree)
         .def_property("static_linking_mode", &UpdaterVMMC<Shape>::getStaticLinkingMode, &UpdaterVMMC<Shape>::setStaticLinkingMode)
         .def_property("instance", &UpdaterVMMC<Shape>::getInstance, &UpdaterVMMC<Shape>::setInstance)
+        .def_property("random_beta_ficticious", &UpdaterVMMC<Shape>::getRandomBetaFicticious, &UpdaterVMMC<Shape>::setRandomBetaFicticious)
     ;
     }
 

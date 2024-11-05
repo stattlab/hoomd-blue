@@ -654,6 +654,7 @@ class VirtualClusterMoves(Updater):
                  cluster_size_limit_mode=None,
                  static_linking_mode=False,
                  always_rebuild_tree=True,
+                 random_beta_ficticious=False,
                  instance=0,
                  ):
         super().__init__(trigger)
@@ -675,6 +676,7 @@ class VirtualClusterMoves(Updater):
                                    static_linking_mode=bool(static_linking_mode),
                                    always_rebuild_tree=bool(always_rebuild_tree),
                                    instance=int(instance),
+                                   random_beta_ficticious=bool(random_beta_ficticious),
                                    )
         param_dict.update(dict(beta_ficticious=beta_ficticious))
         self._param_dict.update(param_dict)
