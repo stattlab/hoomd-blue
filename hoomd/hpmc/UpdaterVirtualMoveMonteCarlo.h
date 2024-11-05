@@ -886,16 +886,16 @@ void UpdaterVMMC<Shape>::update(uint64_t timestep)
 
             // find which of the potential cluster members ended up in the cluster
             m_exec_conf->msg->notice(5) << "Finding failed intracluster links" << std::endl;
-            for (unsigned int i = 0; i < m_potential_link_data.m_potential_intracluster_link_idxs.size(); i++)
+            for (unsigned int potential_link_idx = 0; potential_link_idx < m_potential_link_data.m_potential_intracluster_link_idxs.size(); potential_link_idx++)
                 {
-                unsigned int linker_i = m_potential_link_data.m_potential_intracluster_link_idxs[i].first;  // recall: linker_i in cluster by construction
-                unsigned int linkee_j = m_potential_link_data.m_potential_intracluster_link_idxs[i].second;
+                unsigned int linker_i = m_potential_link_data.m_potential_intracluster_link_idxs[potential_link_idx].first;  // recall: linker_i in cluster by construction
+                unsigned int linkee_j = m_potential_link_data.m_potential_intracluster_link_idxs[potential_link_idx].second;
                 m_exec_conf->msg->notice(10) << "  Checking failed, intracluster links between " << linker_i << " and " << linkee_j << std::endl;
                 if (m_cluster_data.m_linkers_added.find(linkee_j) == m_cluster_data.m_linkers_added.end())
                     {
                     // j ultimately did not join the cluster, so there will in general be a contribution to beta_deltaU for this i-j pair
                     // we have already accounted for the probability of not forming the i-j link, so all we do is add to beta_deltaU
-                    beta_deltaU += m_potential_link_data.m_potential_intracluster_link_beta_deltaU_fwds[i];
+                    beta_deltaU += m_potential_link_data.m_potential_intracluster_link_beta_deltaU_fwds[potential_link_idx];
                     }
                 else
                     {
