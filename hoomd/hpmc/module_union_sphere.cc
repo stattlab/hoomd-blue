@@ -15,6 +15,7 @@
 
 #include "UpdaterClusters.h"
 #include "UpdaterMuVT.h"
+#include "UpdaterVirtualMoveMonteCarlo.h"
 
 #ifdef ENABLE_HIP
 #include "ComputeFreeVolumeGPU.h"
@@ -36,6 +37,7 @@ void export_union_sphere(pybind11::module& m)
     export_ComputeSDF<ShapeUnion<ShapeSphere>>(m, "ComputeSDFSphereUnion");
     export_UpdaterMuVT<ShapeUnion<ShapeSphere>>(m, "UpdaterMuVTSphereUnion");
     export_UpdaterClusters<ShapeUnion<ShapeSphere>>(m, "UpdaterClustersSphereUnion");
+    export_UpdaterVirtualMoveMonteCarlo<ShapeUnion<ShapeSphere>>(m, "UpdaterVMMCSphereUnion");
 
     export_ExternalFieldInterface<ShapeUnion<ShapeSphere>>(m, "ExternalFieldSphereUnion");
     export_HarmonicField<ShapeUnion<ShapeSphere>>(m, "ExternalFieldHarmonicSphereUnion");
