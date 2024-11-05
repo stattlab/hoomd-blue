@@ -716,7 +716,11 @@ void IntegratorHPMCMono<Shape>::update(uint64_t timestep)
 
             //gabby: figure out where to actually put this flag
             //bool use_rotated_boundaries = false;
+
             bool use_rotated_boundaries = true;
+            quat<Scalar> pos_rot_quat = box.getAlphaQuat();
+            quat<Scalar> neg_rot_quat = conj(pos_rot_quat);
+ 
             if (move_type_translate)
                 {
 
@@ -829,16 +833,6 @@ void IntegratorHPMCMono<Shape>::update(uint64_t timestep)
                                 //gabby: using rotated boundaries
                                 if(use_rotated_boundaries && cur_image > 0){
 
-                                    //gabby: hard coded angle
-                                    Scalar alpha = box.getAlpha();
-                                    vec3<Scalar> axis(Scalar(0), Scalar(0), Scalar(1));
-                                    quat<Scalar> pos_rot_quat = quat<Scalar>::fromAxisAngle(axis, alpha*cur_image);
-                                    quat<Scalar> neg_rot_quat = quat<Scalar>::fromAxisAngle(axis, -alpha*cur_image);
-
-                                    //quat<Scalar> pos_rot_quat = quat<Scalar>::fromAxisAngle(axis, alpha*cur_image);
-                                    //quat<Scalar> neg_rot_quat = quat<Scalar>::fromAxisAngle(axis, -alpha*cur_image);
-
-                                    //vec3<Scalar> r_ij = quat<Scalar>::rotate(pos_rot_quat, vec3<Scalar>(postype_j)) - pos_i_image;
                                     if(r_ij.z < 0){
                                         r_ij = rotate(neg_rot_quat, vec3<Scalar>(postype_j)) - pos_i_image;
                                     }
@@ -1123,11 +1117,8 @@ unsigned int IntegratorHPMCMono<Shape>::countOverlaps(bool early_exit)
     //gabby flag use_rot_boundaries
     bool use_rotated_boundaries = true;
     BoxDim box = m_pdata->getBox();
-    Scalar alpha = box.getAlpha();
-    vec3<Scalar> axis(Scalar(0), Scalar(0), Scalar(1));
-    quat<Scalar> pos_rot_quat = quat<Scalar>::fromAxisAngle(axis, alpha);
-    quat<Scalar> neg_rot_quat = quat<Scalar>::fromAxisAngle(axis, -alpha);
-
+    quat<Scalar> pos_rot_quat = box.getAlphaQuat();
+    quat<Scalar> neg_rot_quat = conj(pos_rot_quat);
 
     // access parameters and interaction matrix
     ArrayHandle<unsigned int> h_overlaps(m_overlaps, access_location::host, access_mode::read);
@@ -1158,7 +1149,7 @@ unsigned int IntegratorHPMCMono<Shape>::countOverlaps(bool early_exit)
             vec3<Scalar> pos_i_image = pos_i + m_image_list[cur_image];
             hoomd::detail::AABB aabb = aabb_i_local;
             aabb.translate(pos_i_image);
-
+            
             // stackless search
             for (unsigned int cur_node_idx = 0; cur_node_idx < m_aabb_tree.getNumNodes(); cur_node_idx++)
                 {
