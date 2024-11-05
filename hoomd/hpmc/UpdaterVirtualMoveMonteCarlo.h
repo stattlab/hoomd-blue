@@ -1006,6 +1006,7 @@ void UpdaterVMMC<Shape>::update(uint64_t timestep)
             m_exec_conf->msg->notice(5) << std::endl;
             }  // end loop over seed particles
         }  // end loop over trials
+    m_mc->invalidateAABBTree();
     }  // end update()
 
 
