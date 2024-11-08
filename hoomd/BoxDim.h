@@ -185,10 +185,9 @@ struct
     */
     HOSTDEVICE quat<Scalar> getAlphaQuat() const
         {
+            //std::cout << "From GET m_aq: [" << m_aq.s << ", " << m_aq.v.x << ", " << m_aq.v.y << ", " << m_aq.v.z << "]" << std::endl;
             return m_aq;
         }
-
-
 
     //! Update the box twist angle alpha, only
     //! works in the z direction, with a cylinder
@@ -196,6 +195,7 @@ struct
     */
     HOSTDEVICE void setAlphaQuat(const quat<Scalar>& alpha_quat)
         {
+        //std::cout << "From SETTING!!!! m_aq: [" << m_aq.s << ", " << m_aq.v.x << ", " << m_aq.v.y << ", " << m_aq.v.z << "]" << std::endl;
         m_aq  = alpha_quat;
         }
 

@@ -950,3 +950,219 @@ class QuickCompress(Updater):
             return False
 
         return self._cpp_obj.isComplete()
+
+
+class CylinderRotate(Updater):
+    r"""Quickly compress a hard particle system to a target box.
+
+    Args:
+        trigger (hoomd.trigger.trigger_like): Update the box dimensions on
+            triggered time steps.
+
+        target_box (`hoomd.box.box_like` or `hoomd.variant.box.BoxVariant`):
+            Dimensions of the target box.
+
+        max_overlaps_per_particle (float): The maximum number of overlaps to
+            allow per particle (may be less than 1 - e.g.
+            up to 250 overlaps would be allowed when in a system of 1000
+            particles when max_overlaps_per_particle=0.25).
+
+        min_scale (float): The minimum scale factor to apply to box dimensions.
+
+        allow_unsafe_resize (bool): When `True`, box moves are proposed
+            independent of particle translational move sizes.
+
+    Use `CylinderRotate` in conjunction with an HPMC integrator to scale the
+    system to a target box size. `CylinderRotate` can typically compress dilute
+    systems to near random close packing densities in tens of thousands of time
+    steps. For more control over the rate of compression, use a `BoxVariant` for
+    `target_box`.
+
+    `CylinderRotate` operates by making small changes toward the `target_box`,
+    but only when there are no particle overlaps in the current simulation
+    state. In 3D:
+
+    .. math::
+
+          L_x' &= \begin{cases}
+          \max( L_x \cdot s, L_{\mathrm{target},x} )
+          & L_{\mathrm{target},x} < L_x \\
+          \min( L_x / s, L_{\mathrm{target},x} )
+          & L_{\mathrm{target},x} \ge L_x
+          \end{cases} \\
+          L_y' &= \begin{cases}
+          \max( L_y \cdot s, L_{\mathrm{target},y} )
+          & L_{\mathrm{target},y} < L_y \\
+          \min( L_y / s, L_{\mathrm{target},y} )
+          & L_{\mathrm{target},y} \ge L_y
+          \end{cases} \\
+          L_z' &= \begin{cases}
+          \max( L_z \cdot s, L_{\mathrm{target},z} )
+          & L_{\mathrm{target},z} < L_z \\
+          \min( L_z / s, L_{\mathrm{target},z} )
+          & L_{\mathrm{target},z} \ge L_z
+          \end{cases} \\
+          xy' &= \begin{cases}
+          \min( xy + (1-s) \cdot xy_\mathrm{target}, xy_\mathrm{target} )
+          & xy_\mathrm{target} < xy \\
+          \max( xy + (1-s) \cdot xy_\mathrm{target}, xy_\mathrm{target} )
+          & xy_\mathrm{target} \ge xy
+          \end{cases} \\
+          xz' &= \begin{cases}
+          \min( xz + (1-s) \cdot xz_\mathrm{target}, xz_\mathrm{target} )
+          & xz_\mathrm{target} < xz \\
+          \max( xz + (1-s) \cdot xz_\mathrm{target}, xz_\mathrm{target} )
+          & xz_\mathrm{target} \ge xz
+          \end{cases} \\
+          yz' &= \begin{cases}
+          \min( yz + (1-s) \cdot yz_\mathrm{target}, yz_\mathrm{target} )
+          & yz_\mathrm{target} < yz \\
+          \max( yz + (1-s) \cdot yz_\mathrm{target}, yz_\mathrm{target} )
+          & yz_\mathrm{target} \ge yz
+          \end{cases} \\
+
+    and in 2D:
+
+    .. math::
+
+          L_x' &= \begin{cases}
+          \max( L_x \cdot s, L_{\mathrm{target},x} )
+          & L_{\mathrm{target},x} < L_x \\
+          \min( L_x / s, L_{\mathrm{target},x} )
+          & L_{\mathrm{target},x} \ge L_x
+          \end{cases} \\
+          L_y' &= \begin{cases}
+          \max( L_y \cdot s, L_{\mathrm{target},y} )
+          & L_{\mathrm{target},y} < L_y \\
+          \min( L_y / s, L_{\mathrm{target},y} )
+          & L_{\mathrm{target},y} \ge L_y
+          \end{cases} \\
+          L_z' &= L_z \\
+          xy' &= \begin{cases}
+          \min( xy + (1-s) \cdot xy_\mathrm{target}, xy_\mathrm{target} )
+          & xy_\mathrm{target} < xy \\
+          \max( xy + (1-s) \cdot xy_\mathrm{target}, xy_\mathrm{target} )
+          & xy_\mathrm{target} \ge xy
+          \end{cases} \\
+          xz' &= xz \\
+          yz' &= yz \\
+
+    where the current simulation box is :math:`(L_x, L_y, L_z, xy, xz, yz)`,
+    the target is :math:`(L_{\mathrm{target},x}, L_{\mathrm{target},y},
+    L_{\mathrm{target},z}, xy_\mathrm{target}, xz_\mathrm{target},
+    yz_\mathrm{target})`, the new simulation box set is
+    :math:`(L_x', L_y', L_z', xy', xz', yz')` and :math:`s` is the scale factor
+    chosen for this step (see below). `CylinderRotate` scales particle
+    coordinates (see `BoxMC` for details) when it sets a new box.
+
+    When there are more than ``max_overlaps_per_particle * N_particles`` hard
+    particle overlaps in the system in the new box, the box move is rejected.
+    Otherwise, the small number of overlaps remain when the new box is set.
+    `CylinderRotate` then waits until `hoomd.hpmc.integrate.HPMCIntegrator` makes
+    local MC trial moves that remove all overlaps.
+
+    `CylinderRotate` adjusts the value of :math:`s` based on the particle and
+    translational trial move sizes to ensure that the trial moves will be able
+    to remove the overlaps. It randomly chooses a value of :math:`s` uniformly
+    distributed between ``max(min_scale, 1.0 - min_move_size / max_diameter)``
+    and 1.0 where ``min_move_size`` is the smallest MC translational move size
+    adjusted by the acceptance ratio and ``max_diameter`` is the circumsphere
+    diameter of the largest particle type. If `allow_unsafe_resize` is `True`,
+    box move sizes will be uniformly distributed between ``min_scale`` and 1.0
+    (with no consideration of ``min_move_size``).
+
+    When using a `BoxVariant` for `target_box`, `complete` returns `True` if the
+    current simulation box is equal to the box corresponding to `target_box`
+    evaluated at the current timestep and there are no overlaps in the system.
+    To ensure the updater has compressed the system to the final target box, use
+    a condition that checks both the `complete` attribute of the updater and the
+    simulation timestep. For example::
+
+        target_box = hoomd.variant.box.InverseVolumeRamp(
+            sim.state.box, sim.state.box.volume / 2, 0, 1_000)
+        qc = hoomd.hpmc.update.CylinderRotate(10, target_box)
+        while (
+            sim.timestep < target_box.t_ramp + target_box.t_start or
+            not qc.complete):
+            sim.run(100)
+
+    Tip:
+        Use the `hoomd.hpmc.tune.MoveSize` in conjunction with
+        `CylinderRotate` to adjust the move sizes to maintain a constant
+        acceptance ratio as the density of the system increases.
+
+
+    Warning:
+        When the smallest MC translational move size is 0, `allow_unsafe_resize`
+        must be set to `True` to progress toward the target box. Decrease
+        `max_overlaps_per_particle` when using this setting to prevent
+        unresolvable overlaps.
+
+    Warning:
+        Use `CylinderRotate` *OR* `BoxMC`. Do not use both at the same time.
+
+    .. rubric:: Mixed precision
+
+    `CylinderRotate` uses reduced precision floating point arithmetic when
+    checking for particle overlaps in the local particle reference frame.
+
+    Attributes:
+        trigger (Trigger): Update the box dimensions on triggered time steps.
+
+        target_box (BoxVariant): The variant for the dimensions of the target
+            box.
+
+        max_overlaps_per_particle (float): The maximum number of overlaps to
+            allow per particle (may be less than 1 - e.g.
+            up to 250 overlaps would be allowed when in a system of 1000
+            particles when max_overlaps_per_particle=0.25).
+
+        min_scale (float): The minimum scale factor to apply to box dimensions.
+
+        instance (int):
+            When using multiple `CylinderRotate` updaters in a single simulation,
+            give each a unique value for `instance` so that they generate
+            different streams of random numbers.
+
+        allow_unsafe_resize (bool): Flag that determines whether
+    """
+
+    def __init__(self,
+                 trigger,
+                 max_overlaps_per_particle=0.25,
+                 g=0.01,
+                 ):
+        super().__init__(trigger)
+
+        param_dict = ParameterDict(max_overlaps_per_particle=float,
+                                   g=float,
+                                   instance=int,
+                                   )
+        param_dict['max_overlaps_per_particle'] = max_overlaps_per_particle
+        param_dict['g'] =g 
+
+        self._param_dict.update(param_dict)
+
+        self.instance = 0
+
+    def _attach_hook(self):
+        # HPMC uses RNGs. Warn the user if they did not set the seed.
+        self._simulation._warn_if_seed_unset()
+        integrator = self._simulation.operations.integrator
+        if not isinstance(integrator, integrate.HPMCIntegrator):
+            raise RuntimeError("The integrator must be a HPMC integrator.")
+
+        if not integrator._attached:
+            raise RuntimeError("Integrator is not attached yet.")
+
+        self._cpp_obj = _hpmc.UpdaterCylinderRotate(
+            self._simulation.state._cpp_sys_def, self.trigger,
+            integrator._cpp_obj, self.max_overlaps_per_particle, self.g)
+
+    @property
+    def complete(self):
+        """True when the box has achieved the target."""
+        if not self._attached:
+            return False
+
+        return self._cpp_obj.isComplete()

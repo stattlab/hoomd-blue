@@ -36,6 +36,15 @@ class _ConfigurationData:
     def boxAlpha(self):
         b = self._cpp_obj._global_box
         return b.getAlpha()
+    
+    @property
+    def boxAlphaQuat(self):
+        b = self._cpp_obj._global_box
+        alphaQuat =  b.getAlphaQuat()
+
+        return pythonformattedQuat
+
+
 
     @box.setter
     def box(self, box):

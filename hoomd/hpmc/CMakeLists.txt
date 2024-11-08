@@ -50,6 +50,7 @@ set(_hpmc_sources   module.cc
                     ShapeUtils.cc
                     UpdaterBoxMC.cc
                     UpdaterQuickCompress.cc
+                    UpdaterCylinderRotate.cc
                     IntegratorHPMC.cc
                     )
 
@@ -115,6 +116,7 @@ set(_hpmc_headers
     UpdaterClustersGPUDepletants.cuh
     UpdaterMuVT.h
     UpdaterQuickCompress.h
+    UpdaterCylinderRotate.h
     UpdaterShape.h
     XenoCollide2D.h
     XenoCollide3D.h

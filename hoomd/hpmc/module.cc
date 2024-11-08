@@ -24,6 +24,7 @@
 #include "UpdaterClusters.h"
 #include "UpdaterMuVT.h"
 #include "UpdaterQuickCompress.h"
+#include "UpdaterCylinderRotate.h"
 
 #include "GPUTree.h"
 
@@ -75,6 +76,7 @@ PYBIND11_MODULE(_hpmc, m)
 
     export_UpdaterBoxMC(m);
     export_UpdaterQuickCompress(m);
+    export_UpdaterCylinderRotate(m);
     export_wall_classes(m);
     export_wall_list(m);
     export_MassPropertiesBase(m);

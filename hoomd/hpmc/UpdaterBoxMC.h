@@ -329,7 +329,6 @@ class UpdaterBoxMC : public Updater
     inline bool safe_box(const Scalar newL[3], const unsigned int& Ndim);
     //!< Perform appropriate checks for box validity
 
-    //! Update the internal vector of partial sums of weights
     void updateChangedWeights();
     };
 
