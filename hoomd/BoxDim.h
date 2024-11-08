@@ -166,6 +166,9 @@ struct
     HOSTDEVICE Scalar getAlpha() const
         {
             Scalar alpha = 2.0* std::atan2(std::sqrt((fast::pow(m_aq.v.x, 2)) + (fast::pow(m_aq.v.y, 2)) + (fast::pow(m_aq.v.z, 2))), m_aq.s);
+            if(std::isnan(alpha)){
+                alpha = 2.0*std::acos(m_aq.s);
+            }
             return alpha;
         }
 
@@ -188,6 +191,25 @@ struct
             //std::cout << "From GET m_aq: [" << m_aq.s << ", " << m_aq.v.x << ", " << m_aq.v.y << ", " << m_aq.v.z << "]" << std::endl;
             return m_aq;
         }
+
+    HOSTDEVICE void printAlphaQuat() const
+        {
+            std::cout << "m_aq: [" << m_aq.s << ", " << m_aq.v.x << ", " << m_aq.v.y << ", " << m_aq.v.z << "]" << std::endl;
+        }
+
+    HOSTDEVICE Scalar4 getAlphaQuatScalar4() const
+        {
+            return quat_to_scalar4(m_aq);
+        }
+
+
+    HOSTDEVICE std::string stringAlphaQuat() const
+        {
+            return "[" + std::to_string(m_aq.s) + ", " + std::to_string(m_aq.v.x) + ", " + std::to_string(m_aq.v.y) + ", " + std::to_string(m_aq.v.z) + "]";
+            //return "[" + std::format("{:.10f}", m_aq.s) + ", " + std::format("{:.10f}", m_aq.v.x) + ", " + std::format("{:.10f}", m_aq.v.y) + ", " + std::format("{:.10f}", m_aq.v.z) + "]";
+        }
+
+
 
     //! Update the box twist angle alpha, only
     //! works in the z direction, with a cylinder

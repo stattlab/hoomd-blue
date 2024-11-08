@@ -783,9 +783,11 @@ void IntegratorHPMCMono<Shape>::update(uint64_t timestep)
 
             //gabby: counting number of images
             //std::cout << "Number of images: " << n_images << std::endl;
-
             for (unsigned int cur_image = 0; cur_image < n_images; cur_image++)
                 {
+                if(use_rotated_boundaries && cur_image > 3){
+                    break;
+                }
                 vec3<Scalar> pos_i_image = pos_i + m_image_list[cur_image];
                 hoomd::detail::AABB aabb = aabb_i_local;
                 aabb.translate(pos_i_image);
@@ -1139,13 +1141,14 @@ unsigned int IntegratorHPMCMono<Shape>::countOverlaps(bool early_exit)
         //const unsigned int n_images = (unsigned int)m_image_list.size();
         const unsigned int n_images = (unsigned int)m_image_list.size();
         //gabby: we really don't need to check more than two images in each direction. Maybe more than 3?? Just make move sizes less than the insphere/circumsphere, no random placements
-        //if(n_images > 3){
-        //    n_images = 3;
-        //}
         //gabby: counting overlaps
         //std::cout << "n_images:" << n_images << std::endl;
         for (unsigned int cur_image = 0; cur_image < n_images; cur_image++)
             {
+            if(use_rotated_boundaries && cur_image > 3){
+                break;
+            }
+
             vec3<Scalar> pos_i_image = pos_i + m_image_list[cur_image];
             hoomd::detail::AABB aabb = aabb_i_local;
             aabb.translate(pos_i_image);

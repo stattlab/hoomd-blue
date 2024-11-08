@@ -36,13 +36,18 @@ class _ConfigurationData:
     def boxAlpha(self):
         b = self._cpp_obj._global_box
         return b.getAlpha()
-    
-    @property
+   
+    @property 
     def boxAlphaQuat(self):
         b = self._cpp_obj._global_box
-        alphaQuat =  b.getAlphaQuat()
-
-        return pythonformattedQuat
+        #b.printAlphaQuat()
+        return [float(x) for x in b.stringAlphaQuat()[1:-1].split(", ")]
+    
+    @property 
+    def boxAlphaQuatScalar4(self):
+        b = self._cpp_obj._global_box
+        #b.printAlphaQuat()
+        return b.getAlphaQuatScalar4()
 
 
 
