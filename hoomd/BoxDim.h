@@ -192,17 +192,6 @@ struct
             return m_aq;
         }
 
-    HOSTDEVICE void printAlphaQuat() const
-        {
-            std::cout << "m_aq: [" << m_aq.s << ", " << m_aq.v.x << ", " << m_aq.v.y << ", " << m_aq.v.z << "]" << std::endl;
-        }
-
-    HOSTDEVICE Scalar4 getAlphaQuatScalar4() const
-        {
-            return quat_to_scalar4(m_aq);
-        }
-
-
     HOSTDEVICE std::string stringAlphaQuat() const
         {
             return "[" + std::to_string(m_aq.s) + ", " + std::to_string(m_aq.v.x) + ", " + std::to_string(m_aq.v.y) + ", " + std::to_string(m_aq.v.z) + "]";

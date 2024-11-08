@@ -785,9 +785,9 @@ void IntegratorHPMCMono<Shape>::update(uint64_t timestep)
             //std::cout << "Number of images: " << n_images << std::endl;
             for (unsigned int cur_image = 0; cur_image < n_images; cur_image++)
                 {
-                if(use_rotated_boundaries && cur_image > 3){
-                    break;
-                }
+                //if(use_rotated_boundaries && cur_image > 3){
+                //    break;
+                //}
                 vec3<Scalar> pos_i_image = pos_i + m_image_list[cur_image];
                 hoomd::detail::AABB aabb = aabb_i_local;
                 aabb.translate(pos_i_image);
@@ -1145,9 +1145,9 @@ unsigned int IntegratorHPMCMono<Shape>::countOverlaps(bool early_exit)
         //std::cout << "n_images:" << n_images << std::endl;
         for (unsigned int cur_image = 0; cur_image < n_images; cur_image++)
             {
-            if(use_rotated_boundaries && cur_image > 3){
-                break;
-            }
+            //if(use_rotated_boundaries && cur_image > 3){
+            //    break;
+            //}
 
             vec3<Scalar> pos_i_image = pos_i + m_image_list[cur_image];
             hoomd::detail::AABB aabb = aabb_i_local;
