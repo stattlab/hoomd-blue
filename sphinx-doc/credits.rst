@@ -105,6 +105,7 @@ The following people have contributed to HOOMD-blue:
 * Richmond Newman, University of Michigan
 * Roman Bystryi, Joint Institute for High Temperatures of RAS
 * Ross Smith, University of Michigan
+* Rusen Argun, University of Illinois
 * Ryan Marson, University of Michigan
 * Sam Nola, University of Michigan
 * Simone Ciarella, Eindhoven University of Technology
@@ -118,10 +119,12 @@ The following people have contributed to HOOMD-blue:
 * Tobias Dwyer, University of Michigan
 * Tommy Waltmann, University of Michigan
 * Trung Dac Nguyen, University of Michigan
+* Tzortzis Koulaxizis, University of Illinois
 * Vyas Ramasubramani, University of Michigan
 * Wenbo Shen, University of Michigan
 * William Zygmunt, University of Michigan
 * Wouter Ellenbroek, Eindhoven University of Technology
+* Yashraj Wani, Johannes Gutenberg University Mainz
 * Yuan Zhou, University of Michigan
 * Åsmund Ervik, SINTEF
 * Nathan Barrett, Pritzker School of Molecular Engineering

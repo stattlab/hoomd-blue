@@ -157,7 +157,7 @@ GPUFlags<T>::GPUFlags(const GPUFlags& from)
     memclear();
 
     // copy over the data to the new GPUFlags
-    this->resetFlags(from.readFlags);
+    this->resetFlags(from.readFlags());
     }
 
 template<class T> GPUFlags<T>& GPUFlags<T>::operator=(const GPUFlags& rhs)
@@ -273,7 +273,7 @@ template<class T> void GPUFlags<T>::deallocate()
     if (h_data == NULL)
         return;
 
-        // free memory
+    // free memory
 #ifdef ENABLE_HIP
     if (m_exec_conf && m_exec_conf->isCUDAEnabled())
         {
