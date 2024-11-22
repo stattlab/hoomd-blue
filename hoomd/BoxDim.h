@@ -159,6 +159,26 @@ struct
         }
 #endif
 
+
+    //! Get cylinder twist angle
+    /*! \return use_rotated_boundaries 
+    */
+    HOSTDEVICE bool getUseRotatedBoundaries() const
+        {
+            return m_use_rotated_boundaries;
+        }
+
+    //! Update the box twist angle alpha, only
+    //! works in the z direction, with a cylinder
+    /*! \param use_rotated_boundaries whether to use twist angle for the cylinder pbc
+    */
+    HOSTDEVICE void setUseRotatedBoundaries(const bool& use_rotated_boundaries)
+        {
+        m_use_rotated_boundaries  = use_rotated_boundaries;
+        }
+
+
+
     //! Get cylinder twist angle
     /*! \return alpha 
         remember that hoomd stores quaternions as [x, y, z, w] rather than [w, x, y, z]
@@ -166,9 +186,6 @@ struct
     HOSTDEVICE Scalar getAlpha() const
         {
             Scalar alpha = 2.0* std::atan2(std::sqrt((fast::pow(m_aq.v.x, 2)) + (fast::pow(m_aq.v.y, 2)) + (fast::pow(m_aq.v.z, 2))), m_aq.s);
-            if(std::isnan(alpha)){
-                alpha = 2.0*std::acos(m_aq.s);
-            }
             return alpha;
         }
 
@@ -192,10 +209,14 @@ struct
             return m_aq;
         }
 
-    HOSTDEVICE std::string stringAlphaQuat() const
+    HOSTDEVICE pybind11::tuple getPythonAlphaQuat() const
         {
-            return "[" + std::to_string(m_aq.s) + ", " + std::to_string(m_aq.v.x) + ", " + std::to_string(m_aq.v.y) + ", " + std::to_string(m_aq.v.z) + "]";
-            //return "[" + std::format("{:.10f}", m_aq.s) + ", " + std::format("{:.10f}", m_aq.v.x) + ", " + std::format("{:.10f}", m_aq.v.y) + ", " + std::format("{:.10f}", m_aq.v.z) + "]";
+            pybind11::list aq;
+            aq.append(m_aq.s);
+            aq.append(m_aq.v.x);
+            aq.append(m_aq.v.y);
+            aq.append(m_aq.v.z);
+            return pybind11::tuple(aq);
         }
 
 
@@ -511,19 +532,19 @@ struct
 
         if (m_periodic.z)
             {
-            if (((w.z >= m_hi.z) && !flags.z) || flags.z == 1)
+           if (((w.z >= m_hi.z) && !flags.z) || flags.z == 1)
                 {
                 w.z -= L.z;
                 w.y -= L.z * m_yz;
                 w.x -= L.z * m_xz;
 
-                quat<Scalar> pos_rot_quat = m_aq;
-                vec3<Scalar> rw = rotate(pos_rot_quat, vec3<Scalar>(w));
-
-                w.x = rw.x;
-                w.y = rw.y;
-                w.z = rw.z;
-
+                if(m_use_rotated_boundaries){
+                    quat<Scalar> pos_rot_quat = m_aq; 
+                    vec3<Scalar> rw = rotate(pos_rot_quat, vec3<Scalar>(w));
+                    w.x = rw.x;
+                    w.y = rw.y;
+                    w.z = rw.z;
+                }
                 img.z++;
                 }
             else if (((w.z < m_lo.z) && !flags.z) || flags.z == -1)
@@ -532,13 +553,13 @@ struct
                 w.y += L.z * m_yz;
                 w.x += L.z * m_xz;
 
-                quat<Scalar> neg_rot_quat = conj(m_aq);
-                vec3<Scalar> rw = rotate(neg_rot_quat, vec3<Scalar>(w));
-
-                w.x = rw.x;
-                w.y = rw.y;
-                w.z = rw.z;
-
+                if(m_use_rotated_boundaries){
+                    quat<Scalar> neg_rot_quat = conj(m_aq);
+                    vec3<Scalar> rw = rotate(neg_rot_quat, vec3<Scalar>(w));
+                    w.x = rw.x;
+                    w.y = rw.y;
+                    w.z = rw.z;
+                }
                 img.z--;
                 }
             }
@@ -728,6 +749,7 @@ struct
     uchar3 m_periodic; //!< 0/1 in each direction to tell if the box is periodic in that direction
 
     quat<Scalar> m_aq;       //!< cylinder twister pbc angle as a quaternion, in the +z direction 
+    bool m_use_rotated_boundaries;       //!< use cylinder twister pbc angle, in the +z direction 
 
     };
 

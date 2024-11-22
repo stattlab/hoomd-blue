@@ -223,7 +223,7 @@ struct ShapeSphere
         Scalar cylinder_radius = 5;
         //return hoomd::detail::AABB(pos, params.radius);
         if(cylinder_radius > params.radius){
-        return hoomd::detail::AABB(pos, 2*cylinder_radius);
+            return hoomd::detail::AABB(pos, 2*cylinder_radius);
         }
         else{
             return hoomd::detail::AABB(pos, params.radius);

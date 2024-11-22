@@ -182,6 +182,7 @@ class Box:
         self._cpp_obj = _hoomd.BoxDim(Lx, Ly, Lz)
         self._cpp_obj.setTiltFactors(xy, xz, yz)
         self._cpp_obj.setAlpha(0)
+        self._cpp_obj.setUseRotatedBoundaries(False)
 
     @classmethod
     def cube(cls, L):
@@ -623,6 +624,24 @@ class Box:
     @alpha.setter
     def alpha(self, alpha):
         self._cpp_obj.setAlpha(alpha)
+
+    @property
+    def use_rotated_boundaries(self):
+        """float: Whether or not to use rotated boundaries about the z axis 
+
+        It rotates about the z-axis
+        .. rubric:: Example:
+
+        .. code-block:: python
+
+            box.use_rotated_boundaries = True 
+        """
+        return self._cpp_obj.getUseRotatedBoundaries()
+
+    @use_rotated_boundaries.setter
+    def use_rotated_boundaries(self, use_rotated_boundaries):
+        self._cpp_obj.setUseRotatedBoundaries(use_rotated_boundaries)
+
 
     @property
     def volume(self):

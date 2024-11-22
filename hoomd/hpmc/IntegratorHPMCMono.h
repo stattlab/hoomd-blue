@@ -717,7 +717,7 @@ void IntegratorHPMCMono<Shape>::update(uint64_t timestep)
             //gabby: figure out where to actually put this flag
             //bool use_rotated_boundaries = false;
 
-            bool use_rotated_boundaries = true;
+            bool use_rotated_boundaries = box.getUseRotatedBoundaries();
             quat<Scalar> pos_rot_quat = box.getAlphaQuat();
             quat<Scalar> neg_rot_quat = conj(pos_rot_quat);
  
@@ -785,11 +785,30 @@ void IntegratorHPMCMono<Shape>::update(uint64_t timestep)
             //std::cout << "Number of images: " << n_images << std::endl;
             for (unsigned int cur_image = 0; cur_image < n_images; cur_image++)
                 {
-                //if(use_rotated_boundaries && cur_image > 3){
-                //    break;
-                //}
+
+                if(use_rotated_boundaries && cur_image > 1){
+                    pos_rot_quat = pos_rot_quat * pos_rot_quat;
+                    neg_rot_quat = neg_rot_quat * neg_rot_quat;
+                }
+
                 vec3<Scalar> pos_i_image = pos_i + m_image_list[cur_image];
                 hoomd::detail::AABB aabb = aabb_i_local;
+
+                /*
+                //GABBY NOTE TO FIX: using rotated boundaries
+                fix like how you fix in countOverlaps
+                if(use_rotated_boundaries && cur_image > 0){
+                    //GABBY NOTE: when getting to anisotropic shapes you need to also rotate the orientations
+                    if(r_ij.z < 0){
+                        r_ij = rotate(neg_rot_quat, vec3<Scalar>(postype_j)) - pos_i_image;
+                    }
+                    else{
+                        r_ij = rotate(pos_rot_quat, vec3<Scalar>(postype_j)) - pos_i_image;
+                    }
+                    //vec3<Scalar> rot_r_ij = quat<Scalar>::rotate(pos_rot_quat, r_ij)
+                }
+                */
+
                 aabb.translate(pos_i_image);
 
                 // stackless search
@@ -831,19 +850,6 @@ void IntegratorHPMCMono<Shape>::update(uint64_t timestep)
 
                                 // put particles in coordinate system of particle i
                                 vec3<Scalar> r_ij = vec3<Scalar>(postype_j) - pos_i_image;
-
-                                //gabby: using rotated boundaries
-                                if(use_rotated_boundaries && cur_image > 0){
-
-                                    if(r_ij.z < 0){
-                                        r_ij = rotate(neg_rot_quat, vec3<Scalar>(postype_j)) - pos_i_image;
-                                    }
-                                    else{
-                                        r_ij = rotate(pos_rot_quat, vec3<Scalar>(postype_j)) - pos_i_image;
-                                    }
-                                    //vec3<Scalar> rot_r_ij = quat<Scalar>::rotate(pos_rot_quat, r_ij)
-                                }
- 
 
                                 unsigned int typ_j = __scalar_as_int(postype_j.w);
                                 Shape shape_j(orientation_j, m_params[typ_j]);
@@ -1117,8 +1123,8 @@ unsigned int IntegratorHPMCMono<Shape>::countOverlaps(bool early_exit)
     ArrayHandle<Scalar4> h_orientation(m_pdata->getOrientationArray(), access_location::host, access_mode::read);
     ArrayHandle<unsigned int> h_tag(m_pdata->getTags(), access_location::host, access_mode::read);
     //gabby flag use_rot_boundaries
-    bool use_rotated_boundaries = true;
     BoxDim box = m_pdata->getBox();
+    bool use_rotated_boundaries = box.getUseRotatedBoundaries();
     quat<Scalar> pos_rot_quat = box.getAlphaQuat();
     quat<Scalar> neg_rot_quat = conj(pos_rot_quat);
 
@@ -1140,17 +1146,35 @@ unsigned int IntegratorHPMCMono<Shape>::countOverlaps(bool early_exit)
 
         //const unsigned int n_images = (unsigned int)m_image_list.size();
         const unsigned int n_images = (unsigned int)m_image_list.size();
-        //gabby: we really don't need to check more than two images in each direction. Maybe more than 3?? Just make move sizes less than the insphere/circumsphere, no random placements
-        //gabby: counting overlaps
-        //std::cout << "n_images:" << n_images << std::endl;
         for (unsigned int cur_image = 0; cur_image < n_images; cur_image++)
             {
-            //if(use_rotated_boundaries && cur_image > 3){
-            //    break;
-            //}
+
+            /*
+            GABBY NOTE TO FIX:
+            breakrjhgaieurghaksghrualiurghal check the order of images
+            if(use_rotated_boundaries && cur_image > 1){
+                pos_rot_quat = pos_rot_quat * pos_rot_quat;
+                neg_rot_quat = neg_rot_quat * neg_rot_quat;
+            }*/
 
             vec3<Scalar> pos_i_image = pos_i + m_image_list[cur_image];
             hoomd::detail::AABB aabb = aabb_i_local;
+
+            /*
+            GABBY NOTE TO FIX:
+            rotate based on what image you're in
+            if(use_rotated_boundaries && cur_image > 0){
+                if(r_ij.z < 0){
+                r_ij = rotate(neg_rot_quat, vec3<Scalar>(pos_i_image)) - postype_j;
+                }
+                else{
+                r_ij = rotate(pos_rot_quat, vec3<Scalar>(pos_i_image)) - postype_j;
+                }
+                //std::cout << "NOW!!!!!! r_ij is now: [" << r_ij.x << ", " << r_ij.y << ", " << r_ij.z << "]" << std::endl;
+                //vec3<Scalar> rot_r_ij = quat<Scalar>::rotate(pos_rot_quat, r_ij)
+            }
+            */
+
             aabb.translate(pos_i_image);
             
             // stackless search
@@ -1174,20 +1198,6 @@ unsigned int IntegratorHPMCMono<Shape>::countOverlaps(bool early_exit)
 
                             // put particles in coordinate system of particle i
                             vec3<Scalar> r_ij = vec3<Scalar>(postype_j) - pos_i_image;
-
-                            if(use_rotated_boundaries && cur_image > 0){
-                                //std::cout << "Twisting the boundary to check for overlaps!" << std::endl;
-                                //std::cout << "r_ij is initially: [" << r_ij.x << ", " << r_ij.y << ", " << r_ij.z << "]" << std::endl;
-                                //vec3<Scalar> r_ij = quat<Scalar>::rotate(pos_rot_quat, vec3<Scalar>(postype_j)) - pos_i_image;
-                                if(r_ij.z < 0){
-                                r_ij = rotate(neg_rot_quat, vec3<Scalar>(postype_j)) - pos_i_image;
-                                }
-                                else{
-                                r_ij = rotate(pos_rot_quat, vec3<Scalar>(postype_j)) - pos_i_image;
-                                }
-                                //std::cout << "NOW!!!!!! r_ij is now: [" << r_ij.x << ", " << r_ij.y << ", " << r_ij.z << "]" << std::endl;
-                                //vec3<Scalar> rot_r_ij = quat<Scalar>::rotate(pos_rot_quat, r_ij)
-                            }
 
                             unsigned int typ_j = __scalar_as_int(postype_j.w);
                             Shape shape_j(quat<Scalar>(orientation_j), m_params[typ_j]);
