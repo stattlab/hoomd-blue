@@ -13,9 +13,9 @@
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wconversion"
+#include <thrust/copy.h>
 #include <thrust/device_ptr.h>
 #include <thrust/scan.h>
-#include <thrust/copy.h>
 #pragma GCC diagnostic pop
 
 namespace hoomd
@@ -451,11 +451,17 @@ struct is_nonzero
         {
         return x > 0;
         }
-    }
+    };
 
-hipError_t gpu_find_particles_with_neighbors(unsigned int* d_particle_indices_with_neighbors, const unsigned int* d_n_neigh, const unsigned int nlist_length)
+hipError_t gpu_find_particles_with_neighbors(unsigned int* d_particle_indices_with_neighbors,
+                                             const unsigned int* d_n_neigh,
+                                             const unsigned int nlist_length)
     {
-    thrust::copy_if(d_n_neigh, d_n_neigh + nlist_length, d_particle_indices_with_neighbors, is_nonzero());
+    thrust::copy_if(d_n_neigh,
+                    d_n_neigh + nlist_length,
+                    d_particle_indices_with_neighbors,
+                    is_nonzero());
+    return hipSuccess;
     }
 
     } // end namespace kernel

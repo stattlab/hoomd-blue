@@ -97,6 +97,9 @@ class PYBIND11_EXPORT NeighborListGPU : public NeighborList
     //! Build the head list for neighbor list indexing on the GPU
     virtual void buildHeadList();
 
+    //! Find particles with a nonzero number of neighbors on the GPU
+    void findParticlesWithNeighbors();
+
     //! Schedule the distance check kernel
     /*! \param timestep Current time step
      */
