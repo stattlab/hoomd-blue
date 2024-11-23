@@ -213,6 +213,19 @@ void NeighborListGPU::buildHeadList()
     resizeNlist(req_size_nlist);
     }
 
+//! Find particles with a nonzero number of neighbors on the GPU
+void NeighborListGPU::findParticlesWithNeighbors()
+    {
+    ArrayHandle<unsigned int> d_particle_indices_with_neighbors(m_particle_indices_with_neighbors, access_location::device, access_mode::overwrite);
+    ArrayHandle<unsigned int> d_n_neigh(m_n_neigh, access_location::device, access_mode::read);
+
+    kernel::gpu_find_particles_with_neighbors(d_particle_indices_with_neighbors,
+                                              d_n_neigh,
+                                              m_nlist.getNumElements());
+    if (m_exec_conf->isCUDAErrorCheckingEnabled())
+        CHECK_CUDA_ERROR();
+    }
+
 namespace detail
     {
 void export_NeighborListGPU(pybind11::module& m)

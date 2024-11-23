@@ -486,6 +486,7 @@ class PYBIND11_EXPORT NeighborList : public Compute
 
     GPUArray<unsigned int> m_nlist;   //!< Neighbor list data
     GPUArray<unsigned int> m_n_neigh; //!< Number of neighbors for each particle
+    GPUArray<unsigned int> m_particle_indices_with_neighbors; //!< Indices of particles with a nonzero number of neighbors
     GPUArray<Scalar4> m_last_pos;     //!< coordinates of last updated particle positions
     Scalar3 m_last_L;                 //!< Box lengths at last update
     Scalar3 m_last_L_local;           //!< Local Box lengths at last update
@@ -543,6 +544,9 @@ class PYBIND11_EXPORT NeighborList : public Compute
     //! Build the head list to allocated memory
     virtual void buildHeadList();
 
+    //! Find particles with a nonzero number of neighbors
+    void findParticlesWithNeighbors();
+
     //! Amortized resizing of the neighborlist
     void resizeNlist(size_t size);
 
@@ -585,6 +589,7 @@ class PYBIND11_EXPORT NeighborList : public Compute
                                             //!< m_rebuild_check_delay steps after the last one
     std::vector<uint64_t> m_update_periods; //!< Steps between updates
     std::set<std::string> m_exclusions;     //!< Exclusions that have been set
+    bool m_filter_neighborless;             //!< Whether to find particles with a nonzero number of neighbors
 
     //! Test if the list needs updating
     bool needsUpdating(uint64_t timestep);

@@ -341,6 +341,9 @@ void NeighborList::compute(uint64_t timestep)
         if (m_exclusions_set)
             filterNlist();
 
+        if (m_filter_neighborless)
+            findParticlesWithNeighbors();
+
         setLastUpdatedPos();
         m_has_been_updated_once = true;
         }
@@ -1474,6 +1477,11 @@ void NeighborList::buildHeadList()
         }
 
     resizeNlist(headAddress);
+    }
+
+void NeighborList::findParticlesWithNeighbors()
+    {
+    // does nothing on CPU
     }
 
 /*!
