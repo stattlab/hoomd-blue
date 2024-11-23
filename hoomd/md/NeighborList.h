@@ -310,6 +310,12 @@ class PYBIND11_EXPORT NeighborList : public Compute
         return m_head_list;
         }
 
+    //! Get the particles with neighbors array
+    const GPUArray<unsigned int>& getParticleIndicesWithNeighborsArray() const
+        {
+        return m_particle_indices_with_neighbors;
+        }
+
     //! Get the number of exclusions array
     const GPUArray<unsigned int>& getNExArray()
         {
@@ -358,6 +364,12 @@ class PYBIND11_EXPORT NeighborList : public Compute
             }
         forceUpdate();
         }
+
+    //! Set whether to compute which particles in the nlist have > 0 particles
+    void setFilterNeighborless(bool b);
+
+    //! Get whether to compute which particles in the nlist have > 0 particles
+    bool getFilterNeighborless();
 
     //! Collect some statistics on exclusions.
     void countExclusions();

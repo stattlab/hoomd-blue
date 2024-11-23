@@ -602,6 +602,16 @@ void NeighborList::setExclusions(pybind11::list exclusions)
         }
     }
 
+bool NeighborList::getFilterNeighborless()
+    {
+    return m_filter_neighborless;
+    }
+
+void NeighborList::setFilterNeighborless(bool b)
+    {
+    m_filter_neighborless = b;
+    }
+
 void NeighborList::setSingleExclusion(std::string exclusion)
     {
     if (exclusion == "bond")
@@ -1842,6 +1852,7 @@ void export_NeighborList(pybind11::module& m)
         .def_property("check_dist", &NeighborList::getDistCheck, &NeighborList::setDistCheck)
         .def("setStorageMode", &NeighborList::setStorageMode)
         .def_property("exclusions", &NeighborList::getExclusions, &NeighborList::setExclusions)
+        .def_property("filter_neighborless", &NeighborList::getFilterNeighborless, &NeighborList::setFilterNeighborless)
         .def("addMesh", &NeighborList::AddMesh)
         .def("getMaxRCut", &NeighborList::getMaxRCut)
         .def("getMinRCut", &NeighborList::getMinRCut)
