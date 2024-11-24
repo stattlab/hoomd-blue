@@ -33,7 +33,7 @@ NeighborList::NeighborList(std::shared_ptr<SystemDefinition> sysdef, Scalar r_bu
     : Compute(sysdef), m_typpair_idx(m_pdata->getNTypes()), m_rcut_max_max(0.0), m_rcut_min(0.0),
       m_r_buff(r_buff), m_filter_body(false), m_storage_mode(half), m_meshbond_data(NULL),
       m_rcut_changed(true), m_updates(0), m_forced_updates(0), m_dangerous_updates(0),
-      m_force_update(true), m_dist_check(true), m_has_been_updated_once(false)
+      m_force_update(true), m_dist_check(true), m_has_been_updated_once(false), m_filter_neighborless(false)
     {
     m_exec_conf->msg->notice(5) << "Constructing Neighborlist" << endl;
 
