@@ -185,7 +185,7 @@ struct
     */
     HOSTDEVICE Scalar getAlpha() const
         {
-            Scalar alpha = 2.0* std::atan2(std::sqrt((fast::pow(m_aq.v.x, 2)) + (fast::pow(m_aq.v.y, 2)) + (fast::pow(m_aq.v.z, 2))), m_aq.s);
+            Scalar alpha = 2.0* std::atan2(std::sqrt((std::pow(m_aq.v.x, 2)) + (std::pow(m_aq.v.y, 2)) + (std::pow(m_aq.v.z, 2))), m_aq.s);
             return alpha;
         }
 

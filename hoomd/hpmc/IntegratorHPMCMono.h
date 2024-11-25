@@ -670,6 +670,14 @@ void IntegratorHPMCMono<Shape>::update(uint64_t timestep)
         m_max_pair_additive_cutoff.push_back(getMaxPairInteractionAdditiveRCut(type));
         }
 
+    bool use_rotated_boundaries = box.getUseRotatedBoundaries();
+    quat<Scalar> pos_rot_quat = box.getAlphaQuat();
+    quat<Scalar> neg_rot_quat = conj(pos_rot_quat);
+    quat<Scalar> temp_pos_rot_quat;
+    quat<Scalar> temp_neg_rot_quat;
+    Scalar twists;
+    Scalar3 boxL = box.getL();
+
     // loop over local particles nselect times
     for (unsigned int i_nselect = 0; i_nselect < m_nselect; i_nselect++)
         {
@@ -714,13 +722,6 @@ void IntegratorHPMCMono<Shape>::update(uint64_t timestep)
             Shape shape_old(shape_i.orientation, m_params[typ_i]);
             vec3<Scalar> pos_old = pos_i;
 
-            //gabby: figure out where to actually put this flag
-            //bool use_rotated_boundaries = false;
-
-            bool use_rotated_boundaries = box.getUseRotatedBoundaries();
-            quat<Scalar> pos_rot_quat = box.getAlphaQuat();
-            quat<Scalar> neg_rot_quat = conj(pos_rot_quat);
- 
             if (move_type_translate)
                 {
 
@@ -786,28 +787,34 @@ void IntegratorHPMCMono<Shape>::update(uint64_t timestep)
             for (unsigned int cur_image = 0; cur_image < n_images; cur_image++)
                 {
 
-                if(use_rotated_boundaries && cur_image > 1){
+                /*if(use_rotated_boundaries && cur_image > 1){
                     pos_rot_quat = pos_rot_quat * pos_rot_quat;
                     neg_rot_quat = neg_rot_quat * neg_rot_quat;
-                }
+                }*/
 
                 vec3<Scalar> pos_i_image = pos_i + m_image_list[cur_image];
                 hoomd::detail::AABB aabb = aabb_i_local;
 
-                /*
-                //GABBY NOTE TO FIX: using rotated boundaries
-                fix like how you fix in countOverlaps
-                if(use_rotated_boundaries && cur_image > 0){
-                    //GABBY NOTE: when getting to anisotropic shapes you need to also rotate the orientations
-                    if(r_ij.z < 0){
-                        r_ij = rotate(neg_rot_quat, vec3<Scalar>(postype_j)) - pos_i_image;
+                if(use_rotated_boundaries){
+                    if(2*pos_i_image.z/(boxL.z) >= 1){
+                        twists = std::abs(std::floor(2*pos_i_image.z/(boxL.z)));
+                        temp_pos_rot_quat = pos_rot_quat;
+                        for(unsigned int t = 1; t < twists; twists++){
+                            temp_pos_rot_quat = temp_pos_rot_quat * pos_rot_quat;
+                        }
+                        pos_i_image = rotate(temp_pos_rot_quat, vec3<Scalar>(pos_i_image));
                     }
-                    else{
-                        r_ij = rotate(pos_rot_quat, vec3<Scalar>(postype_j)) - pos_i_image;
+                    if(2*pos_i_image.z/(boxL.z) < 1){
+                    //else if(m_image_list[cur_image]/boxL.z < -1){
+                        twists = std::abs(std::floor(2*pos_i_image.z/(boxL.z)));
+                        temp_neg_rot_quat = neg_rot_quat;
+                        for(unsigned int t = 1; t < twists; twists++){
+                            temp_neg_rot_quat = temp_neg_rot_quat * neg_rot_quat;
+                        }
+                        pos_i_image = rotate(temp_neg_rot_quat, vec3<Scalar>(pos_i_image));
                     }
-                    //vec3<Scalar> rot_r_ij = quat<Scalar>::rotate(pos_rot_quat, r_ij)
                 }
-                */
+
 
                 aabb.translate(pos_i_image);
 
@@ -1127,6 +1134,10 @@ unsigned int IntegratorHPMCMono<Shape>::countOverlaps(bool early_exit)
     bool use_rotated_boundaries = box.getUseRotatedBoundaries();
     quat<Scalar> pos_rot_quat = box.getAlphaQuat();
     quat<Scalar> neg_rot_quat = conj(pos_rot_quat);
+    quat<Scalar> temp_pos_rot_quat;
+    quat<Scalar> temp_neg_rot_quat;
+    Scalar twists;
+    Scalar3 boxL = box.getL();
 
     // access parameters and interaction matrix
     ArrayHandle<unsigned int> h_overlaps(m_overlaps, access_location::host, access_mode::read);
@@ -1149,33 +1160,68 @@ unsigned int IntegratorHPMCMono<Shape>::countOverlaps(bool early_exit)
         for (unsigned int cur_image = 0; cur_image < n_images; cur_image++)
             {
 
-            /*
-            GABBY NOTE TO FIX:
-            breakrjhgaieurghaksghrualiurghal check the order of images
-            if(use_rotated_boundaries && cur_image > 1){
-                pos_rot_quat = pos_rot_quat * pos_rot_quat;
-                neg_rot_quat = neg_rot_quat * neg_rot_quat;
-            }*/
-
             vec3<Scalar> pos_i_image = pos_i + m_image_list[cur_image];
             hoomd::detail::AABB aabb = aabb_i_local;
 
-            /*
-            GABBY NOTE TO FIX:
-            rotate based on what image you're in
-            if(use_rotated_boundaries && cur_image > 0){
-                if(r_ij.z < 0){
-                r_ij = rotate(neg_rot_quat, vec3<Scalar>(pos_i_image)) - postype_j;
-                }
-                else{
-                r_ij = rotate(pos_rot_quat, vec3<Scalar>(pos_i_image)) - postype_j;
-                }
-                //std::cout << "NOW!!!!!! r_ij is now: [" << r_ij.x << ", " << r_ij.y << ", " << r_ij.z << "]" << std::endl;
-                //vec3<Scalar> rot_r_ij = quat<Scalar>::rotate(pos_rot_quat, r_ij)
-            }
-            */
-
             aabb.translate(pos_i_image);
+
+            //GABBY NOTE TO FIX:
+            //rotate based on what image you're in
+            if(use_rotated_boundaries){
+
+                //GABBY NOTE: here we ignore images that are not going through the top/bottom of the box, since these should NEVER generate overlaps, make the box interact with images only through the top and bottom.
+                ///*
+                if((m_image_list[cur_image].x != 0) ||
+                   (m_image_list[cur_image].y != 0)){
+                    continue;
+                   }
+                //*/
+
+                if(2*pos_i_image.z/(boxL.z) > 1){
+                    //std::cout << "twisting a bit up" << std::endl;
+                    std::cout << "pos_i_image.z/(boxL.z) = " << pos_i_image.z/(boxL.z) << "\tTwist POS evaluates to: " << (pos_i_image.z/(boxL.z) > 1) << std::endl;
+                    twists = std::abs(std::floor(pos_i_image.z/(boxL.z)));
+                    temp_pos_rot_quat = pos_rot_quat;
+                    for(unsigned int t = 1; t < twists; t++){
+                        temp_pos_rot_quat = temp_pos_rot_quat * pos_rot_quat;
+                    }
+                    std::cout << "\tboxL.z: " << boxL.z << "\tpos_i_image.z: " << pos_i_image.z << "\tnumber of twists: " << twists << "\tangle: ";
+
+                    std::cout << (2.0* std::atan2(std::sqrt((fast::pow(temp_pos_rot_quat.v.x, 2)) + (fast::pow(temp_pos_rot_quat.v.y, 2)) + (fast::pow(temp_pos_rot_quat.v.z, 2))), temp_pos_rot_quat.s));
+                    std::cout << "\tquat: [" << temp_pos_rot_quat.s << ", " << temp_pos_rot_quat.v.x << ", " << temp_pos_rot_quat.v.y << ", " << temp_pos_rot_quat.v.z << "]";
+                    std::cout << "\tpos_i transform: [" << pos_i_image.x << ", " << pos_i_image.y << ", " << pos_i_image.z << "]";
+                    pos_i_image = rotate(temp_pos_rot_quat, vec3<Scalar>(pos_i_image));
+                    std::cout << " -----> [" << pos_i_image.x << ", " << pos_i_image.y << ", " << pos_i_image.z << "]" << std::endl;
+                }
+                else if(2*pos_i_image.z/(boxL.z) <= -1){
+                    //std::cout << "twisting a bit down" << std::endl;
+                    std::cout << "pos_i_image.z/(boxL.z) = " << pos_i_image.z/(boxL.z) << "\tTwist NEG evaluates to: " << (pos_i_image.z/(boxL.z) <= 1) << std::endl;
+                    twists = std::abs(std::ceil(pos_i_image.z/(boxL.z)));
+                    //std::cout << "\tnumber of twists: " << twists << std::endl;
+                    temp_neg_rot_quat = neg_rot_quat;
+                    for(unsigned int t = 1; t < twists; t++){
+                        temp_neg_rot_quat = temp_neg_rot_quat * neg_rot_quat;
+                    }
+                    std::cout << "\tboxL.z: " << boxL.z << "\tpos_i_image.z: " << pos_i_image.z << "\tnumber of twists: " << twists << "\tangle: ";
+
+                    std::cout << (2.0* std::atan2(std::sqrt((std::pow(temp_neg_rot_quat.v.x, 2)) + (std::pow(temp_neg_rot_quat.v.y, 2)) + (std::pow(temp_neg_rot_quat.v.z, 2))), temp_neg_rot_quat.s));
+
+                    std::cout << "\tquat: [" << temp_neg_rot_quat.s << ", " << temp_neg_rot_quat.v.x << ", " << temp_neg_rot_quat.v.y << ", " << temp_neg_rot_quat.v.z << "]";
+
+                    std::cout << "\tpos_i transform: [" << pos_i_image.x << ", " << pos_i_image.y << ", " << pos_i_image.z << "]";
+
+                    pos_i_image = rotate(temp_neg_rot_quat, vec3<Scalar>(pos_i_image));
+
+                    std::cout << " -----> [" << pos_i_image.x << ", " << pos_i_image.y << ", " << pos_i_image.z << "]" << std::endl;
+                }
+
+                else{
+                    std::cout << "pos_i_image.z/(boxL.z) = " << pos_i_image.z/(boxL.z) << "\tNO TWIST :)" << std::endl;
+                    std::cout << "\tpos_i: [" << pos_i_image.x << ", " << pos_i_image.y << ", " << pos_i_image.z << "]" << std::endl;
+                }
+            }
+
+            //aabb.translate(pos_i_image);
             
             // stackless search
             for (unsigned int cur_node_idx = 0; cur_node_idx < m_aabb_tree.getNumNodes(); cur_node_idx++)
@@ -1208,6 +1254,8 @@ unsigned int IntegratorHPMCMono<Shape>::countOverlaps(bool early_exit)
                                 && test_overlap(r_ij, shape_i, shape_j, err_count)
                                 && test_overlap(-r_ij, shape_j, shape_i, err_count))
                                 {
+                                std::cout << "\t\t!!!!!!!!!!!!!!!!!!!!!!!!!OVERLAP HERE!!!!!!!!!!!!!!!!!!!!!!!!!" << std::endl;
+                                std::cout << "\t\tOverlap info: \tr_ij: [" << r_ij.x << ", " << r_ij.y << ", " << r_ij.z << "]\tpos_i_image: [" << pos_i_image.x << ", " << pos_i_image.y << ", " << pos_i_image.z << "]\tpostype_j: [" << postype_j.x << ", " << postype_j.y << ", " << postype_j.z << "]" << std::endl;
                                 overlap_count++;
                                 if (early_exit)
                                     {
@@ -1215,6 +1263,9 @@ unsigned int IntegratorHPMCMono<Shape>::countOverlaps(bool early_exit)
                                     break;
                                     }
                                 }
+                            else{
+                                std::cout << "\t\tNo overlap info: \tr_ij: [" << r_ij.x << ", " << r_ij.y << ", " << r_ij.z << "]\tpos_i_image: [" << pos_i_image.x << ", " << pos_i_image.y << ", " << pos_i_image.z << "]\tpostype_j: [" << postype_j.x << ", " << postype_j.y << ", " << postype_j.z << "]" << std::endl;
+                            }
                             }
                         }
                     }

@@ -42,13 +42,12 @@ class _ConfigurationData:
         b = self._cpp_obj._global_box
         return b.getAlphaQuat()
 
-
-
     @box.setter
     def box(self, box):
         try:
             new_box = hoomd.Box.from_box(box)
             new_box.alpha = box.alpha
+            new_box.use_rotated_boundaries = box.use_rotated_boundaries
                 
         except Exception:
             raise ValueError(
