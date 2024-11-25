@@ -109,6 +109,9 @@ template<class evaluator> void AnisoPotentialPairGPU<evaluator>::computeForces(u
     ArrayHandle<size_t> d_head_list(this->m_nlist->getHeadList(),
                                     access_location::device,
                                     access_mode::read);
+    ArrayHandle<unsigned int> d_particle_indices_with_neighbors(this->m_nlist->getParticleIndicesWithNeighborsArray(),
+                access_location::device,
+                access_mode::read);
 
     // access the particle data
     ArrayHandle<Scalar4> d_pos(this->m_pdata->getPositions(),
@@ -160,6 +163,7 @@ template<class evaluator> void AnisoPotentialPairGPU<evaluator>::computeForces(u
                               d_n_neigh.data,
                               d_nlist.data,
                               d_head_list.data,
+                              d_particle_indices_with_neighbors.data,
                               d_rcutsq.data,
                               this->m_pdata->getNTypes(),
                               block_size,

@@ -122,6 +122,11 @@ template<class evaluator> void PotentialPairGPU<evaluator>::computeForces(uint64
                                      access_location::device,
                                      access_mode::read);
 
+        // remove neighborless particles from arrays (pos, charge, nlist arrays?)
+        // do i to this here?
+        // if so, how do i do this?
+        // if not, where does it go?
+
         BoxDim box = this->m_pdata->getBox();
 
         // access parameters
@@ -156,6 +161,7 @@ template<class evaluator> void PotentialPairGPU<evaluator>::computeForces(uint64
                                 d_n_neigh.data,
                                 d_nlist.data,
                                 d_head_list.data,
+                                d_particle_indices_with_neighbors.data,
                                 d_rcutsq.data,
                                 d_ronsq.data,
                                 this->m_nlist->getNListArray().getPitch(),

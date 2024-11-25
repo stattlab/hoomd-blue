@@ -115,7 +115,7 @@ class NeighborList(Compute):
     """
 
     def __init__(self, buffer, exclusions, rebuild_check_delay, check_dist,
-                 mesh, default_r_cut):
+                 mesh, default_r_cut, filter_neighborless):
 
         validate_exclusions = OnlyFrom([
             'bond', 'angle', 'constraint', 'dihedral', 'special_pair', 'body',
@@ -134,7 +134,8 @@ class NeighborList(Compute):
         params = ParameterDict(exclusions=[validate_exclusions],
                                buffer=float(buffer),
                                rebuild_check_delay=int(rebuild_check_delay),
-                               check_dist=bool(check_dist))
+                               check_dist=bool(check_dist),
+                               filter_neighborless=bool(filter_neighborless))
         params["exclusions"] = exclusions
         self._param_dict.update(params)
 
@@ -379,10 +380,12 @@ class Cell(NeighborList):
                  check_dist=True,
                  deterministic=False,
                  mesh=None,
-                 default_r_cut=0.0):
+                 default_r_cut=0.0,
+                 filter_neighborless=False,
+                 ):
 
         super().__init__(buffer, exclusions, rebuild_check_delay, check_dist,
-                         mesh, default_r_cut)
+                         mesh, default_r_cut, filter_neighborless)
 
         self._param_dict.update(
             ParameterDict(deterministic=bool(deterministic)))
@@ -487,10 +490,11 @@ class Stencil(NeighborList):
                  check_dist=True,
                  deterministic=False,
                  mesh=None,
-                 default_r_cut=0.0):
+                 default_r_cut=0.0,
+                 filter_neighborless=False):
 
         super().__init__(buffer, exclusions, rebuild_check_delay, check_dist,
-                         mesh, default_r_cut)
+                         mesh, default_r_cut, filter_neighborless)
 
         params = ParameterDict(deterministic=bool(deterministic),
                                cell_width=float(cell_width))
@@ -560,10 +564,11 @@ class Tree(NeighborList):
                  rebuild_check_delay=1,
                  check_dist=True,
                  mesh=None,
-                 default_r_cut=0.0):
+                 default_r_cut=0.0,
+                 filter_neighborless=False):
 
         super().__init__(buffer, exclusions, rebuild_check_delay, check_dist,
-                         mesh, default_r_cut)
+                         mesh, default_r_cut, filter_neighborless)
 
     def _attach_hook(self):
         if isinstance(self._simulation.device, hoomd.device.CPU):

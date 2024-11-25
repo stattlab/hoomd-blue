@@ -54,6 +54,7 @@ struct a_pair_args_t
                   const unsigned int* _d_n_neigh,
                   const unsigned int* _d_nlist,
                   const size_t* _d_head_list,
+                  const unsigned int* _d_particle_indices_with_neighbors,
                   const Scalar* _d_rcutsq,
                   const unsigned int _ntypes,
                   const unsigned int _block_size,
@@ -65,7 +66,7 @@ struct a_pair_args_t
         : d_force(_d_force), d_torque(_d_torque), d_virial(_d_virial), virial_pitch(_virial_pitch),
           N(_N), n_max(_n_max), d_pos(_d_pos), d_charge(_d_charge), d_orientation(_d_orientation),
           d_tag(_d_tag), box(_box), d_n_neigh(_d_n_neigh), d_nlist(_d_nlist),
-          d_head_list(_d_head_list), d_rcutsq(_d_rcutsq), ntypes(_ntypes), block_size(_block_size),
+          d_head_list(_d_head_list), d_particle_indices_with_neighbors(_d_particle_indices_with_neighbors), d_rcutsq(_d_rcutsq), ntypes(_ntypes), block_size(_block_size),
           shift_mode(_shift_mode), compute_virial(_compute_virial),
           threads_per_particle(_threads_per_particle), devprop(_devprop),
           update_shape_param(_update_shape_param) { };
@@ -85,6 +86,7 @@ struct a_pair_args_t
         d_n_neigh;               //!< Device array listing the number of neighbors on each particle
     const unsigned int* d_nlist; //!< Device array listing the neighbors of each particle
     const size_t* d_head_list;   //!< Device array listing beginning of each particle's neighbors
+    const unsigned int* d_particle_indices_with_neighbors;   //!< Device array listing which particles have neighbors
     const Scalar* d_rcutsq;      //!< Device array listing r_cut squared per particle type pair
     const unsigned int ntypes;   //!< Number of particle types in the simulation
     const unsigned int block_size;           //!< Block size to execute
@@ -152,6 +154,7 @@ gpu_compute_pair_aniso_forces_kernel(Scalar4* d_force,
                                      const unsigned int* d_n_neigh,
                                      const unsigned int* d_nlist,
                                      const size_t* d_head_list,
+                                     const unsigned int* d_particle_indices_with_neighbors,
                                      const typename evaluator::param_type* d_params,
                                      const typename evaluator::shape_type* d_shape_params,
                                      const Scalar* d_rcutsq,
@@ -211,6 +214,15 @@ gpu_compute_pair_aniso_forces_kernel(Scalar4* d_force,
 
     // start by identifying which particle we are to handle
     unsigned int idx;
+    if (d_particle_indices_with_neighbors == NULL)
+        {
+        idx = blockIdx.x * (blockDim.x / tpp) + threadIdx.x / tpp;
+        }
+    else
+        {
+        unsigned int nonzero_idx = blockIdx.x * (blockDim.x / tpp) + threadIdx.x / tpp;
+        idx = d_particle_indices_with_neighbors[nonzero_idx];
+        }
     idx = blockIdx.x * (blockDim.x / tpp) + threadIdx.x / tpp;
     bool active = true;
     if (idx >= N)
@@ -475,6 +487,7 @@ struct AnisoPairForceComputeKernel
                 pair_args.d_n_neigh,
                 pair_args.d_nlist,
                 pair_args.d_head_list,
+                pair_args.d_particle_indices_with_neighbors,
                 params,
                 shape_params,
                 pair_args.d_rcutsq,

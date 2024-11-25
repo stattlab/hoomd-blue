@@ -62,6 +62,7 @@ def test_common_params(nlist_params):
         "exclusions": ('bond',),
         "rebuild_check_delay": 1,
         "check_dist": True,
+        "filter_neighborless": False,
     }
     _assert_nlist_params(nlist, default_params_dict)
     new_params_dict = {
@@ -76,6 +77,7 @@ def test_common_params(nlist_params):
             np.random.randint(8),
         "check_dist":
             False,
+        "filter_neighborless": True
     }
     for param in new_params_dict.keys():
         setattr(nlist, param, new_params_dict[param])

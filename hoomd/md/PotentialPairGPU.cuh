@@ -53,6 +53,7 @@ struct pair_args_t
                 const unsigned int* _d_n_neigh,
                 const unsigned int* _d_nlist,
                 const size_t* _d_head_list,
+                const unsigned int* _d_particle_indices_with_neighbors,
                 const Scalar* _d_rcutsq,
                 const Scalar* _d_ronsq,
                 const size_t _size_neigh_list,
@@ -64,7 +65,7 @@ struct pair_args_t
                 const hipDeviceProp_t& _devprop)
         : d_force(_d_force), d_virial(_d_virial), virial_pitch(_virial_pitch), N(_N), n_max(_n_max),
           d_pos(_d_pos), d_charge(_d_charge), box(_box), d_n_neigh(_d_n_neigh), d_nlist(_d_nlist),
-          d_head_list(_d_head_list), d_rcutsq(_d_rcutsq), d_ronsq(_d_ronsq),
+          d_head_list(_d_head_list), d_particle_indices_with_neighbors(_d_particle_indices_with_neighbors), d_rcutsq(_d_rcutsq), d_ronsq(_d_ronsq),
           size_neigh_list(_size_neigh_list), ntypes(_ntypes), block_size(_block_size),
           shift_mode(_shift_mode), compute_virial(_compute_virial),
           threads_per_particle(_threads_per_particle), devprop(_devprop) { };
@@ -81,6 +82,7 @@ struct pair_args_t
         d_n_neigh;                //!< Device array listing the number of neighbors on each particle
     const unsigned int* d_nlist;  //!< Device array listing the neighbors of each particle
     const size_t* d_head_list;    //!< Head list indexes for accessing d_nlist
+    const unsigned int* d_particle_indices_with_neighbors;   //!< Device array listing which particles have neighbors
     const Scalar* d_rcutsq;       //!< Device array listing r_cut squared per particle type pair
     const Scalar* d_ronsq;        //!< Device array listing r_on squared per particle type pair
     const size_t size_neigh_list; //!< Size of the neighbor list for texture binding
@@ -147,6 +149,7 @@ gpu_compute_pair_forces_shared_kernel(Scalar4* d_force,
                                       const unsigned int* d_n_neigh,
                                       const unsigned int* d_nlist,
                                       const size_t* d_head_list,
+                                      const unsigned int* d_particle_indices_with_neighbors,
                                       const typename evaluator::param_type* d_params,
                                       const Scalar* d_rcutsq,
                                       const Scalar* d_ronsq,
@@ -201,7 +204,16 @@ gpu_compute_pair_forces_shared_kernel(Scalar4* d_force,
         }
 
     // start by identifying which particle we are to handle
-    unsigned int idx = blockIdx.x * (blockDim.x / tpp) + threadIdx.x / tpp;
+    unsigned int idx;
+    if (d_particle_indices_with_neighbors == NULL)
+        {
+        idx = blockIdx.x * (blockDim.x / tpp) + threadIdx.x / tpp;
+        }
+    else
+        {
+        unsigned int nonzero_idx = blockIdx.x * (blockDim.x / tpp) + threadIdx.x / tpp;
+        idx = d_particle_indices_with_neighbors[nonzero_idx];
+        }
     bool active = true;
     if (idx >= N)
         {
@@ -499,6 +511,7 @@ struct PairForceComputeKernel
                                    pair_args.d_n_neigh,
                                    pair_args.d_nlist,
                                    pair_args.d_head_list,
+                                   pair_args.d_particle_indices_with_neighbors,
                                    d_params,
                                    pair_args.d_rcutsq,
                                    pair_args.d_ronsq,
@@ -526,6 +539,7 @@ struct PairForceComputeKernel
                                    pair_args.d_n_neigh,
                                    pair_args.d_nlist,
                                    pair_args.d_head_list,
+                                   pair_args.d_particle_indices_with_neighbors,
                                    d_params,
                                    pair_args.d_rcutsq,
                                    pair_args.d_ronsq,
