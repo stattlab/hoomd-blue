@@ -98,7 +98,7 @@ class PYBIND11_EXPORT NeighborListGPU : public NeighborList
     virtual void buildHeadList();
 
     //! Find particles with a nonzero number of neighbors on the GPU
-    void findParticlesWithNeighbors();
+    void findParticlesWithNeighbors() override;
 
     //! Schedule the distance check kernel
     /*! \param timestep Current time step

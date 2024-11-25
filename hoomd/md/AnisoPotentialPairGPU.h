@@ -144,6 +144,18 @@ template<class evaluator> void AnisoPotentialPairGPU<evaluator>::computeForces(u
     unsigned int block_size = this->m_tuner->getParam()[0];
     unsigned int threads_per_particle = this->m_tuner->getParam()[1];
 
+    unsigned int n_particles = this->m_pdata->getN();
+    unsigned int* d_particle_indices_with_neighbors_data = nullptr;
+    if (this->m_nlist->getFilterNeighborless())
+        {
+        d_particle_indices_with_neighbors_data = d_particle_indices_with_neighbors.data;
+        n_particles = static_cast<unsigned int>(this->m_nlist->getParticleIndicesWithNeighborsArray().size());
+        }
+
+    // reset force and torque arrays
+    hipMemsetAsync(d_force.data, 0, sizeof(Scalar4) * this->m_force.getNumElements());
+    hipMemsetAsync(d_torque.data, 0, sizeof(Scalar4) * this->m_torque.getNumElements());
+
     // On the first iteration, shape parameters are updated. For optimization,
     // could track this between calls to avoid extra copying.
     bool first = true;
@@ -153,7 +165,7 @@ template<class evaluator> void AnisoPotentialPairGPU<evaluator>::computeForces(u
                               d_torque.data,
                               d_virial.data,
                               this->m_virial.getPitch(),
-                              this->m_pdata->getN(),
+                              n_particles,
                               this->m_pdata->getMaxN(),
                               d_pos.data,
                               d_charge.data,
@@ -163,7 +175,7 @@ template<class evaluator> void AnisoPotentialPairGPU<evaluator>::computeForces(u
                               d_n_neigh.data,
                               d_nlist.data,
                               d_head_list.data,
-                              d_particle_indices_with_neighbors.data,
+                              d_particle_indices_with_neighbors_data,
                               d_rcutsq.data,
                               this->m_pdata->getNTypes(),
                               block_size,

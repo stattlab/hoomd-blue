@@ -204,21 +204,28 @@ gpu_compute_pair_forces_shared_kernel(Scalar4* d_force,
         }
 
     // start by identifying which particle we are to handle
-    unsigned int idx;
-    if (d_particle_indices_with_neighbors == NULL)
+    unsigned int idx = 0;
+    bool active = true;
+    if (d_particle_indices_with_neighbors)
         {
-        idx = blockIdx.x * (blockDim.x / tpp) + threadIdx.x / tpp;
+        unsigned int nonzero_idx = blockIdx.x * (blockDim.x / tpp) + threadIdx.x / tpp;
+        if (nonzero_idx >= N)
+            {
+            active = false;
+            }
+        else
+            {
+            idx = d_particle_indices_with_neighbors[nonzero_idx];
+            }
         }
     else
         {
-        unsigned int nonzero_idx = blockIdx.x * (blockDim.x / tpp) + threadIdx.x / tpp;
-        idx = d_particle_indices_with_neighbors[nonzero_idx];
-        }
-    bool active = true;
-    if (idx >= N)
-        {
-        // need to mask this thread, but still participate in warp-level reduction
-        active = false;
+        idx = blockIdx.x * (blockDim.x / tpp) + threadIdx.x / tpp;
+        if (idx >= N)
+            {
+            // need to mask this thread, but still participate in warp-level reduction
+            active = false;
+            }
         }
 
     // initialize the force to 0

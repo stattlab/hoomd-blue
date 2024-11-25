@@ -216,16 +216,20 @@ void NeighborListGPU::buildHeadList()
 //! Find particles with a nonzero number of neighbors on the GPU
 void NeighborListGPU::findParticlesWithNeighbors()
     {
+    m_particle_indices_with_neighbors.resize(m_pdata->getN());
     ArrayHandle<unsigned int> d_particle_indices_with_neighbors(m_particle_indices_with_neighbors,
                                                                 access_location::device,
                                                                 access_mode::overwrite);
     ArrayHandle<unsigned int> d_n_neigh(m_n_neigh, access_location::device, access_mode::read);
+    unsigned int num_particles_with_neighbors;
 
-    kernel::gpu_find_particles_with_neighbors(d_particle_indices_with_neighbors.data,
+    kernel::gpu_find_particles_with_neighbors(num_particles_with_neighbors,
+                                              d_particle_indices_with_neighbors.data,
                                               d_n_neigh.data,
-                                              static_cast<unsigned int>(m_nlist.getNumElements()));
+                                              m_pdata->getN());
     if (m_exec_conf->isCUDAErrorCheckingEnabled())
         CHECK_CUDA_ERROR();
+    m_particle_indices_with_neighbors.resize(num_particles_with_neighbors);
     }
 
 namespace detail

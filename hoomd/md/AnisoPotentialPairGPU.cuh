@@ -216,22 +216,28 @@ gpu_compute_pair_aniso_forces_kernel(Scalar4* d_force,
     __syncthreads();
 
     // start by identifying which particle we are to handle
-    unsigned int idx;
+    unsigned int idx = 0;
+    bool active = true;
     if (d_particle_indices_with_neighbors)
         {
         unsigned int nonzero_idx = blockIdx.x * (blockDim.x / tpp) + threadIdx.x / tpp;
-        idx = d_particle_indices_with_neighbors[nonzero_idx];
+        if (nonzero_idx >= N)
+            {
+            active = false;
+            }
+        else
+            {
+            idx = d_particle_indices_with_neighbors[nonzero_idx];
+            }
         }
     else
         {
         idx = blockIdx.x * (blockDim.x / tpp) + threadIdx.x / tpp;
-        }
-    idx = blockIdx.x * (blockDim.x / tpp) + threadIdx.x / tpp;
-    bool active = true;
-    if (idx >= N)
-        {
-        // need to mask this thread, but still participate in warp-level reduction
-        active = false;
+        if (idx >= N)
+            {
+            // need to mask this thread, but still participate in warp-level reduction
+            active = false;
+            }
         }
 
     // initialize the force to 0

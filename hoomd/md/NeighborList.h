@@ -311,7 +311,7 @@ class PYBIND11_EXPORT NeighborList : public Compute
         }
 
     //! Get the particles with neighbors array
-    const GPUArray<unsigned int>& getParticleIndicesWithNeighborsArray() const
+    const GPUVector<unsigned int>& getParticleIndicesWithNeighborsArray() const
         {
         return m_particle_indices_with_neighbors;
         }
@@ -498,7 +498,7 @@ class PYBIND11_EXPORT NeighborList : public Compute
 
     GPUArray<unsigned int> m_nlist;   //!< Neighbor list data
     GPUArray<unsigned int> m_n_neigh; //!< Number of neighbors for each particle
-    GPUArray<unsigned int> m_particle_indices_with_neighbors; //!< Indices of particles with a nonzero number of neighbors
+    GPUVector<unsigned int> m_particle_indices_with_neighbors; //!< Indices of particles with a nonzero number of neighbors
     GPUArray<Scalar4> m_last_pos;     //!< coordinates of last updated particle positions
     Scalar3 m_last_L;                 //!< Box lengths at last update
     Scalar3 m_last_L_local;           //!< Local Box lengths at last update
@@ -557,7 +557,7 @@ class PYBIND11_EXPORT NeighborList : public Compute
     virtual void buildHeadList();
 
     //! Find particles with a nonzero number of neighbors
-    void findParticlesWithNeighbors();
+    virtual void findParticlesWithNeighbors();
 
     //! Amortized resizing of the neighborlist
     void resizeNlist(size_t size);

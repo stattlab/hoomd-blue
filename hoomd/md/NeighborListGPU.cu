@@ -16,6 +16,8 @@
 #include <thrust/copy.h>
 #include <thrust/device_ptr.h>
 #include <thrust/scan.h>
+#include <thrust/iterator/counting_iterator.h>
+#include <thrust/execution_policy.h>
 #pragma GCC diagnostic pop
 
 namespace hoomd
@@ -453,14 +455,19 @@ struct is_nonzero
         }
     };
 
-hipError_t gpu_find_particles_with_neighbors(unsigned int* d_particle_indices_with_neighbors,
+hipError_t gpu_find_particles_with_neighbors(unsigned int &num_particles_with_neighbors, unsigned int* d_particle_indices_with_neighbors,
                                              const unsigned int* d_n_neigh,
                                              const unsigned int nlist_length)
     {
-    thrust::copy_if(d_n_neigh,
-                    d_n_neigh + nlist_length,
-                    d_particle_indices_with_neighbors,
-                    is_nonzero());
+    thrust::counting_iterator<unsigned int> counter(0);
+    unsigned int* end = thrust::copy_if(
+            thrust::device,
+            counter,
+            counter + nlist_length,
+            d_n_neigh,
+            d_particle_indices_with_neighbors,
+            is_nonzero());
+    num_particles_with_neighbors = static_cast<unsigned int>(end - d_particle_indices_with_neighbors);
     return hipSuccess;
     }
 

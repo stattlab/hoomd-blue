@@ -64,7 +64,7 @@ hipError_t gpu_update_exclusion_list(const unsigned int* d_tag,
                                      const unsigned int N);
 
 //! GPU function to find neighbors with a nonzero number of neighbors
-hipError_t gpu_find_particles_with_neighbors(unsigned int* d_particle_indices_with_neighbors,
+hipError_t gpu_find_particles_with_neighbors(unsigned int &num_particles_with_neighbors, unsigned int* d_particle_indices_with_neighbors,
                                              const unsigned int* d_n_neight,
                                              const unsigned int nlist_length);
 

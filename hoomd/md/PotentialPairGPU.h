@@ -149,11 +149,22 @@ template<class evaluator> void PotentialPairGPU<evaluator>::computeForces(uint64
         unsigned int block_size = param[0];
         unsigned int threads_per_particle = param[1];
 
+        unsigned int n_particles = this->m_pdata->getN();
+        unsigned int* d_particle_indices_with_neighbors_data = nullptr;
+        if (this->m_nlist->getFilterNeighborless())
+            {
+            d_particle_indices_with_neighbors_data = d_particle_indices_with_neighbors.data;
+            n_particles = static_cast<unsigned int>(this->m_nlist->getParticleIndicesWithNeighborsArray().size());
+            }
+
+        // reset force and torque arrays
+        hipMemsetAsync(d_force.data, 0, sizeof(Scalar4) * this->m_force.getNumElements());
+
         kernel::gpu_compute_pair_forces<evaluator>(
             kernel::pair_args_t(d_force.data,
                                 d_virial.data,
                                 this->m_virial.getPitch(),
-                                this->m_pdata->getN(),
+                                n_particles,
                                 this->m_pdata->getMaxN(),
                                 d_pos.data,
                                 d_charge.data,
@@ -161,7 +172,7 @@ template<class evaluator> void PotentialPairGPU<evaluator>::computeForces(uint64
                                 d_n_neigh.data,
                                 d_nlist.data,
                                 d_head_list.data,
-                                d_particle_indices_with_neighbors.data,
+                                d_particle_indices_with_neighbors_data,
                                 d_rcutsq.data,
                                 d_ronsq.data,
                                 this->m_nlist->getNListArray().getPitch(),

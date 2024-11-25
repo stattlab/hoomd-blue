@@ -32,6 +32,7 @@ Change Log
   (`#1869 <https://github.com/glotzerlab/hoomd-blue/pull/1869>`__).
 * ``P`` property of ``hoomd.hpmc.compute.SDF``
   (`#1869 <https://github.com/glotzerlab/hoomd-blue/pull/1869>`__).
+* ``filter_neighborless`` property of ``hoomd.md.NeighborList``
 
 *Changed*
 

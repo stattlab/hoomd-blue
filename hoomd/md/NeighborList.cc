@@ -129,17 +129,8 @@ NeighborList::NeighborList(std::shared_ptr<SystemDefinition> sysdef, Scalar r_bu
     GPUArray<unsigned int> ex_list_idx(m_pdata->getMaxN(), 1, m_exec_conf);
     m_ex_list_idx.swap(ex_list_idx);
 
-    if (m_filter_neighborless)
-        {
-        GPUArray<unsigned int> particle_indices_with_neighbors(m_pdata->getMaxN(), m_exec_conf);
-        m_particle_indices_with_neighbors.swap(particle_indices_with_neighbors);
-        }
-    else
-        {
-        // initialize null ptr
-        GPUArray<unsigned int> particle_indices_with_neighbors;
-        m_particle_indices_with_neighbors.swap(particle_indices_with_neighbors);
-        }
+    GPUVector<unsigned int> particle_indices_with_neighbors(m_exec_conf);
+    m_particle_indices_with_neighbors.swap(particle_indices_with_neighbors);
 
     // reset exclusions
     resizeAndClearExclusions();
@@ -354,7 +345,9 @@ void NeighborList::compute(uint64_t timestep)
             filterNlist();
 
         if (m_filter_neighborless)
+            {
             findParticlesWithNeighbors();
+            }
 
         setLastUpdatedPos();
         m_has_been_updated_once = true;
