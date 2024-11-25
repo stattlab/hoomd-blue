@@ -56,6 +56,206 @@ class Geometry(_HOOMDBaseObject):
         self._param_dict.update(param_dict)
 
 
+class ConcentricCylinders(Geometry):
+    r"""Concentric cylinders.
+
+    Args:
+        inner_radius (float): Radius of inner cylinder.
+        outer_radius (float): Radius of outer cylinder.
+        angular_speed (float): Angular speed of the outer cylinder in the
+            counterclockwise direction.
+        no_slip (bool): If True, surfaces have no-slip boundary condition.
+            Otherwise, they have the slip boundary condition.
+
+    `ConcentricCylinders` confines particles between two cylinders
+    centered around the origin. The inner cylinder is stationary, but the
+    outer cylinder can rotate counterclockwise about the *z* axis with
+    constant `angular_speed`.
+
+    .. rubric:: Examples:
+
+    Stationary concentric cylinders with no-slip boundary condition.
+
+    .. code-block:: python
+
+        cylinders = hoomd.mpcd.geometry.ConcentricCylinders(inner_radius=2.0,
+          outer_radius=5.0)
+        stream = hoomd.mpcd.stream.BounceBack(period=1, geometry=cylinders)
+        simulation.operations.integrator.streaming_method = stream
+
+    Stationary concentric cylinders with slip boundary condition.
+
+    .. code-block:: python
+
+        cylinders = hoomd.mpcd.geometry.ConcentricCylinders(
+            inner_radius=2.0, outer_radius=5.0, no_slip=False)
+        stream = hoomd.mpcd.stream.BounceBack(period=1, geometry=cylinders)
+        simulation.operations.integrator.streaming_method = stream
+
+    Moving outer cylinder.
+
+    .. code-block:: python
+
+        cylinders = hoomd.mpcd.geometry.ConcentricCylinders(
+            inner_radius=2.0, outer_radius=5.0, angular_speed=1.0, no_slip=True)
+        stream = hoomd.mpcd.stream.BounceBack(period=1, geometry=cylinders)
+        simulation.operations.integrator.streaming_method = stream
+
+    Attributes:
+        inner_radius (float): Radius of inner cylinder (*read only*).
+
+        outer_radius (float): Radius of outer cylinder (*read only*).
+
+        angular_speed (float): Angular speed of outer cylinder (*read only*).
+
+            `angular_speed` will have no effect if `no_slip` is False because
+            the slip surface cannot generate shear stress.
+
+    """
+
+    def __init__(self,
+                 inner_radius,
+                 outer_radius,
+                 angular_speed=0.0,
+                 no_slip=True):
+        super().__init__(no_slip)
+        param_dict = ParameterDict(
+            inner_radius=float(inner_radius),
+            outer_radius=float(outer_radius),
+            angular_speed=float(angular_speed),
+        )
+        self._param_dict.update(param_dict)
+
+    def _attach_hook(self):
+        self._cpp_obj = _mpcd.ConcentricCylinders(self.inner_radius,
+                                                  self.outer_radius,
+                                                  self.angular_speed,
+                                                  self.no_slip)
+        super()._attach_hook()
+
+
+class CosineChannel(Geometry):
+    r"""Serpentine (sinusoidal) channel.
+
+    Args:
+        amplitude (float): Amplitude of cosine.
+        repeat_length (float): Repeat length (period) of cosine.
+        separation (float): Distance between channel walls.
+        no_slip (bool): If True, surfaces have no-slip boundary condition.
+            Otherwise, they have the slip boundary condition.
+
+    `CosineChannel` models a fluid confined in :math:`y` between two
+    walls described by a sinusoidal profile with equations
+
+    .. math::
+
+        y(x) = A \cos\left(\frac{2 \pi x}{L}\right) \pm H
+
+    where :math:`A` is the `amplitude`, :math:`L` is the `repeat_length`,
+    and :math:`2H` is the `separation`.
+
+    .. rubric:: Example:
+
+    .. code-block:: python
+
+        channel = hoomd.mpcd.geometry.CosineChannel(
+            amplitude=2.0,
+            separation=4.0,
+            repeat_length=10.0)
+        stream = hoomd.mpcd.stream.BounceBack(period=1, geometry=channel)
+        simulation.operations.integrator.streaming_method = stream
+
+    Attributes:
+        amplitude (float): Amplitude of cosine (*read only*).
+
+        repeat_length (float): Repeat length (period) of cosine. (*read only*).
+
+        separation (float): Distance between walls (*read only*).
+
+
+    """
+
+    def __init__(self, amplitude, repeat_length, separation, no_slip=True):
+        super().__init__(no_slip)
+
+        param_dict = ParameterDict(
+            amplitude=float(amplitude),
+            repeat_length=float(repeat_length),
+            separation=float(separation),
+        )
+        self._param_dict.update(param_dict)
+
+    def _attach_hook(self):
+        self._cpp_obj = _mpcd.CosineChannel(self.amplitude, self.repeat_length,
+                                            self.separation, self.no_slip)
+        super()._attach_hook()
+
+
+class CosineExpansionContraction(Geometry):
+    r"""Channel with sinusoidal expansion and contraction.
+
+    Args:
+        expansion_separation (float): Maximum distance between channel walls.
+        contraction_separation (float): Minimum distance between channel walls.
+        repeat_length (float): Repeat length (period) of cosine.
+        no_slip (bool): If True, surfaces have no-slip boundary condition.
+            Otherwise, they have the slip boundary condition.
+
+    `CosineExpansionContraction` models a fluid confined in :math:`y` between
+    two walls described by a sinusoidal profile with equations
+
+    .. math::
+
+        y(x) = \pm\left( \frac{H_{\rm e}-H_{\rm c}}{2}
+                         \left[1+\cos\left(\frac{2 \pi x}{L}\right)\right]
+                         + H_{\rm c} \right)
+
+    where :math:`2 H_{\rm e}` is the `expansion_separation`, :math:`2 H_{\rm c}`
+    is the `contraction_separation`, and :math:`L` is the `repeat_length`.
+
+    .. rubric:: Example:
+
+    .. code-block:: python
+
+        channel = hoomd.mpcd.geometry.CosineExpansionContraction(
+            expansion_separation=6.0,
+            contraction_separation=3.0,
+            repeat_length=10.0)
+        stream = hoomd.mpcd.stream.BounceBack(period=1, geometry=channel)
+        simulation.operations.integrator.streaming_method = stream
+
+    Attributes:
+        contraction_separation (float): Distance between channel walls at
+            the minimum contraction (*read only*).
+
+        expansion_separation (float): Distance between channel walls at the
+            maximum expansion (*read only*).
+
+        repeat_length (float): Repeat length (period) of cosine. (*read only*).
+
+    """
+
+    def __init__(self,
+                 expansion_separation,
+                 contraction_separation,
+                 repeat_length,
+                 no_slip=True):
+        super().__init__(no_slip)
+
+        param_dict = ParameterDict(
+            expansion_separation=float(expansion_separation),
+            contraction_separation=float(contraction_separation),
+            repeat_length=float(repeat_length),
+        )
+        self._param_dict.update(param_dict)
+
+    def _attach_hook(self):
+        self._cpp_obj = _mpcd.CosineExpansionContraction(
+            self.expansion_separation, self.contraction_separation,
+            self.repeat_length, self.no_slip)
+        super()._attach_hook()
+
+
 class ParallelPlates(Geometry):
     r"""Parallel-plate channel.
 
