@@ -217,14 +217,14 @@ gpu_compute_pair_aniso_forces_kernel(Scalar4* d_force,
 
     // start by identifying which particle we are to handle
     unsigned int idx;
-    if (d_particle_indices_with_neighbors == NULL)
-        {
-        idx = blockIdx.x * (blockDim.x / tpp) + threadIdx.x / tpp;
-        }
-    else
+    if (d_particle_indices_with_neighbors)
         {
         unsigned int nonzero_idx = blockIdx.x * (blockDim.x / tpp) + threadIdx.x / tpp;
         idx = d_particle_indices_with_neighbors[nonzero_idx];
+        }
+    else
+        {
+        idx = blockIdx.x * (blockDim.x / tpp) + threadIdx.x / tpp;
         }
     idx = blockIdx.x * (blockDim.x / tpp) + threadIdx.x / tpp;
     bool active = true;
