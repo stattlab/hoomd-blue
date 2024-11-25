@@ -675,6 +675,8 @@ void IntegratorHPMCMono<Shape>::update(uint64_t timestep)
     quat<Scalar> neg_rot_quat = conj(pos_rot_quat);
     quat<Scalar> temp_pos_rot_quat;
     quat<Scalar> temp_neg_rot_quat;
+    quat<Scalar> temp_orientation_i_old;
+    quat<Scalar> temp_orientation_i;
     Scalar twists;
     Scalar3 boxL = box.getL();
 
@@ -758,6 +760,9 @@ void IntegratorHPMCMono<Shape>::update(uint64_t timestep)
                     move_rotate<2>(shape_i.orientation, rng_i, h_a.data[typ_i]);
                 else
                     move_rotate<3>(shape_i.orientation, rng_i, h_a.data[typ_i]);
+
+                temp_orientation_i_old = shape_i.orientation;
+
                 }
 
 
@@ -807,8 +812,14 @@ void IntegratorHPMCMono<Shape>::update(uint64_t timestep)
                         for(unsigned int t = 1; t < twists; t++){
                             temp_pos_rot_quat = temp_pos_rot_quat * pos_rot_quat;
                         }
+                        temp_pos_rot_quat = temp_pos_rot_quat * (fast::rsqrt(norm2(temp_pos_rot_quat)));
 
                         pos_i_image = rotate(temp_pos_rot_quat, vec3<Scalar>(pos_i_image));
+
+                        temp_orientation_i = temp_pos_rot_quat * quat<Scalar>(temp_orientation_i_old);
+                        temp_orientation_i = temp_orientation_i * (fast::rsqrt(norm2(temp_orientation_i)));
+                        shape_i.orientation = temp_orientation_i;
+    
                     }
                     else if(2*pos_i_image.z/(boxL.z) <= -1){
                         twists = std::abs(std::ceil(pos_i_image.z/(boxL.z)));
@@ -816,7 +827,16 @@ void IntegratorHPMCMono<Shape>::update(uint64_t timestep)
                         for(unsigned int t = 1; t < twists; t++){
                             temp_neg_rot_quat = temp_neg_rot_quat * neg_rot_quat;
                         }
+                        temp_neg_rot_quat = temp_neg_rot_quat * (fast::rsqrt(norm2(temp_neg_rot_quat)));
+
                         pos_i_image = rotate(temp_neg_rot_quat, vec3<Scalar>(pos_i_image));
+
+                        temp_orientation_i = temp_neg_rot_quat * quat<Scalar>(temp_orientation_i_old);
+                        temp_orientation_i = temp_orientation_i * (fast::rsqrt(norm2(temp_orientation_i)));
+                        shape_i.orientation = temp_orientation_i;
+                    }
+                    else{
+                        shape_i.orientation = temp_orientation_i_old;
                     }
                 }
 
@@ -1140,6 +1160,7 @@ unsigned int IntegratorHPMCMono<Shape>::countOverlaps(bool early_exit)
     quat<Scalar> neg_rot_quat = conj(pos_rot_quat);
     quat<Scalar> temp_pos_rot_quat;
     quat<Scalar> temp_neg_rot_quat;
+    quat<Scalar> temp_orientation_i;
     Scalar twists;
     Scalar3 boxL = box.getL();
 
@@ -1179,8 +1200,13 @@ unsigned int IntegratorHPMCMono<Shape>::countOverlaps(bool early_exit)
                     for(unsigned int t = 1; t < twists; t++){
                         temp_pos_rot_quat = temp_pos_rot_quat * pos_rot_quat;
                     }
+                    temp_pos_rot_quat = temp_pos_rot_quat * (fast::rsqrt(norm2(temp_pos_rot_quat)));
 
                     pos_i_image = rotate(temp_pos_rot_quat, vec3<Scalar>(pos_i_image));
+
+                    temp_orientation_i = temp_pos_rot_quat * quat<Scalar>(orientation_i);
+                    temp_orientation_i = temp_orientation_i * (fast::rsqrt(norm2(temp_orientation_i)));
+                    shape_i.orientation = temp_orientation_i;
                 }
                 else if(2*pos_i_image.z/(boxL.z) <= -1){
                     twists = std::abs(std::ceil(pos_i_image.z/(boxL.z)));
@@ -1188,7 +1214,16 @@ unsigned int IntegratorHPMCMono<Shape>::countOverlaps(bool early_exit)
                     for(unsigned int t = 1; t < twists; t++){
                         temp_neg_rot_quat = temp_neg_rot_quat * neg_rot_quat;
                     }
+                    temp_neg_rot_quat = temp_neg_rot_quat * (fast::rsqrt(norm2(temp_neg_rot_quat)));
+
                     pos_i_image = rotate(temp_neg_rot_quat, vec3<Scalar>(pos_i_image));
+
+                    temp_orientation_i = temp_neg_rot_quat * quat<Scalar>(orientation_i);
+                    temp_orientation_i = temp_orientation_i * (fast::rsqrt(norm2(temp_orientation_i)));
+                    shape_i.orientation = temp_orientation_i;
+                }
+                else{
+                    shape_i.orientation = quat<Scalar>(orientation_i);
                 }
             }
 
