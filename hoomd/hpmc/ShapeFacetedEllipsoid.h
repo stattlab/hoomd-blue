@@ -551,7 +551,9 @@ struct ShapeFacetedEllipsoid
         }
 
     /// Return the bounding box of the shape in world coordinates
-    DEVICE hoomd::detail::AABB getAABB(const vec3<Scalar>& pos) const
+    //DEVICE hoomd::detail::AABB getAABB(const vec3<Scalar>& pos) const
+    //NOTE: Hasn't been edited to account for rotated boundary conditions override
+    DEVICE hoomd::detail::AABB getAABB(const vec3<Scalar>& pos, Scalar override_radius = 0) const
         {
         // use support function of the ellipsoid to determine the furthest extent in each direction
         detail::SupportFuncFacetedEllipsoid sfunc(params);

@@ -228,8 +228,12 @@ struct ShapeSphinx
         }
 
     /// Return the bounding box of the shape in world coordinates
-    DEVICE hoomd::detail::AABB getAABB(const vec3<Scalar>& pos) const
+    //DEVICE hoomd::detail::AABB getAABB(const vec3<Scalar>& pos) const
+    DEVICE hoomd::detail::AABB getAABB(const vec3<Scalar>& pos, Scalar override_radius = 0) const
         {
+        if(override_radius > getCircumsphereDiameter() / Scalar(2.0)){
+            return hoomd::detail::AABB(pos, override_radius);
+        } 
         return hoomd::detail::AABB(pos, getCircumsphereDiameter() / Scalar(2.0));
         }
 

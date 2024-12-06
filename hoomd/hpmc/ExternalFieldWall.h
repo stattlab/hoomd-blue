@@ -591,6 +591,28 @@ template<class Shape> class ExternalFieldWall : public ExternalFieldMono<Shape>
         }
     ~ExternalFieldWall() { }
 
+
+    // Note! This should be used in a very specific way for Gabby's rotated cylinder boundaries for packings
+    // INSIDE of the cylinder
+    Scalar getRadius()
+        {
+        Scalar maxRadius;
+        if(m_Cylinders.size() > 0)
+            {
+                maxRadius = m_Cylinders[0].getRadius();
+                for(size_t i = 0; i < m_Cylinders.size(); i++)
+                    {
+                        if(m_Cylinders[i].getRadius() > maxRadius) maxRadius = m_Cylinders[i].getRadius();
+                    }
+                return maxRadius;
+            }
+            else
+            {
+                return Scalar(0);
+            }
+            
+        }
+
     double energydiff(uint64_t timestep,
                       const unsigned int& index,
                       const vec3<Scalar>& position_old,

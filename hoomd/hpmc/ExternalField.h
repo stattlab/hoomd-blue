@@ -94,6 +94,10 @@ template<class Shape> class ExternalFieldMono : public ExternalField
         return 0;
         }
 
+    virtual Scalar getRadius(){
+        return 0;
+    };
+
     virtual void reset(uint64_t timestep) { }
     };
 

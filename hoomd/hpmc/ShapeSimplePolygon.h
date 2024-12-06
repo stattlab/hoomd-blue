@@ -96,8 +96,12 @@ struct ShapeSimplePolygon
 #endif
 
     //! Return the bounding box of the shape in world coordinates
-    DEVICE hoomd::detail::AABB getAABB(const vec3<Scalar>& pos) const
+    //DEVICE hoomd::detail::AABB getAABB(const vec3<Scalar>& pos) const
+    DEVICE hoomd::detail::AABB getAABB(const vec3<Scalar>& pos, Scalar override_radius = 0) const
         {
+        if(override_radius > verts.diameter / Scalar(2)){
+            return hoomd::detail::AABB(pos, override_radius);
+        }
         return hoomd::detail::AABB(pos, verts.diameter / Scalar(2));
         }
 

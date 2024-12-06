@@ -150,7 +150,8 @@ struct ShapeEllipsoid
         }
 
     /// Return the bounding box of the shape in world coordinates
-    DEVICE hoomd::detail::AABB getAABB(const vec3<Scalar>& pos) const
+    //DEVICE hoomd::detail::AABB getAABB(const vec3<Scalar>& pos) const
+    DEVICE hoomd::detail::AABB getAABB(const vec3<Scalar>& pos, Scalar override_radius = 0) const
         {
         ShortReal max_axis = detail::max(axes.x, detail::max(axes.y, axes.z));
 
@@ -172,6 +173,9 @@ struct ShapeEllipsoid
 
         // return hoomd::detail::AABB(lower, upper);
         // ^^^^^^^^^ The above method is slow, just use the circumsphere
+        if(override_radius > max_axis){
+            return hoomd::detail::AABB(pos, override_radius);
+        } 
         return hoomd::detail::AABB(pos, max_axis);
         }
 

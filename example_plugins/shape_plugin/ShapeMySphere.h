@@ -113,7 +113,7 @@ struct ShapeMySphere
         }
 
     /// Return the bounding box of the shape in world coordinates
-    DEVICE hoomd::detail::AABB getAABB(const vec3<Scalar>& pos) const
+    DEVICE hoomd::detail::AABB getAABB(const vec3<Scalar>& pos, Scalar override_radius = 0) const
         {
         return hoomd::detail::AABB(pos, params.radius);
         }
