@@ -4,4 +4,11 @@
 """Mesh potentials for molecular dynamics."""
 
 from .potential import MeshPotential
-from . import bending, bond
+from . import bending, bond, conservation
+
+__all__ = [
+    "MeshPotential",
+    "bending",
+    "bond",
+    "conservation",
+]

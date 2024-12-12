@@ -323,7 +323,7 @@ class SupportFuncConvexPolyhedron
                 }
 
             // find the maximum of the 8 channels
-            // http://stackoverflow.com/questions/17638487/minimum-of-4-sp-values-in-m128
+            // https://stackoverflow.com/questions/17638487/minimum-of-4-sp-values-in-m128
             max_dot_v
                 = _mm256_max_ps(max_dot_v,
                                 _mm256_shuffle_ps(max_dot_v, max_dot_v, _MM_SHUFFLE(2, 1, 0, 3)));
@@ -374,7 +374,7 @@ class SupportFuncConvexPolyhedron
                 }
 
             // find the maximum of the 4 channels
-            // http://stackoverflow.com/questions/17638487/minimum-of-4-sp-values-in-m128
+            // https://stackoverflow.com/questions/17638487/minimum-of-4-sp-values-in-m128
             max_dot_v = _mm_max_ps(max_dot_v,
                                    _mm_shuffle_ps(max_dot_v, max_dot_v, _MM_SHUFFLE(2, 1, 0, 3)));
             max_dot_v = _mm_max_ps(max_dot_v,
@@ -715,11 +715,6 @@ struct ShapeConvexPolyhedron
     {
     /// Define the parameter type
     typedef detail::PolyhedronVertices param_type;
-
-    //! Temporary storage for depletant insertion
-    typedef struct
-        {
-        } depletion_storage_type;
 
     /// Construct a shape at a given orientation
     DEVICE ShapeConvexPolyhedron(const quat<Scalar>& _orientation, const param_type& _params)

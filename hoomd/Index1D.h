@@ -73,16 +73,6 @@ struct Index2D
         return m_h;
         }
 
-    //! Get the inverse mapping 1D-index -> coordinate pair
-    HOSTDEVICE inline uint2 getPair(const unsigned int idx) const
-        {
-        uint2 t;
-
-        t.y = idx / m_w;
-        t.x = idx % m_w;
-        return t;
-        }
-
     private:
     unsigned int m_w; //!< Width of the 2D array
     unsigned int m_h; //!< Height of the 2D array
@@ -184,7 +174,7 @@ struct Index2DUpperTriangular
         \param j row index
         \returns 1D array index corresponding to the 2D index (\a i, \a j) in row major order
         \note Formula adapted from:
-       http://www.itl.nist.gov/div897/sqg/dads/HTML/upperTriangularMatrix.html
+       https://www.itl.nist.gov/div897/sqg/dads/HTML/upperTriangularMatrix.html
     */
     HOSTDEVICE inline unsigned int operator()(unsigned int i, unsigned int j) const
         {

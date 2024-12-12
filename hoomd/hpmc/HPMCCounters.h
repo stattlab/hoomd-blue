@@ -197,24 +197,6 @@ DEVICE inline hpmc_boxmc_counters_t operator-(const hpmc_boxmc_counters_t& a,
     return result;
     }
 
-//! Storage for implicit depletants acceptance counters
-/*! \ingroup hpmc_data_structs */
-struct hpmc_implicit_counters_t
-    {
-    unsigned long long int insert_count;        //!< Count of depletants inserted
-    unsigned long long int insert_accept_count; //!< Count of depletants inserted successfully
-    unsigned long long int
-        insert_accept_count_sq; //!< Squared count of successful insertion attempts per depletant
-
-    //! Construct a zero set of counters
-    DEVICE hpmc_implicit_counters_t()
-        {
-        insert_count = 0;
-        insert_accept_count = 0;
-        insert_accept_count_sq = 0;
-        }
-    };
-
 //! Storage for muVT acceptance counters
 /*! \ingroup hpmc_data_structs */
 struct hpmc_muvt_counters_t

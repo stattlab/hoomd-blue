@@ -28,7 +28,13 @@ void export_CollisionMethod(pybind11::module&);
 #ifdef ENABLE_MPI
 void export_Communicator(pybind11::module&);
 #endif // ENABLE_MPI
+void export_ConcentricCylindersGeometry(pybind11::module&);
+void export_ConcentricCylindersGeometryFiller(pybind11::module&);
 void export_ConstantForce(pybind11::module&);
+void export_CosineChannelGeometry(pybind11::module&);
+void export_CosineChannelGeometryFiller(pybind11::module&);
+void export_CosineExpansionContractionGeometry(pybind11::module&);
+void export_CosineExpansionContractionGeometryFiller(pybind11::module&);
 void export_Integrator(pybind11::module&);
 void export_ManualVirtualParticleFiller(pybind11::module&);
 void export_NoForce(pybind11::module&);
@@ -50,6 +56,9 @@ void export_CellThermoComputeGPU(pybind11::module&);
 #ifdef ENABLE_MPI
 void export_CommunicatorGPU(pybind11::module&);
 #endif // ENABLE_MPI
+void export_ConcentricCylindersGeometryFillerGPU(pybind11::module&);
+void export_CosineChannelGeometryFillerGPU(pybind11::module&);
+void export_CosineExpansionContractionGeometryFillerGPU(pybind11::module&);
 void export_ParallelPlateGeometryFillerGPU(pybind11::module&);
 void export_PlanarPoreGeometryFillerGPU(pybind11::module&);
 void export_SorterGPU(pybind11::module&);
@@ -68,6 +77,23 @@ void export_BulkStreamingMethodNoForceGPU(pybind11::module&);
 void export_BulkStreamingMethodSineForceGPU(pybind11::module&);
 #endif // ENABLE_HIP
 
+// concentric cylinders
+void export_BounceBackStreamingMethodConcentricCylindersGeometryBlockForce(pybind11::module&);
+void export_BounceBackStreamingMethodConcentricCylindersGeometryConstantForce(pybind11::module&);
+void export_BounceBackStreamingMethodConcentricCylindersGeometryNoForce(pybind11::module&);
+void export_BounceBackStreamingMethodConcentricCylindersGeometrySineForce(pybind11::module&);
+// cosine channel
+void export_BounceBackStreamingMethodCosineChannelGeometryBlockForce(pybind11::module&);
+void export_BounceBackStreamingMethodCosineChannelGeometryConstantForce(pybind11::module&);
+void export_BounceBackStreamingMethodCosineChannelGeometryNoForce(pybind11::module&);
+void export_BounceBackStreamingMethodCosineChannelGeometrySineForce(pybind11::module&);
+// cosine expansion contraction
+void export_BounceBackStreamingMethodCosineExpansionContractionGeometryBlockForce(
+    pybind11::module&);
+void export_BounceBackStreamingMethodCosineExpansionContractionGeometryConstantForce(
+    pybind11::module&);
+void export_BounceBackStreamingMethodCosineExpansionContractionGeometryNoForce(pybind11::module&);
+void export_BounceBackStreamingMethodCosineExpansionContractionGeometrySineForce(pybind11::module&);
 // parallel plate
 void export_BounceBackStreamingMethodParallelPlateGeometryBlockForce(pybind11::module&);
 void export_BounceBackStreamingMethodParallelPlateGeometryConstantForce(pybind11::module&);
@@ -84,6 +110,25 @@ void export_BounceBackStreamingMethodSphereGeometryConstantForce(pybind11::modul
 void export_BounceBackStreamingMethodSphereGeometryNoForce(pybind11::module&);
 void export_BounceBackStreamingMethodSphereGeometrySineForce(pybind11::module&);
 #ifdef ENABLE_HIP
+// concentric cylinders
+void export_BounceBackStreamingMethodConcentricCylindersGeometryBlockForceGPU(pybind11::module&);
+void export_BounceBackStreamingMethodConcentricCylindersGeometryConstantForceGPU(pybind11::module&);
+void export_BounceBackStreamingMethodConcentricCylindersGeometryNoForceGPU(pybind11::module&);
+void export_BounceBackStreamingMethodConcentricCylindersGeometrySineForceGPU(pybind11::module&);
+// cosine channel
+void export_BounceBackStreamingMethodCosineChannelGeometryBlockForceGPU(pybind11::module&);
+void export_BounceBackStreamingMethodCosineChannelGeometryConstantForceGPU(pybind11::module&);
+void export_BounceBackStreamingMethodCosineChannelGeometryNoForceGPU(pybind11::module&);
+void export_BounceBackStreamingMethodCosineChannelGeometrySineForceGPU(pybind11::module&);
+// cosine expansion contraction
+void export_BounceBackStreamingMethodCosineExpansionContractionGeometryBlockForceGPU(
+    pybind11::module&);
+void export_BounceBackStreamingMethodCosineExpansionContractionGeometryConstantForceGPU(
+    pybind11::module&);
+void export_BounceBackStreamingMethodCosineExpansionContractionGeometryNoForceGPU(
+    pybind11::module&);
+void export_BounceBackStreamingMethodCosineExpansionContractionGeometrySineForceGPU(
+    pybind11::module&);
 // parallel plate
 void export_BounceBackStreamingMethodParallelPlateGeometryBlockForceGPU(pybind11::module&);
 void export_BounceBackStreamingMethodParallelPlateGeometryConstantForceGPU(pybind11::module&);
@@ -101,10 +146,16 @@ void export_BounceBackStreamingMethodSphereGeometryNoForceGPU(pybind11::module&)
 void export_BounceBackStreamingMethodSphereGeometrySineForceGPU(pybind11::module&);
 #endif // ENABLE_HIP
 
+void export_BounceBackNVEConcentricCylindersGeometry(pybind11::module&);
+void export_BounceBackNVECosineChannelGeometry(pybind11::module&);
+void export_BounceBackNVECosineExpansionContractionGeometry(pybind11::module&);
 void export_BounceBackNVEParallelPlateGeometry(pybind11::module&);
 void export_BounceBackNVEPlanarPoreGeometry(pybind11::module&);
 void export_BounceBackNVESphereGeometry(pybind11::module&);
 #ifdef ENABLE_HIP
+void export_BounceBackNVEConcentricCylindersGeometryGPU(pybind11::module&);
+void export_BounceBackNVECosineChannelGeometryGPU(pybind11::module&);
+void export_BounceBackNVECosineExpansionContractionGeometryGPU(pybind11::module&);
 void export_BounceBackNVEParallelPlateGeometryGPU(pybind11::module&);
 void export_BounceBackNVEPlanarPoreGeometryGPU(pybind11::module&);
 void export_BounceBackNVESphereGeometryGPU(pybind11::module&);
@@ -153,7 +204,13 @@ PYBIND11_MODULE(_mpcd, m)
 #ifdef ENABLE_MPI
     export_Communicator(m);
 #endif // ENABLE_MPI
+    export_ConcentricCylindersGeometry(m);
+    export_ConcentricCylindersGeometryFiller(m);
     export_ConstantForce(m);
+    export_CosineChannelGeometry(m);
+    export_CosineChannelGeometryFiller(m);
+    export_CosineExpansionContractionGeometry(m);
+    export_CosineExpansionContractionGeometryFiller(m);
     export_Integrator(m);
     export_ManualVirtualParticleFiller(m);
     export_NoForce(m);
@@ -173,6 +230,9 @@ PYBIND11_MODULE(_mpcd, m)
 #ifdef ENABLE_MPI
     export_CommunicatorGPU(m);
 #endif // ENABLE_MPI
+    export_ConcentricCylindersGeometryFillerGPU(m);
+    export_CosineChannelGeometryFillerGPU(m);
+    export_CosineExpansionContractionGeometryFillerGPU(m);
     export_ParallelPlateGeometryFillerGPU(m);
     export_PlanarPoreGeometryFillerGPU(m);
     export_SorterGPU(m);
@@ -191,6 +251,21 @@ PYBIND11_MODULE(_mpcd, m)
     export_BulkStreamingMethodSineForceGPU(m);
 #endif // ENABLE_HIP
 
+    // concentric cylinders
+    export_BounceBackStreamingMethodConcentricCylindersGeometryBlockForce(m);
+    export_BounceBackStreamingMethodConcentricCylindersGeometryConstantForce(m);
+    export_BounceBackStreamingMethodConcentricCylindersGeometryNoForce(m);
+    export_BounceBackStreamingMethodConcentricCylindersGeometrySineForce(m);
+    // cosine channel
+    export_BounceBackStreamingMethodCosineChannelGeometryBlockForce(m);
+    export_BounceBackStreamingMethodCosineChannelGeometryConstantForce(m);
+    export_BounceBackStreamingMethodCosineChannelGeometryNoForce(m);
+    export_BounceBackStreamingMethodCosineChannelGeometrySineForce(m);
+    // cosine expansion contraction
+    export_BounceBackStreamingMethodCosineExpansionContractionGeometryBlockForce(m);
+    export_BounceBackStreamingMethodCosineExpansionContractionGeometryConstantForce(m);
+    export_BounceBackStreamingMethodCosineExpansionContractionGeometryNoForce(m);
+    export_BounceBackStreamingMethodCosineExpansionContractionGeometrySineForce(m);
     // parallel plate
     export_BounceBackStreamingMethodParallelPlateGeometryBlockForce(m);
     export_BounceBackStreamingMethodParallelPlateGeometryConstantForce(m);
@@ -207,6 +282,21 @@ PYBIND11_MODULE(_mpcd, m)
     export_BounceBackStreamingMethodSphereGeometryNoForce(m);
     export_BounceBackStreamingMethodSphereGeometrySineForce(m);
 #ifdef ENABLE_HIP
+    // concentric cylinders
+    export_BounceBackStreamingMethodConcentricCylindersGeometryBlockForceGPU(m);
+    export_BounceBackStreamingMethodConcentricCylindersGeometryConstantForceGPU(m);
+    export_BounceBackStreamingMethodConcentricCylindersGeometryNoForceGPU(m);
+    export_BounceBackStreamingMethodConcentricCylindersGeometrySineForceGPU(m);
+    // cosine channel
+    export_BounceBackStreamingMethodCosineChannelGeometryBlockForceGPU(m);
+    export_BounceBackStreamingMethodCosineChannelGeometryConstantForceGPU(m);
+    export_BounceBackStreamingMethodCosineChannelGeometryNoForceGPU(m);
+    export_BounceBackStreamingMethodCosineChannelGeometrySineForceGPU(m);
+    // cosine expansion contraction
+    export_BounceBackStreamingMethodCosineExpansionContractionGeometryBlockForceGPU(m);
+    export_BounceBackStreamingMethodCosineExpansionContractionGeometryConstantForceGPU(m);
+    export_BounceBackStreamingMethodCosineExpansionContractionGeometryNoForceGPU(m);
+    export_BounceBackStreamingMethodCosineExpansionContractionGeometrySineForceGPU(m);
     // parallel plate
     export_BounceBackStreamingMethodParallelPlateGeometryBlockForceGPU(m);
     export_BounceBackStreamingMethodParallelPlateGeometryConstantForceGPU(m);
@@ -224,10 +314,16 @@ PYBIND11_MODULE(_mpcd, m)
     export_BounceBackStreamingMethodSphereGeometrySineForceGPU(m);
 #endif // ENABLE_HIP
 
+    export_BounceBackNVEConcentricCylindersGeometry(m);
+    export_BounceBackNVECosineChannelGeometry(m);
+    export_BounceBackNVECosineExpansionContractionGeometry(m);
     export_BounceBackNVEParallelPlateGeometry(m);
     export_BounceBackNVEPlanarPoreGeometry(m);
     export_BounceBackNVESphereGeometry(m);
 #ifdef ENABLE_HIP
+    export_BounceBackNVEConcentricCylindersGeometryGPU(m);
+    export_BounceBackNVECosineChannelGeometryGPU(m);
+    export_BounceBackNVECosineExpansionContractionGeometryGPU(m);
     export_BounceBackNVEParallelPlateGeometryGPU(m);
     export_BounceBackNVEPlanarPoreGeometryGPU(m);
     export_BounceBackNVESphereGeometryGPU(m);
