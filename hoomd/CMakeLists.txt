@@ -175,7 +175,6 @@ set(_hoomd_headers
     VectorVariant.h
     VectorMath.h
     WarpTools.cuh
-    extern/dset.h
     )
 
 if (ENABLE_HIP)

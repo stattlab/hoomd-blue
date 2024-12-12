@@ -494,6 +494,12 @@ class PYBIND11_EXPORT IntegratorHPMC : public Integrator
         return m_pair_energy_search_radius;
         }
 
+    Scalar getNominalWidth()
+        {
+        return m_nominal_width;
+        }
+
+
     protected:
     unsigned int m_translation_move_probability; //!< Fraction of moves that are translation moves.
     unsigned int m_nselect;                      //!< Number of particles to select for trial moves

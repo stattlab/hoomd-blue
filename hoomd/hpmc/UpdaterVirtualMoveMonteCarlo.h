@@ -59,17 +59,17 @@ struct PotentialLinkData
     void clear()
         {
         m_potential_intracluster_link_idxs.clear();
-        m_potential_intracluster_link_beta_deltaU_fwds.clear();
+        m_potential_intracluster_link_deltaU_fwds.clear();
         }
 
-    void update(unsigned int i, unsigned int j, LongReal beta_delta_u_ij_fwd)
+    void update(unsigned int i, unsigned int j, LongReal delta_u_ij_fwd)
         {
         m_potential_intracluster_link_idxs.push_back(std::make_pair(i, j));
-        m_potential_intracluster_link_beta_deltaU_fwds.push_back(beta_delta_u_ij_fwd);
+        m_potential_intracluster_link_deltaU_fwds.push_back(delta_u_ij_fwd);
         }
 
     std::vector<std::pair<unsigned int, unsigned int>> m_potential_intracluster_link_idxs;
-    std::vector<LongReal> m_potential_intracluster_link_beta_deltaU_fwds;
+    std::vector<LongReal> m_potential_intracluster_link_deltaU_fwds;
     };
 
 
@@ -264,9 +264,9 @@ class UpdaterVMMC : public Updater
 
         detail::UpdateOrder m_update_order;
 
-        GlobalVector<Scalar4> m_postype_backup;        //!< Old local positions
-        GlobalVector<Scalar4> m_orientation_backup;    //!< Old local orientations
-        GlobalVector<int3> m_image_backup;             //!< Old local images
+        GPUVector<Scalar4> m_postype_backup;        //!< Old local positions
+        GPUVector<Scalar4> m_orientation_backup;    //!< Old local orientations
+        GPUVector<int3> m_image_backup;             //!< Old local images
         LongReal m_maximum_translate_size;
         Scalar m_maximum_rotate_size;
         LongReal m_maximum_trial_center_of_rotation_shift;
@@ -296,12 +296,9 @@ UpdaterVMMC<Shape>::UpdaterVMMC(
     resetStats();
 
     // initialize memory
-    GlobalVector<Scalar4>(1,this->m_exec_conf).swap(m_postype_backup);
-    TAG_ALLOCATION(m_postype_backup);
-    GlobalVector<Scalar4>(1,this->m_exec_conf).swap(m_orientation_backup);
-    TAG_ALLOCATION(m_orientation_backup);
-    GlobalVector<int3>(1,this->m_exec_conf).swap(m_image_backup);
-    TAG_ALLOCATION(m_image_backup);
+    GPUVector<Scalar4>(1,this->m_exec_conf).swap(m_postype_backup);
+    GPUVector<Scalar4>(1,this->m_exec_conf).swap(m_orientation_backup);
+    GPUVector<int3>(1,this->m_exec_conf).swap(m_image_backup);
     }
 
 template< class Shape >
@@ -317,7 +314,7 @@ UpdaterVMMC<Shape>::~UpdaterVMMC()
     The steps of the algorithm are:
     1. Pick a random seed particle i and a random trial displacement/rotation
     2. Loop over all of i's neighbors (j):
-        2a. Add j to the cluster with probability p_ij, which needs beta_u_ij in the current state, and beta_u_ij after only i has been moved
+        2a. Add j to the cluster with probability p_ij, which needs u_ij in the current state, and u_ij after only i has been moved
         2b. If j added to cluster, loop over all of its neighbors and add to cluster with probability p_jk
         2c. Continue recursively looping over neighbors until no candidate cluster members are left
     3. Do the move
@@ -344,6 +341,7 @@ void UpdaterVMMC<Shape>::update(uint64_t timestep)
 
     // get stuff needed for the calculation
     LongReal current_beta_ficticious = m_static_linking_mode ? m_beta_ficticious->operator()(timestep) : 1.0;
+    const Scalar kT = m_mc->getKT()->operator()(timestep);
     const LongReal min_core_radius = m_mc->getMinCoreDiameter() * LongReal(0.5);
     const auto& pair_energy_search_radius = m_mc->getPairEnergySearchRadius();
     ArrayHandle<Scalar4> h_postype(m_pdata->getPositions(), access_location::host, access_mode::readwrite);
@@ -397,7 +395,7 @@ void UpdaterVMMC<Shape>::update(uint64_t timestep)
             m_potential_link_data.clear();
             LongReal p_link_probability_ratio = 1.0;  // 3rd product in eqn 13 from the paper
             LongReal p_failed_link_probability_ratio = 1.0;  // 1st product in eqn 13 from the paper
-            LongReal beta_deltaU = 0.0;  // change in energy before and after the cluster move
+            LongReal deltaU = 0.0;  // change in energy before and after the cluster move
             bool skip_to_next_seed = false;
 
             // seed particle that starts the virtual move
@@ -651,7 +649,7 @@ void UpdaterVMMC<Shape>::update(uint64_t timestep)
                                             }
                                         else
                                             {
-                                            double beta_u_ij =
+                                            double u_ij =
                                                 m_mc->computeOnePairEnergy(
                                                         r_squared,
                                                         r_linker_linkee,
@@ -663,7 +661,7 @@ void UpdaterVMMC<Shape>::update(uint64_t timestep)
                                                         shape_linkee.orientation,
                                                         h_diameter.data[j_linkee],
                                                         h_charge.data[j_linkee]);
-                                            double beta_u_ij_after_reverse_move_of_linker =
+                                            double u_ij_after_reverse_move_of_linker =
                                                 m_mc->computeOnePairEnergy(r_squared_after_reverse_move_of_linker,
                                                         r_linker_linkee_after_reverse_move_of_linker,
                                                         type_linker,
@@ -674,10 +672,7 @@ void UpdaterVMMC<Shape>::update(uint64_t timestep)
                                                         shape_linkee.orientation,
                                                         h_diameter.data[j_linkee],
                                                         h_charge.data[j_linkee]);
-                                            p_ij_reverse = std::max(0.0, 1 - exp(-current_beta_ficticious*(beta_u_ij_after_reverse_move_of_linker - beta_u_ij)));
-                                            m_exec_conf->msg->notice(5) << "  beta_u_ij = "  << beta_u_ij << std::endl;
-                                            m_exec_conf->msg->notice(5) << "  beta_u_ij_after_reverse_move = "  << beta_u_ij_after_reverse_move_of_linker << std::endl;
-                                            m_exec_conf->msg->notice(5) << "  p_ij_reverse = "  << p_ij_reverse << std::endl;
+                                            p_ij_reverse = std::max(0.0, 1 - exp(-current_beta_ficticious*(u_ij_after_reverse_move_of_linker - u_ij) / kT));
                                             }
                                         if (p_ij_reverse == 0.0)
                                             {
@@ -698,8 +693,8 @@ void UpdaterVMMC<Shape>::update(uint64_t timestep)
                                         } // end if (overlap_after_forward_move_of_linker)
                                     m_exec_conf->msg->notice(5) << "    No overlap after moving linker between " << i_linker << " and " << j_linkee << std::endl;
 
-                                    // if no overlap, we have to calculate beta_u_ij and beta_u_ij_after_move to determine p_ij
-                                    double beta_u_ij =
+                                    // if no overlap, we have to calculate u_ij and u_ij_after_move to determine p_ij
+                                    double u_ij =
                                         m_mc->computeOnePairEnergy(
                                                 r_squared,
                                                 r_linker_linkee,
@@ -711,7 +706,7 @@ void UpdaterVMMC<Shape>::update(uint64_t timestep)
                                                 shape_linkee.orientation,
                                                 h_diameter.data[j_linkee],
                                                 h_charge.data[j_linkee]);
-                                    double beta_u_ij_after_move =
+                                    double u_ij_after_move =
                                         m_mc->computeOnePairEnergy(r_squared_after_forward_move_of_linker,
                                                 r_linker_linkee_after_forward_move_of_linker,
                                                 type_linker,
@@ -722,7 +717,7 @@ void UpdaterVMMC<Shape>::update(uint64_t timestep)
                                                 shape_linkee.orientation,
                                                 h_diameter.data[j_linkee],
                                                 h_charge.data[j_linkee]);
-                                    if (beta_u_ij_after_move == 0.0 && beta_u_ij == 0.0)
+                                    if (u_ij_after_move == 0.0 && u_ij == 0.0)
                                         {
                                         // non-interacting -> non-interacting; continue to next linkee
                                         continue;  // to next linkee
@@ -731,11 +726,11 @@ void UpdaterVMMC<Shape>::update(uint64_t timestep)
                                     LongReal p_ij_forward;
                                     if (m_static_linking_mode)
                                         {
-                                        p_ij_forward = 1.0 - exp(-current_beta_ficticious * abs(beta_u_ij));
+                                        p_ij_forward = 1.0 - exp(-current_beta_ficticious * abs(u_ij / kT));
                                         }
                                     else
                                         {
-                                        p_ij_forward = std::max(0.0, 1.0 - exp(-current_beta_ficticious * (beta_u_ij_after_move - beta_u_ij)));
+                                        p_ij_forward = std::max(0.0, 1.0 - exp(-current_beta_ficticious * (u_ij_after_move - u_ij) / kT));
                                         }
                                     Scalar r = hoomd::UniformDistribution<Scalar>()(rng_i);
                                     bool link_formed = r < p_ij_forward;
@@ -763,7 +758,7 @@ void UpdaterVMMC<Shape>::update(uint64_t timestep)
                                             }
                                         if (m_static_linking_mode)
                                             {
-                                            // do not need to modify beta_deltaU since they're both in the cluster
+                                            // do not need to modify deltaU since they're both in the cluster
                                             // only need to just update the cluster data (done just above) and continue, so we just continue
                                             continue;
                                             }
@@ -781,7 +776,7 @@ void UpdaterVMMC<Shape>::update(uint64_t timestep)
                                             }
                                         else
                                             {
-                                            double beta_u_ij_after_reverse_move =
+                                            double u_ij_after_reverse_move =
                                                 m_mc->computeOnePairEnergy(r_squared_after_reverse_move_of_linker,
                                                         r_linker_linkee_after_reverse_move_of_linker,
                                                         type_linker,
@@ -792,8 +787,8 @@ void UpdaterVMMC<Shape>::update(uint64_t timestep)
                                                         shape_linkee.orientation,
                                                         h_diameter.data[j_linkee],
                                                         h_charge.data[j_linkee]);
-                                            m_exec_conf->msg->notice(5) << "  u_ij_after_reverse_move = "  << beta_u_ij_after_move << std::endl;
-                                            p_ij_reverse = std::max(0.0, 1.0 - exp(-current_beta_ficticious * (beta_u_ij_after_reverse_move - beta_u_ij)));
+                                            m_exec_conf->msg->notice(5) << "  u_ij_after_reverse_move = "  << u_ij_after_move << std::endl;
+                                            p_ij_reverse = std::max(0.0, 1.0 - exp(-current_beta_ficticious * (u_ij_after_reverse_move - u_ij) / kT));
                                             if (p_ij_reverse == 0.0)
                                                 {
                                                 m_count_total.early_abort_no_reverse_link++;
@@ -817,7 +812,7 @@ void UpdaterVMMC<Shape>::update(uint64_t timestep)
                                     else  // no link formed
                                         {
                                         m_exec_conf->msg->notice(5) << "  p_ij_forward = " << p_ij_forward << "; random number = " << r << " -> no link_formed" << std::endl;
-                                        // if j ultimately ends up in the cluster, the dU contribution is 0, but we still have to
+                                        // if j ultimately ends up in the cluster, the dU contribution is 0
                                         // if j ultimately does not end up in the cluster, we do have to account for the energy change,
                                         // so dU_forward += dU
                                         // either way, we still must account
@@ -838,13 +833,13 @@ void UpdaterVMMC<Shape>::update(uint64_t timestep)
                                         // because we don't yet know if j_linkee will eventually join the cult
                                         if (m_static_linking_mode)
                                             {
-                                            m_potential_link_data.update(i_linker, j_linkee, (LongReal)beta_u_ij_after_move - (LongReal)beta_u_ij);
+                                            m_potential_link_data.update(i_linker, j_linkee, (LongReal)u_ij_after_move - (LongReal)u_ij);
                                             continue;
                                             }
 
                                         // account for probabilities of not forming this link
                                         Scalar q_ij_forward = 1.0 - p_ij_forward;
-                                        Scalar q_ij_reverse = std::min(1.0, fast::exp(-current_beta_ficticious * (beta_u_ij - beta_u_ij_after_move)));
+                                        Scalar q_ij_reverse = std::min(1.0, fast::exp(-current_beta_ficticious * (u_ij - u_ij_after_move)));
                                         if (q_ij_reverse == 0.0)
                                             {
                                             m_count_total.early_abort_forced_reverse_link++;
@@ -865,7 +860,7 @@ void UpdaterVMMC<Shape>::update(uint64_t timestep)
                                         p_failed_link_probability_ratio *= q_ij_reverse / q_ij_forward;
 
                                         // add to possible contributions to deltaU for the cluster move
-                                        m_potential_link_data.update(i_linker, j_linkee, (LongReal)beta_u_ij_after_move - (LongReal)beta_u_ij);
+                                        m_potential_link_data.update(i_linker, j_linkee, (LongReal)u_ij_after_move - (LongReal)u_ij);
                                         continue;
                                         }
                                     }  // end loop over linkees
@@ -893,17 +888,17 @@ void UpdaterVMMC<Shape>::update(uint64_t timestep)
                 m_exec_conf->msg->notice(10) << "  Checking failed, intracluster links between " << linker_i << " and " << linkee_j << std::endl;
                 if (m_cluster_data.m_linkers_added.find(linkee_j) == m_cluster_data.m_linkers_added.end())
                     {
-                    // j ultimately did not join the cluster, so there will in general be a contribution to beta_deltaU for this i-j pair
-                    // we have already accounted for the probability of not forming the i-j link, so all we do is add to beta_deltaU
-                    beta_deltaU += m_potential_link_data.m_potential_intracluster_link_beta_deltaU_fwds[potential_link_idx];
+                    // j ultimately did not join the cluster, so there will in general be a contribution to deltaU for this i-j pair
+                    // we have already accounted for the probability of not forming the i-j link, so all we do is add to deltaU
+                    deltaU += m_potential_link_data.m_potential_intracluster_link_deltaU_fwds[potential_link_idx];
                     }
                 else
                     {
                     m_exec_conf->msg->notice(5) << "    particle with tag " << linkee_j << " eventually joined the cluster." << std::endl;
                     // j ultimately joined the cluster so there will be no contribution to deltaU for this i-j pair
                     // we have also already accounted for the probability of not forming that link in the forward and reverse moves
-                    // so there is nothing to do here except for explicitly add 0.0 to beta_deltaU for the sake of code readability
-                    beta_deltaU += 0.0;
+                    // so there is nothing to do here except for explicitly add 0.0 to deltaU for the sake of code readability
+                    deltaU += 0.0;
                     }
                 }
 
@@ -912,17 +907,16 @@ void UpdaterVMMC<Shape>::update(uint64_t timestep)
             m_count_total.total_num_moves_attempted++;
             m_exec_conf->msg->notice(5) << "  failed_link_probability_ratio = " << p_failed_link_probability_ratio << std::endl;
             m_exec_conf->msg->notice(5) << "  p_link_probability_ratio = " << p_link_probability_ratio << std::endl;
-            m_exec_conf->msg->notice(5) << "  beta*dU = " << beta_deltaU << std::endl;
-            m_exec_conf->msg->notice(5) << "  exp(-beta*dU) = " << exp(-beta_deltaU) << std::endl;
+            m_exec_conf->msg->notice(5) << "  beta*dU = " << deltaU / kT << std::endl;
+            m_exec_conf->msg->notice(5) << "  exp(-beta*dU) = " << exp(-deltaU / kT) << std::endl;
             LongReal p_acc;
             if (m_static_linking_mode)
                 {
-                // the 1.0 in current_beta_ficticious - 1.0 is where we assume beta in 1.0 in HPMC
-                p_acc = std::min(1.0, exp((current_beta_ficticious - 1.0) * beta_deltaU));
+                p_acc = std::min(1.0, exp((current_beta_ficticious - 1/kT) * deltaU));
                 }
             else
                 {
-                p_acc = std::min(1.0, exp(-beta_deltaU) * p_link_probability_ratio * p_failed_link_probability_ratio);
+                p_acc = std::min(1.0, exp(-deltaU / kT) * p_link_probability_ratio * p_failed_link_probability_ratio);
                 }
             Scalar r = hoomd::UniformDistribution<Scalar>()(rng_i);
             bool accept_cluster_move = r <= p_acc;

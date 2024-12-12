@@ -289,7 +289,7 @@ template<class Shape> class IntegratorHPMCMono : public IntegratorHPMC
                              std::shared_ptr<PairPotential> selected_pair = nullptr);
 
     //! Build the AABB tree (if needed)
-    const hoomd::detail::AABBTree& buildAABBTree();
+    hoomd::detail::AABBTree& buildAABBTree();
 
     //! Make list of image indices for boxes to check in small-box mode
     const std::vector<vec3<Scalar>>& updateImageList();
@@ -326,6 +326,11 @@ template<class Shape> class IntegratorHPMCMono : public IntegratorHPMC
         for (unsigned int i = 0; i < type_shape_mapping.size(); i++)
             type_shapes.append(type_shape_mapping[i]);
         return type_shapes;
+        }
+
+    std::vector<LongReal> getShapeCircumsphereRadius()
+        {
+        return m_shape_circumsphere_radius;
         }
 
     protected:
@@ -1594,7 +1599,6 @@ template<class Shape> void IntegratorHPMCMono<Shape>::growAABBList(unsigned int 
 */
 template <class Shape>
 hoomd::detail::AABBTree& IntegratorHPMCMono<Shape>::buildAABBTree()
-template<class Shape> const hoomd::detail::AABBTree& IntegratorHPMCMono<Shape>::buildAABBTree()
     {
     if (m_aabb_tree_invalid)
         {

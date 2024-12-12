@@ -443,28 +443,6 @@ DEVICE inline hpmc_virtual_moves_counters_t operator-(const hpmc_virtual_moves_c
     return result;
     }
 
-//! Take the difference of two sets of counters
-DEVICE inline hpmc_implicit_counters_t operator-(const hpmc_implicit_counters_t& a,
-                                                 const hpmc_implicit_counters_t& b)
-    {
-    hpmc_implicit_counters_t result;
-    result.insert_count = a.insert_count - b.insert_count;
-    result.insert_accept_count = a.insert_accept_count - b.insert_accept_count;
-    result.insert_accept_count_sq = a.insert_accept_count_sq - b.insert_accept_count_sq;
-    return result;
-    }
-
-//! Sum of two sets of counters
-DEVICE inline hpmc_implicit_counters_t operator+(const hpmc_implicit_counters_t& a,
-                                                 const hpmc_implicit_counters_t& b)
-    {
-    hpmc_implicit_counters_t result;
-    result.insert_count = a.insert_count + b.insert_count;
-    result.insert_accept_count = a.insert_accept_count + b.insert_accept_count;
-    result.insert_accept_count_sq = a.insert_accept_count_sq + b.insert_accept_count_sq;
-    return result;
-    }
-
 DEVICE inline hpmc_muvt_counters_t operator-(const hpmc_muvt_counters_t& a,
                                              const hpmc_muvt_counters_t& b)
     {
