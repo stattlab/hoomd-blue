@@ -676,15 +676,71 @@ class Shape(Updater):
 
 
 class VirtualClusterMoves(Updater):
-    """Apply virtual move Monte Carlo moves.
+    """Apply virtual move Monte Carlo (VMMC) moves.
 
-    See Whitelam and Geissler (2007).
-    Args
-    ----
-    cluster_size_limit mode : str, one of ["deterministic", "probabilistic"]
-        deterministic = hard cutoff on cluster size
-        probabilistic = cluster size cutoff proportional to 1/cluster_size**2, cluster_size_distribution_prefactor is the constant of proportionality
+    Args:
+        trigger (hoomd.trigger.trigger_like): Apply cluster moves on triggered time steps.
+
+        attempts_per_particle (int): Number of sweeps to run on each triggered timestep.
+
+        beta_ficticious (float): Temperature to use for artificial virtual moves, between 0 and 1 inclusive.
+
+        translation_move_probability (float): Probability of choosing a translation move, between 0 and 1 inclusive.
+
+        maximum_trial_rotation (float): Maximum size of rotational trial moves, units?
+
+        maximum_trial_translation (float): Maximum size of translational trial moves.
+
+        maximum_trial_center_of_rotation_shift (float): Maximum translation of seed particle before applying rotational trial move.
+
+        maximum_allowed_cluster_size (int): The largest allowable cluster size for acceptable cluster moves.
+
+        cluster_size_distribution_prefactor (float): Prefactor for cluster size limit distribution. See below for more information about limiting the cluster size.
+
+        cluster_size_limit_mode (str): How to limit cluster sizes. One of ``""``, ``"deterministic"``, or ``"probabilistic"``.
+
+        static_linking_mode (bool): Whether or not to construct clusters statically.
+
+        always_rebuild_tree (bool): If ``True``, rebuild the ``AABBTree`` any time a cluster move is accepted and applied.
+
+        random_beta_ficticious (bool): I clearly need to clean up this class and get rid of any ideas I was testing.
+
+        instance (int): When using multiple `VirtualClusterMoves` updaters in a single simulation, give each a unique value for `instance` so that they generate different streams of random numbers.
+
+    The `VirtualClusterMoves` updater applies virtual cluster moves according to the algorithm described in `Whitelam and Geissler 2007 <https://doi.org/10.1063/1.2790421>`__.
+    Here, we provide a practical overview of the algorithm; see `the original publication <https://doi.org/10.1063/1.2790421>`__ for the theoretical details.
+    The general idea is that moves are attempted on clusters of particles, where the clusters are generated on-the-fly by attempting to form *links* between members of the growing cluster and nearby particles.
+    The formation of a link results in the addition of the non-member to the cluster.
+
+    Specifically, the virtual cluster moves are created as follows:
+    first, a particle is selected as the seed particle and is the first member of the cluster.
+    The seed particle becomes the first *active linker*.
+    Next, a trial move is selected and applied to the active linker.
+    The change in pairwise energy between each potential *linkee* (particles in the system who have not been tested for cluster membership yet) and the active linker after applying the trial move to only the active linker determines the probability of that linkee joining the cluster.
+    For each particle that joins the cluster, the process of applying the trial move to it and determining new potential linkees is repeated until each member of the cluster has served as the active linker.
+    Once the cluster has been determined, the trial move is applied to the cluster as a whole and is accepted according the a balance-preserving criterion.
+    Each time the updater is triggered, every particle in the system acts as the seed particle ``attempts_per_particle`` times.
+
+    Not clear yet wheter we'll keep the static and dynamic linking options.
+    I'm leaning towards not including them in the original PR and then adding them if testing proves that they'll be useful.
+
+    .. rubric:: Box move types
+
+    {inherited}
+
+    ----------
+
+    **Members defined in** `VirtualClusterMoves`:
+
+    Attributes:
+        instance (int):
+            When using multiple `QuickCompress` updaters in a single simulation,
+            give each a unique value for `instance` so that they generate
+            different streams of random numbers.
+
     """
+
+    __doc__ = __doc__.replace("{inherited}", Updater._doc_inherited)
 
     def __init__(self, trigger=1, attempts_per_particle=1, beta_ficticious=1.0,
                  translation_move_probability=0.5,
@@ -1131,4 +1187,5 @@ __all__ = [
     "MuVT",
     "QuickCompress",
     "Shape",
+    "VirtualClusterMoves",
 ]

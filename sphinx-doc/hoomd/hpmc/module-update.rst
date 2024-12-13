@@ -3,7 +3,7 @@ update
 
 .. automodule:: hoomd.hpmc.update
    :members:
-   :exclude-members: BoxMC,GCA,MuVT,QuickCompress,Shape
+   :exclude-members: BoxMC,GCA,MuVT,QuickCompress,Shape,VirtualClusterMoves
 
 .. rubric:: Classes
 
@@ -15,3 +15,4 @@ update
     update/muvt
     update/quickcompress
     update/shape
+    update/virtualclustermoves
