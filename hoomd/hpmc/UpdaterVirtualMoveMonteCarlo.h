@@ -459,14 +459,15 @@ void UpdaterVMMC<Shape>::update(uint64_t timestep)
 
                        )
                         {
-                        m_count_total.reject_count_inactive_seed++;
                         if (move_type_translate)
                             {
                             m_count_total.translate_reject_count++;
+                            m_count_total.translate_reject_inactive_region++;
                             }
                         else
                             {
                             m_count_total.rotate_reject_count++;
+                            m_count_total.rotate_reject_inactive_region++;
                             }
                         skip_to_next_seed = true;
                         break;
@@ -571,6 +572,16 @@ void UpdaterVMMC<Shape>::update(uint64_t timestep)
                                                 && m_cluster_data.current_cluster_size() == maximum_allowed_cluster_size)
                                             {
                                             // abort the move.
+                                            if (move_type_translate)
+                                                {
+                                                m_count_total.translate_reject_count++;
+                                                m_count_total.translate_reject_oversized_cluster++;
+                                                }
+                                            else
+                                                {
+                                                m_count_total.rotate_reject_count++;
+                                                m_count_total.rotate_reject_oversized_cluster++;
+                                                }
                                             skip_to_next_seed = true;
                                             break;
                                             }
@@ -578,6 +589,16 @@ void UpdaterVMMC<Shape>::update(uint64_t timestep)
                                                 && hoomd::UniformDistribution<Scalar>()(rng_i) > m_cluster_size_distribution_prefactor / ((LongReal)m_cluster_data.current_cluster_size() + 1))
                                             {
                                             // abort the move.
+                                            if (move_type_translate)
+                                                {
+                                                m_count_total.translate_reject_count++;
+                                                m_count_total.translate_reject_oversized_cluster++;
+                                                }
+                                            else
+                                                {
+                                                m_count_total.rotate_reject_count++;
+                                                m_count_total.rotate_reject_oversized_cluster++;
+                                                }
                                             skip_to_next_seed = true;
                                             break;
                                             }
@@ -631,14 +652,15 @@ void UpdaterVMMC<Shape>::update(uint64_t timestep)
                                             }
                                         if (p_ij_reverse == 0.0)
                                             {
-                                            m_count_total.early_abort_no_reverse_link++;
                                             if (move_type_translate)
                                                 {
                                                 m_count_total.translate_reject_count++;
+                                                m_count_total.translate_reject_p_reverse_link_zero++;
                                                 }
                                             else
                                                 {
                                                 m_count_total.rotate_reject_count++;
+                                                m_count_total.rotate_reject_p_reverse_link_zero++;
                                                 }
                                             skip_to_next_seed = true;
                                             break;  // break loop over linkees
@@ -690,6 +712,16 @@ void UpdaterVMMC<Shape>::update(uint64_t timestep)
                                                 && m_cluster_data.current_cluster_size() == maximum_allowed_cluster_size)
                                             {
                                             // abort the move.
+                                            if (move_type_translate)
+                                                {
+                                                m_count_total.translate_reject_count++;
+                                                m_count_total.translate_reject_oversized_cluster++;
+                                                }
+                                            else
+                                                {
+                                                m_count_total.rotate_reject_count++;
+                                                m_count_total.rotate_reject_oversized_cluster++;
+                                                }
                                             skip_to_next_seed = true;
                                             break;
                                             }
@@ -697,6 +729,16 @@ void UpdaterVMMC<Shape>::update(uint64_t timestep)
                                                 && hoomd::UniformDistribution<Scalar>()(rng_i) > m_cluster_size_distribution_prefactor / ((LongReal)m_cluster_data.current_cluster_size() + 1))
                                             {
                                             // abort the move.
+                                            if (move_type_translate)
+                                                {
+                                                m_count_total.translate_reject_count++;
+                                                m_count_total.translate_reject_oversized_cluster++;
+                                                }
+                                            else
+                                                {
+                                                m_count_total.rotate_reject_count++;
+                                                m_count_total.rotate_reject_oversized_cluster++;
+                                                }
                                             skip_to_next_seed = true;
                                             break;
                                             }
@@ -732,15 +774,16 @@ void UpdaterVMMC<Shape>::update(uint64_t timestep)
                                             p_ij_reverse = std::max(0.0, 1.0 - exp(-(u_ij_after_reverse_move - u_ij) / kT));
                                             if (p_ij_reverse == 0.0)
                                                 {
-                                                m_count_total.early_abort_no_reverse_link++;
                                                 m_exec_conf->msg->notice(5) << "  p_ij_reverse = 0; aborting move."  << std::endl;
                                                 if (move_type_translate)
                                                     {
                                                     m_count_total.translate_reject_count++;
+                                                    m_count_total.translate_reject_p_reverse_link_zero++;
                                                     }
                                                 else
                                                     {
                                                     m_count_total.rotate_reject_count++;
+                                                    m_count_total.rotate_reject_p_reverse_link_zero++;
                                                     }
                                                 skip_to_next_seed = true;
                                                 break;
@@ -775,16 +818,17 @@ void UpdaterVMMC<Shape>::update(uint64_t timestep)
                                         Scalar q_ij_reverse = std::min(1.0, fast::exp(-(u_ij - u_ij_after_move) / kT));
                                         if (q_ij_reverse == 0.0)
                                             {
-                                            m_count_total.early_abort_forced_reverse_link++;
                                             m_exec_conf->msg->notice(5) << "  q_ij_reverse = 0; aborting move." << std::endl;
                                             skip_to_next_seed = true;
                                             if (move_type_translate)
                                                 {
                                                 m_count_total.translate_reject_count++;
+                                                m_count_total.translate_reject_q_reverse_link_zero++;
                                                 }
                                             else
                                                 {
                                                 m_count_total.rotate_reject_count++;
+                                                m_count_total.rotate_reject_q_reverse_link_zero++;
                                                 }
                                             break;
                                             }
@@ -837,7 +881,6 @@ void UpdaterVMMC<Shape>::update(uint64_t timestep)
 
 
             // now we can accept or reject the move
-            m_count_total.total_num_moves_attempted++;
             m_exec_conf->msg->notice(5) << "  failed_link_probability_ratio = " << p_failed_link_probability_ratio << std::endl;
             m_exec_conf->msg->notice(5) << "  p_link_probability_ratio = " << p_link_probability_ratio << std::endl;
             m_exec_conf->msg->notice(5) << "  beta*dU = " << deltaU / kT << std::endl;
@@ -848,18 +891,18 @@ void UpdaterVMMC<Shape>::update(uint64_t timestep)
             bool accept_cluster_move = r <= p_acc;
             m_exec_conf->msg->notice(4) << "  VMMC p_acc: " << p_acc << std::endl;
             size_t cluster_size = m_cluster_data.m_linkers_added.size();
-            m_count_total.total_num_particles_in_clusters += (unsigned long long int)cluster_size;
             if(accept_cluster_move)
                 {
-                m_count_total.total_num_particles_in_accepted_cluster_moves += (unsigned long long int)cluster_size;
                 m_exec_conf->msg->notice(4) << "  VMMC move accepted, moving " << cluster_size << " particles as a cluster" << std::endl;
                 if (move_type_translate)
                     {
                     m_count_total.translate_accept_count++;
+                    m_count_total.translate_total_num_particles_in_moved_clusters += (unsigned long long int)cluster_size;
                     }
                 else
                     {
                     m_count_total.rotate_accept_count++;
+                    m_count_total.rotate_total_num_particles_in_moved_clusters += (unsigned long long int)cluster_size;
                     }
 
                 // move the particles that are in the cluster
@@ -959,12 +1002,11 @@ inline void export_hpmc_virtual_moves_counters(pybind11::module &m)
     {
 pybind11::class_<hpmc_virtual_moves_counters_t>(m, "hpmc_virtual_moves_counters_t")
     .def_property_readonly("translate_counts", &hpmc_virtual_moves_counters_t::getTranslateCounts)
+    .def_property_readonly("translate_rejection_counts", &hpmc_virtual_moves_counters_t::getTranslateRejectCounts)
+    .def_property_readonly("translate_num_particles_in_moved_clusters", &hpmc_virtual_moves_counters_t::getTotalNumParticlesInClustersTranslate)
     .def_property_readonly("rotate_counts", &hpmc_virtual_moves_counters_t::getRotateCounts)
-    .def_property_readonly("average_cluster_size", &hpmc_virtual_moves_counters_t::getAverageClusterSize)
-    .def_property_readonly("total_num_particles_in_clusters", &hpmc_virtual_moves_counters_t::getTotalNumParticlesInClusters)
-    .def_property_readonly("total_num_moves_attempted", &hpmc_virtual_moves_counters_t::getTotalNumMovesAttempted)
-    .def_property_readonly("early_abort_counts", &hpmc_virtual_moves_counters_t::getEarlyAbortCounts)
-    .def_property_readonly("average_cluster_size_accepted", &hpmc_virtual_moves_counters_t::getAverageAcceptedClusterSize)
+    .def_property_readonly("rotate_rejection_counts", &hpmc_virtual_moves_counters_t::getRotateRejectCounts)
+    .def_property_readonly("rotate_num_particles_in_moved_clusters", &hpmc_virtual_moves_counters_t::getTotalNumParticlesInClustersRotate)
     ;
     }
 

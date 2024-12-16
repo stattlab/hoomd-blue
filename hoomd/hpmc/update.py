@@ -810,51 +810,78 @@ class VirtualClusterMoves(Updater):
 
     @log(category="sequence", requires_run=True)
     def translate_counts(self):
+        """tuple[int, int]: Count of the accepted and rejected translate moves.
+
+        Note:
+            The counts are reset to 0 at the start of each `hoomd.Simulation.run`.
+        """
         return self._cpp_obj.getCounters(1).translate_counts
 
     @log(category="sequence", requires_run=True)
+    def translate_rejection_counts(self):
+        """tuple[int, int, int, int]: Counts of different types of rejected translate moves.
+
+        The items in the list correspond to the following reasons for a rejection:
+          - a particle in the cluster starts or ends in an inactive region
+          - the cluster becomes too large
+          - the probability of forming one of the links in the reverse move was zero
+          - the probability of not forming one of the non-links in the reverse move was zero
+
+        Note:
+            The counts are reset to 0 at the start of each `hoomd.Simulation.run`.
+
+        """
+        return self._cpp_obj.getCounters(1).translate_rejection_counts
+
+    @log(category="sequence", requires_run=True)
+    def translate_num_particles_in_moved_clusters(self):
+        """int: Total number of particles in clusters with accepted translate moves.
+
+        Note:
+            The counts are reset to 0 at the start of each `hoomd.Simulation.run`.
+
+        """
+        return self._cpp_obj.getCounters(1).translate_num_particles_in_moved_clusters
+
+    @log(category="sequence", requires_run=True)
     def rotate_counts(self):
+        """tuple[int, int]: Count of the accepted and rejected rotate moves.
+
+        Note:
+            The counts are reset to 0 at the start of each `hoomd.Simulation.run`.
+        """
         return self._cpp_obj.getCounters(1).rotate_counts
 
-    @log(category="scalar", requires_run=True)
-    def translate_acceptance_rate(self):
-        acc, rej = self._cpp_obj.getCounters(1).translate_counts
-        if acc + rej == 0:
-            return 0.0
-        else:
-            return acc / (acc + rej)
+    @log(category="sequence", requires_run=True)
+    def rotate_rejection_counts(self):
+        """tuple[int, int, int, int]: Counts of different types of rejected rotate moves.
 
-    @log(category="scalar", requires_run=True)
-    def rotate_acceptance_rate(self):
-        acc, rej = self._cpp_obj.getCounters(1).rotate_counts
-        if acc + rej == 0:
-            return 0.0
-        else:
-            return acc / (acc + rej)
+        The items in the list correspond to the following reasons for a rejection:
+          - a particle in the cluster starts or ends in an inactive region
+          - the cluster becomes too large
+          - the probability of forming one of the links in the reverse move was zero
+          - the probability of not forming one of the non-links in the reverse move was zero
 
-    @log(category="scalar", requires_run=True)
-    def average_cluster_size(self):
-        return self._cpp_obj.getCounters(1).average_cluster_size
+        Note:
+            The counts are reset to 0 at the start of each `hoomd.Simulation.run`.
+
+        """
+        return self._cpp_obj.getCounters(1).rotate_rejection_counts
+
+    @log(category="sequence", requires_run=True)
+    def rotate_num_particles_in_moved_clusters(self):
+        """int: Total number of particles in clusters with accepted rotate moves.
+
+        Note:
+            The counts are reset to 0 at the start of each `hoomd.Simulation.run`.
+
+        """
+        return self._cpp_obj.getCounters(1).rotate_num_particles_in_moved_clusters
 
     @log(category="scalar", requires_run=False)
     def maximum_trial_rotation(self):
+        """float: Maximum size of rotation trial moves."""
         return self._cpp_obj.getMaximumTrialRotation
-
-    @log(category="scalar", requires_run=True)
-    def total_num_particles_in_clusters(self):
-        return self._cpp_obj.getCounters(1).total_num_particles_in_clusters
-
-    @log(category="scalar", requires_run=True)
-    def early_abort_counts_no_reverse_link(self):
-        return self._cpp_obj.getCounters(1).early_abort_counts[0]
-
-    @log(category="scalar", requires_run=True)
-    def early_abort_counts_forced_reverse_link(self):
-        return self._cpp_obj.getCounters(1).early_abort_counts[1]
-
-    @log(category="scalar", requires_run=True)
-    def average_cluster_size_accepted(self):
-        return self._cpp_obj.getCounters(1).average_cluster_size_accepted
 
 
 class GCA(Updater):

@@ -353,14 +353,20 @@ struct hpmc_virtual_moves_counters_t
     {
     unsigned long long int translate_accept_count;
     unsigned long long int translate_reject_count;
+    unsigned long long int translate_total_num_particles_in_moved_clusters;
+    unsigned long long int translate_reject_inactive_region;
+    unsigned long long int translate_reject_oversized_cluster;
+    unsigned long long int translate_reject_p_reverse_link_zero;
+    unsigned long long int translate_reject_q_reverse_link_zero;
+
+
     unsigned long long int rotate_accept_count;
     unsigned long long int rotate_reject_count;
-    unsigned long long int total_num_particles_in_clusters;
-    unsigned long long int total_num_moves_attempted;
-    unsigned long long int reject_count_inactive_seed;
-    unsigned long long int early_abort_no_reverse_link;
-    unsigned long long int early_abort_forced_reverse_link;
-    unsigned long long int total_num_particles_in_accepted_cluster_moves;
+    unsigned long long int rotate_total_num_particles_in_moved_clusters;
+    unsigned long long int rotate_reject_inactive_region;
+    unsigned long long int rotate_reject_oversized_cluster;
+    unsigned long long int rotate_reject_p_reverse_link_zero;
+    unsigned long long int rotate_reject_q_reverse_link_zero;
 
 
     //! Construct a zero set of counters
@@ -368,14 +374,19 @@ struct hpmc_virtual_moves_counters_t
         {
         translate_accept_count = 0;
         translate_reject_count = 0;
+        translate_total_num_particles_in_moved_clusters = 0;
+        translate_reject_inactive_region = 0;
+        translate_reject_oversized_cluster = 0;
+        translate_reject_p_reverse_link_zero = 0;
+        translate_reject_q_reverse_link_zero = 0;
+
         rotate_accept_count = 0;
         rotate_reject_count = 0;
-        total_num_particles_in_clusters = 0;
-        total_num_moves_attempted = 0;
-        reject_count_inactive_seed = 0;
-        early_abort_no_reverse_link = 0;
-        early_abort_forced_reverse_link = 0;
-        total_num_particles_in_accepted_cluster_moves = 0;
+        rotate_total_num_particles_in_moved_clusters = 0;
+        rotate_reject_inactive_region = 0;
+        rotate_reject_oversized_cluster = 0;
+        rotate_reject_p_reverse_link_zero = 0;
+        rotate_reject_q_reverse_link_zero = 0;
         }
 
     std::pair<unsigned long long int, unsigned long long int> getTranslateCounts()
@@ -388,58 +399,50 @@ struct hpmc_virtual_moves_counters_t
         return std::make_pair(rotate_accept_count, translate_reject_count);
         }
 
-    DEVICE double getAverageClusterSize()
+
+    std::array<unsigned long long int, 4> getRotateRejectCounts()
+            {
+            std::array<unsigned long long int, 4> counts = {rotate_reject_inactive_region, rotate_reject_oversized_cluster, rotate_reject_p_reverse_link_zero, rotate_reject_q_reverse_link_zero};
+            return counts;
+            }
+
+    std::array<unsigned long long int, 4> getTranslateRejectCounts()
+            {
+            std::array<unsigned long long int, 4> counts = {translate_reject_inactive_region, translate_reject_oversized_cluster, translate_reject_p_reverse_link_zero, translate_reject_q_reverse_link_zero};
+            return counts;
+            }
+
+    DEVICE unsigned long long int getTotalNumParticlesInClustersRotate()
         {
-        if (translate_accept_count + translate_reject_count + rotate_accept_count + rotate_reject_count)
-            {
-            return (double)total_num_particles_in_clusters / ((double)translate_accept_count + (double)translate_reject_count + (double)rotate_accept_count + (double)rotate_reject_count);
-            }
-        else
-            {
-            return 0.0;
-            }
+        return rotate_total_num_particles_in_moved_clusters;
         }
 
-    DEVICE double getAverageAcceptedClusterSize()
+    DEVICE unsigned long long int getTotalNumParticlesInClustersTranslate()
         {
-        if (translate_accept_count + rotate_accept_count)
-            {
-            return (double)total_num_particles_in_accepted_cluster_moves / ((double)translate_accept_count + (double)rotate_accept_count);
-            }
-        else
-            {
-            return 0.0;
-            }
+        return translate_total_num_particles_in_moved_clusters;
         }
 
-    DEVICE unsigned long long int getTotalNumParticlesInClusters()
-        {
-        return total_num_particles_in_clusters;
-        }
-
-    DEVICE unsigned long long int getTotalNumMovesAttempted()
-        {
-        return total_num_moves_attempted;
-        }
-
-    DEVICE std::pair<unsigned long long int, unsigned long long int> getEarlyAbortCounts()
-        {
-        return std::make_pair(early_abort_no_reverse_link, early_abort_forced_reverse_link);
-        }
     };
 
 DEVICE inline hpmc_virtual_moves_counters_t operator-(const hpmc_virtual_moves_counters_t& a, hpmc_virtual_moves_counters_t& b)
     {
     hpmc_virtual_moves_counters_t result;
-    result.translate_accept_count = a.translate_accept_count - b.translate_accept_count;
-    result.translate_reject_count = a.translate_reject_count - b.translate_reject_count;
     result.rotate_accept_count = a.rotate_accept_count - b.rotate_accept_count;
     result.rotate_reject_count = a.rotate_reject_count - b.rotate_reject_count;
-    result.total_num_particles_in_clusters = a.total_num_particles_in_clusters - b.total_num_particles_in_clusters;
-    result.total_num_moves_attempted = a.total_num_moves_attempted - b.total_num_moves_attempted;
-    result.early_abort_no_reverse_link = a.early_abort_no_reverse_link - b.early_abort_no_reverse_link;
-    result.early_abort_forced_reverse_link = a.early_abort_forced_reverse_link - b.early_abort_forced_reverse_link;
-    result.total_num_particles_in_accepted_cluster_moves = a.total_num_particles_in_accepted_cluster_moves - b.total_num_particles_in_accepted_cluster_moves;
+    result.rotate_total_num_particles_in_moved_clusters = a.rotate_total_num_particles_in_moved_clusters + b.rotate_total_num_particles_in_moved_clusters;
+    result.rotate_reject_inactive_region = a.rotate_reject_inactive_region + b.rotate_reject_inactive_region;
+    result.rotate_reject_oversized_cluster = a.rotate_reject_oversized_cluster + b.rotate_reject_oversized_cluster;
+    result.rotate_reject_p_reverse_link_zero = a.rotate_reject_p_reverse_link_zero + b.rotate_reject_p_reverse_link_zero;
+    result.rotate_reject_q_reverse_link_zero = a.rotate_reject_q_reverse_link_zero + b.rotate_reject_q_reverse_link_zero;
+
+    result.translate_accept_count = a.translate_accept_count - b.translate_accept_count;
+    result.translate_reject_count = a.translate_reject_count - b.translate_reject_count;
+    result.translate_total_num_particles_in_moved_clusters = a.translate_total_num_particles_in_moved_clusters + b.translate_total_num_particles_in_moved_clusters;
+    result.translate_reject_inactive_region = a.translate_reject_inactive_region + b.translate_reject_inactive_region;
+    result.translate_reject_oversized_cluster = a.translate_reject_oversized_cluster + b.translate_reject_oversized_cluster;
+    result.translate_reject_p_reverse_link_zero = a.translate_reject_p_reverse_link_zero + b.translate_reject_p_reverse_link_zero;
+    result.translate_reject_q_reverse_link_zero = a.translate_reject_q_reverse_link_zero + b.translate_reject_q_reverse_link_zero;
+
     return result;
     }
 
