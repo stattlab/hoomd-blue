@@ -805,7 +805,6 @@ class VirtualClusterMoves(Updater):
             self._simulation.state._cpp_sys_def,
             self.trigger,
             integrator._cpp_obj,
-            self.beta_ficticious,
         )
 
     @log(category="sequence", requires_run=True)
