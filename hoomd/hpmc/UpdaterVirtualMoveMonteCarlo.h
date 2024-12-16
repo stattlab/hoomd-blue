@@ -306,18 +306,10 @@ template<class Shape> void UpdaterVMMC<Shape>::update(uint64_t timestep)
     const Scalar kT = m_mc->getKT()->operator()(timestep);
     const LongReal min_core_radius = m_mc->getMinCoreDiameter() * LongReal(0.5);
     const auto& pair_energy_search_radius = m_mc->getPairEnergySearchRadius();
-    ArrayHandle<Scalar4> h_postype(m_pdata->getPositions(),
-                                   access_location::host,
-                                   access_mode::readwrite);
-    ArrayHandle<Scalar4> h_orientation(m_pdata->getOrientationArray(),
-                                       access_location::host,
-                                       access_mode::readwrite);
-    ArrayHandle<Scalar> h_charge(m_pdata->getCharges(),
-                                 access_location::host,
-                                 access_mode::readwrite);
+    ArrayHandle<Scalar> h_charge(m_pdata->getCharges(), access_location::host, access_mode::read);
     ArrayHandle<Scalar> h_diameter(m_pdata->getDiameters(),
                                    access_location::host,
-                                   access_mode::readwrite);
+                                   access_mode::read);
     ArrayHandle<int3> h_image(m_pdata->getImages(), access_location::host, access_mode::readwrite);
     const BoxDim box = m_pdata->getBox();
     unsigned int ndim = this->m_sysdef->getNDimensions();
@@ -325,10 +317,19 @@ template<class Shape> void UpdaterVMMC<Shape>::update(uint64_t timestep)
     const auto& mc_params = m_mc->getParams();
     unsigned int maximum_allowed_cluster_size
         = m_maximum_allowed_cluster_size == 0 ? m_pdata->getN() : m_maximum_allowed_cluster_size;
-    GPUArray<Scalar4> pos_last_tree_build = m_pdata->getPositions();
+    GPUArray<Scalar4> pos_last_tree_build(m_pdata->getN(), m_exec_conf);
     ArrayHandle<Scalar4> h_pos_last_tree_build(pos_last_tree_build,
                                                access_location::host,
                                                access_mode::readwrite);
+        {
+        ArrayHandle<Scalar4> h_postype(m_pdata->getPositions(),
+                                       access_location::host,
+                                       access_mode::readwrite);
+        for (unsigned int idx = 0; idx < m_pdata->getN(); idx++)
+            {
+            h_pos_last_tree_build.data[idx] = h_postype.data[idx];
+            }
+        }
 
 #ifdef ENABLE_MPI
     // compute the width of the active region
@@ -406,7 +407,14 @@ template<class Shape> void UpdaterVMMC<Shape>::update(uint64_t timestep)
                 }
 
             // add linker and current image rotation center to their sets
-            vec3<Scalar> pos_seed = vec3<Scalar>(h_postype.data[seed_idx]);
+            Scalar4 postype_seed;
+                {
+                ArrayHandle<Scalar4> h_postype(m_pdata->getPositions(),
+                                               access_location::host,
+                                               access_mode::readwrite);
+                postype_seed = h_postype.data[seed_idx];
+                }
+            vec3<Scalar> pos_seed = vec3<Scalar>(postype_seed);
             m_cluster_data.update_cluster(seed_idx, virtual_translate_move + pos_seed);
 
             m_exec_conf->msg->notice(6)
@@ -430,7 +438,21 @@ template<class Shape> void UpdaterVMMC<Shape>::update(uint64_t timestep)
                 m_exec_conf->msg->notice(5) << "VMMC linker tag: " << i_linker << std::endl;
 
                 // get position and orientation of linker
-                Scalar4 postype_linker = h_postype.data[i_linker];
+                Scalar4 postype_linker;
+                quat<Scalar> orientation_linker;
+                quat<Scalar> orientation_linker_after_move;
+                    {
+                    // scope the handle to postypes bc buildAABBTree needs it
+                    ArrayHandle<Scalar4> h_postype(m_pdata->getPositions(),
+                                                   access_location::host,
+                                                   access_mode::readwrite);
+                    ArrayHandle<Scalar4> h_orientation(m_pdata->getOrientationArray(),
+                                                       access_location::host,
+                                                       access_mode::readwrite);
+                    postype_linker = h_postype.data[i_linker];
+                    orientation_linker = quat<Scalar>(h_orientation.data[i_linker]);
+                    orientation_linker_after_move = virtual_translate_move * orientation_linker;
+                    }
                 vec3<Scalar> pos_linker = vec3<Scalar>(postype_linker);
                 vec3<Scalar> pos_linker_after_move_primary_image;
                 vec3<Scalar> pos_linker_after_reverse_move_primary_image;
@@ -458,14 +480,12 @@ template<class Shape> void UpdaterVMMC<Shape>::update(uint64_t timestep)
                 m_positions_after_move[i_linker] = pos_linker_after_move_primary_image;
 
                 int type_linker = __scalar_as_int(postype_linker.w);
-                Shape shape_linker(quat<Scalar>(h_orientation.data[i_linker]),
-                                   mc_params[type_linker]);
-                Shape shape_linker_after_move(virtual_rotate_move
-                                                  * quat<Scalar>(h_orientation.data[i_linker]),
+                Shape shape_linker(orientation_linker, mc_params[type_linker]);
+                Shape shape_linker_after_move(virtual_rotate_move * orientation_linker,
                                               mc_params[type_linker]);
-                Shape shape_linker_after_reverse_move(
-                    conj(virtual_rotate_move) * quat<Scalar>(h_orientation.data[i_linker]),
-                    mc_params[type_linker]);
+                Shape shape_linker_after_reverse_move(conj(virtual_rotate_move)
+                                                          * orientation_linker,
+                                                      mc_params[type_linker]);
 
 // linker must be an active particle before and after the move
 #ifdef ENABLE_MPI
@@ -571,10 +591,22 @@ template<class Shape> void UpdaterVMMC<Shape>::update(uint64_t timestep)
                                         continue;
                                         }
                                     Scalar4 postype_linkee;
-                                    postype_linkee = h_postype.data[j_linkee];
+                                        {
+                                        // scope the handle to postypes bc buildAABBTree needs it
+                                        ArrayHandle<Scalar4> h_postype(m_pdata->getPositions(),
+                                                                       access_location::host,
+                                                                       access_mode::readwrite);
+                                        postype_linkee = h_postype.data[j_linkee];
+                                        }
                                     quat<LongReal> orientation_linkee;
-                                    orientation_linkee
-                                        = quat<LongReal>(h_orientation.data[j_linkee]);
+                                        {
+                                        ArrayHandle<Scalar4> h_orientation(
+                                            m_pdata->getOrientationArray(),
+                                            access_location::host,
+                                            access_mode::readwrite);
+                                        orientation_linkee
+                                            = quat<Scalar>(h_orientation.data[j_linkee]);
+                                        }
 
                                     unsigned int type_linkee = __scalar_as_int(postype_linkee.w);
                                     Shape shape_linkee(orientation_linkee, mc_params[type_linkee]);
@@ -1075,60 +1107,71 @@ template<class Shape> void UpdaterVMMC<Shape>::update(uint64_t timestep)
 
                 // move the particles that are in the cluster
                 bool rebuild_tree = m_always_rebuild_tree ? true : false;
-                for (unsigned int idx = 0; idx < m_pdata->getN(); idx++)
                     {
-                    if (!(m_cluster_data.m_linkers_added.find(idx)
-                          == m_cluster_data.m_linkers_added.end()))
-                        {
-                        // particle idx is in the cluster
-                        Scalar4 postype_idx = h_postype.data[idx];
-                        vec3<Scalar> new_pos = m_positions_after_move[idx];
-                        h_postype.data[idx]
-                            = make_scalar4(new_pos.x, new_pos.y, new_pos.z, postype_idx.w);
-                        box.wrap(h_postype.data[idx], h_image.data[idx]);
-                        vec3<Scalar> displacement = vec3<Scalar>(h_postype.data[idx])
-                                                    - vec3<Scalar>(h_pos_last_tree_build.data[idx]);
-                        LongReal displacement_sq = dot(displacement, displacement);
-                        if (displacement_sq
-                            > min_displacement_rebuild_tree * min_displacement_rebuild_tree)
-                            {
-                            rebuild_tree = true;
-                            }
-                        quat<Scalar> orientation(h_orientation.data[idx]);
-                        h_orientation.data[idx]
-                            = quat_to_scalar4(virtual_rotate_move * orientation);
-                        }
-                    }
-                if (rebuild_tree)
-                    {
-                    m_mc->invalidateAABBTree();
-                    // update pos_last_tree_build
-                    for (unsigned int idx = 0; idx < m_pdata->getN(); idx++)
-                        {
-                        h_pos_last_tree_build.data[idx] = h_postype.data[idx];
-                        }
-                    }
-                else
-                    {
+                    ArrayHandle<Scalar4> h_postype(m_pdata->getPositions(),
+                                                   access_location::host,
+                                                   access_mode::readwrite);
+                    ArrayHandle<Scalar4> h_orientation(m_pdata->getOrientationArray(),
+                                                       access_location::host,
+                                                       access_mode::readwrite);
                     for (unsigned int idx = 0; idx < m_pdata->getN(); idx++)
                         {
                         if (!(m_cluster_data.m_linkers_added.find(idx)
                               == m_cluster_data.m_linkers_added.end()))
                             {
-                            LongReal R_query
-                                = m_mc->getShapeCircumsphereRadius()[(size_t)h_postype.data[idx].w];
-                            if (m_mc->hasPairInteractions())
+                            // particle idx is in the cluster
+                            Scalar4 postype_idx = h_postype.data[idx];
+                            vec3<Scalar> new_pos = m_positions_after_move[idx];
+                            h_postype.data[idx]
+                                = make_scalar4(new_pos.x, new_pos.y, new_pos.z, postype_idx.w);
+                            box.wrap(h_postype.data[idx], h_image.data[idx]);
+                            vec3<Scalar> displacement
+                                = vec3<Scalar>(h_postype.data[idx])
+                                  - vec3<Scalar>(h_pos_last_tree_build.data[idx]);
+                            LongReal displacement_sq = dot(displacement, displacement);
+                            if (displacement_sq
+                                > min_displacement_rebuild_tree * min_displacement_rebuild_tree)
                                 {
-                                // Extend the search to include the pair interaction r_cut
-                                // subtract minimum AABB extent from search radius
-                                R_query = std::max(
-                                    R_query,
-                                    pair_energy_search_radius[(size_t)h_postype.data[idx].w]
-                                        - min_core_radius);
+                                rebuild_tree = true;
                                 }
-                            hoomd::detail::AABB new_aabb
-                                = hoomd::detail::AABB(vec3<LongReal>(h_postype.data[idx]), R_query);
-                            mc_aabb_tree.update(idx, new_aabb);
+                            quat<Scalar> orientation(h_orientation.data[idx]);
+                            h_orientation.data[idx]
+                                = quat_to_scalar4(virtual_rotate_move * orientation);
+                            }
+                        }
+                    if (rebuild_tree)
+                        {
+                        m_mc->invalidateAABBTree();
+                        // update pos_last_tree_build
+                        for (unsigned int idx = 0; idx < m_pdata->getN(); idx++)
+                            {
+                            h_pos_last_tree_build.data[idx] = h_postype.data[idx];
+                            }
+                        }
+                    else
+                        {
+                        for (unsigned int idx = 0; idx < m_pdata->getN(); idx++)
+                            {
+                            if (!(m_cluster_data.m_linkers_added.find(idx)
+                                  == m_cluster_data.m_linkers_added.end()))
+                                {
+                                LongReal R_query
+                                    = m_mc->getShapeCircumsphereRadius()[(size_t)h_postype.data[idx]
+                                                                             .w];
+                                if (m_mc->hasPairInteractions())
+                                    {
+                                    // Extend the search to include the pair interaction r_cut
+                                    // subtract minimum AABB extent from search radius
+                                    R_query = std::max(
+                                        R_query,
+                                        pair_energy_search_radius[(size_t)h_postype.data[idx].w]
+                                            - min_core_radius);
+                                    }
+                                hoomd::detail::AABB new_aabb
+                                    = hoomd::detail::AABB(vec3<LongReal>(h_postype.data[idx]),
+                                                          R_query);
+                                mc_aabb_tree.update(idx, new_aabb);
+                                }
                             }
                         }
                     }
