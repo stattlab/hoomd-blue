@@ -679,52 +679,65 @@ class VirtualClusterMoves(Updater):
     """Apply virtual move Monte Carlo (VMMC) moves.
 
     Args:
-        trigger (hoomd.trigger.trigger_like): Apply cluster moves on triggered time steps.
+        trigger (hoomd.trigger.trigger_like): Apply cluster moves on triggered
+            time steps.
 
-        attempts_per_particle (int): Number of sweeps to run on each triggered timestep.
+        attempts_per_particle (int): Number of sweeps to run on each triggered
+            timestep.
 
-        beta_ficticious (float): Temperature to use for artificial virtual moves, between 0 and 1 inclusive.
+        translation_move_probability (float): Probability of choosing a
+            translation move, between 0 and 1 inclusive.
 
-        translation_move_probability (float): Probability of choosing a translation move, between 0 and 1 inclusive.
+        maximum_trial_rotation (float): Maximum size of rotational trial moves.
 
-        maximum_trial_rotation (float): Maximum size of rotational trial moves, units?
+        maximum_trial_translation (float): Maximum size of translational trial
+            moves.
 
-        maximum_trial_translation (float): Maximum size of translational trial moves.
+        maximum_trial_center_of_rotation_shift (float): Maximum translation of
+            seed particle before applying rotational trial move.
 
-        maximum_trial_center_of_rotation_shift (float): Maximum translation of seed particle before applying rotational trial move.
+        maximum_allowed_cluster_size (int): The largest allowable cluster size
+            for acceptable cluster moves.
 
-        maximum_allowed_cluster_size (int): The largest allowable cluster size for acceptable cluster moves.
+        cluster_size_distribution_prefactor (float): Prefactor for cluster size
+            limit distribution. See below for more information about limiting the
+            cluster size.
 
-        cluster_size_distribution_prefactor (float): Prefactor for cluster size limit distribution. See below for more information about limiting the cluster size.
+        cluster_size_limit_mode (str): How to limit cluster sizes. One of
+            ``""``, ``"deterministic"``, or ``"probabilistic"``.
 
-        cluster_size_limit_mode (str): How to limit cluster sizes. One of ``""``, ``"deterministic"``, or ``"probabilistic"``.
+        always_rebuild_tree (bool): If ``True``, rebuild the ``AABBTree`` any
+            time a cluster move is accepted and applied.
 
-        static_linking_mode (bool): Whether or not to construct clusters statically.
+        instance (int): When using multiple `VirtualClusterMoves` updaters in a
+            single simulation, give each a unique value for `instance` so that they
+            generate different streams of random numbers.
 
-        always_rebuild_tree (bool): If ``True``, rebuild the ``AABBTree`` any time a cluster move is accepted and applied.
+    The `VirtualClusterMoves` updater applies virtual cluster moves according
+    to the algorithm described in `Whitelam and Geissler 2007
+    <https://doi.org/10.1063/1.2790421>`__.  Here, we provide a practical
+    overview of the algorithm; see `the original publication
+    <https://doi.org/10.1063/1.2790421>`__ for the theoretical details.  The
+    general idea is that moves are attempted on clusters of particles, where
+    the clusters are generated on-the-fly by attempting to form *links* between
+    members of the growing cluster and nearby particles.  The formation of a
+    link results in the addition of the non-member to the cluster.
 
-        random_beta_ficticious (bool): I clearly need to clean up this class and get rid of any ideas I was testing.
-
-        instance (int): When using multiple `VirtualClusterMoves` updaters in a single simulation, give each a unique value for `instance` so that they generate different streams of random numbers.
-
-    The `VirtualClusterMoves` updater applies virtual cluster moves according to the algorithm described in `Whitelam and Geissler 2007 <https://doi.org/10.1063/1.2790421>`__.
-    Here, we provide a practical overview of the algorithm; see `the original publication <https://doi.org/10.1063/1.2790421>`__ for the theoretical details.
-    The general idea is that moves are attempted on clusters of particles, where the clusters are generated on-the-fly by attempting to form *links* between members of the growing cluster and nearby particles.
-    The formation of a link results in the addition of the non-member to the cluster.
-
-    Specifically, the virtual cluster moves are created as follows:
-    first, a particle is selected as the seed particle and is the first member of the cluster.
-    The seed particle becomes the first *active linker*.
-    Next, a trial move is selected and applied to the active linker.
-    The change in pairwise energy between each potential *linkee* (particles in the system who have not been tested for cluster membership yet) and the active linker after applying the trial move to only the active linker determines the probability of that linkee joining the cluster.
-    For each particle that joins the cluster, the process of applying the trial move to it and determining new potential linkees is repeated until each member of the cluster has served as the active linker.
-    Once the cluster has been determined, the trial move is applied to the cluster as a whole and is accepted according the a balance-preserving criterion.
-    Each time the updater is triggered, every particle in the system acts as the seed particle ``attempts_per_particle`` times.
-
-    Not clear yet wheter we'll keep the static and dynamic linking options.
-    I'm leaning towards not including them in the original PR and then adding them if testing proves that they'll be useful.
-
-    .. rubric:: Box move types
+    Specifically, the virtual cluster moves are created as follows: first, a
+    particle is selected as the seed particle and is the first member of the
+    cluster.  The seed particle becomes the first *active linker*.  Next, a
+    trial move is selected and applied to the active linker.  The change in
+    pairwise energy between each potential *linkee* (particles in the system
+    who have not been tested for cluster membership yet) and the active linker
+    after applying the trial move to only the active linker determines the
+    probability of that linkee joining the cluster.  For each particle that
+    joins the cluster, the process of applying the trial move to it and
+    determining new potential linkees is repeated until each member of the
+    cluster has served as the active linker.  Once the cluster has been
+    determined, the trial move is applied to the cluster as a whole and is
+    accepted according the a balance-preserving criterion.  Each time the
+    updater is triggered, every particle in the system acts as the seed
+    particle ``attempts_per_particle`` times.
 
     {inherited}
 
@@ -742,40 +755,42 @@ class VirtualClusterMoves(Updater):
 
     __doc__ = __doc__.replace("{inherited}", Updater._doc_inherited)
 
-    def __init__(self, trigger=1, attempts_per_particle=1, beta_ficticious=1.0,
-                 translation_move_probability=0.5,
-                 maximum_trial_rotation=0.5,maximum_trial_translation=1.0,
-                 maximum_trial_center_of_rotation_shift=1.0,
-                 maximum_allowed_cluster_size=0,
-                 cluster_size_distribution_prefactor=1.0,
-                 cluster_size_limit_mode=None,
-                 static_linking_mode=False,
-                 always_rebuild_tree=True,
-                 random_beta_ficticious=False,
-                 instance=0,
-                 ):
+    def __init__(
+        self,
+        trigger=1,
+        attempts_per_particle=1,
+        translation_move_probability=0.5,
+        maximum_trial_rotation=0.5,
+        maximum_trial_translation=1.0,
+        maximum_trial_center_of_rotation_shift=1.0,
+        maximum_allowed_cluster_size=0,
+        cluster_size_distribution_prefactor=1.0,
+        cluster_size_limit_mode=None,
+        always_rebuild_tree=True,
+        instance=0,
+    ):
         super().__init__(trigger)
         if maximum_allowed_cluster_size is None:
             # set no limits on maximum allowed cluster size
-            # TODO: is there a more explicit way to do this insteading of using None?
             maximum_allowed_cluster_size = 0
         if cluster_size_limit_mode is None:
             cluster_size_limit_mode = ""
-        param_dict = ParameterDict(attempts_per_particle=int(attempts_per_particle),
-                                   beta_ficticious=hoomd.variant.Variant,
-                                   translation_move_probability=float(translation_move_probability),
-                                   maximum_trial_rotation=float(maximum_trial_rotation),
-                                   maximum_trial_translation=float(maximum_trial_translation),
-                                   maximum_trial_center_of_rotation_shift=float(maximum_trial_center_of_rotation_shift),
-                                   maximum_allowed_cluster_size=int(maximum_allowed_cluster_size),
-                                   cluster_size_distribution_prefactor=float(cluster_size_distribution_prefactor),
-                                   cluster_size_limit_mode=str(cluster_size_limit_mode),
-                                   static_linking_mode=bool(static_linking_mode),
-                                   always_rebuild_tree=bool(always_rebuild_tree),
-                                   instance=int(instance),
-                                   random_beta_ficticious=bool(random_beta_ficticious),
-                                   )
-        param_dict.update(dict(beta_ficticious=beta_ficticious))
+        param_dict = ParameterDict(
+            attempts_per_particle=int(attempts_per_particle),
+            translation_move_probability=float(translation_move_probability),
+            maximum_trial_rotation=float(maximum_trial_rotation),
+            maximum_trial_translation=float(maximum_trial_translation),
+            maximum_trial_center_of_rotation_shift=float(
+                maximum_trial_center_of_rotation_shift
+            ),
+            maximum_allowed_cluster_size=int(maximum_allowed_cluster_size),
+            cluster_size_distribution_prefactor=float(
+                cluster_size_distribution_prefactor
+            ),
+            cluster_size_limit_mode=str(cluster_size_limit_mode),
+            always_rebuild_tree=bool(always_rebuild_tree),
+            instance=int(instance),
+        )
         self._param_dict.update(param_dict)
 
     def _attach_hook(self):
@@ -787,18 +802,21 @@ class VirtualClusterMoves(Updater):
         cpp_cls_name += integrator.__class__.__name__
         cpp_cls = getattr(_hpmc, cpp_cls_name)
         self._cpp_obj = cpp_cls(
-            self._simulation.state._cpp_sys_def, self.trigger, integrator._cpp_obj, self.beta_ficticious
+            self._simulation.state._cpp_sys_def,
+            self.trigger,
+            integrator._cpp_obj,
+            self.beta_ficticious,
         )
 
-    @log(category='sequence', requires_run=True)
+    @log(category="sequence", requires_run=True)
     def translate_counts(self):
         return self._cpp_obj.getCounters(1).translate_counts
 
-    @log(category='sequence', requires_run=True)
+    @log(category="sequence", requires_run=True)
     def rotate_counts(self):
         return self._cpp_obj.getCounters(1).rotate_counts
 
-    @log(category='scalar', requires_run=True)
+    @log(category="scalar", requires_run=True)
     def translate_acceptance_rate(self):
         acc, rej = self._cpp_obj.getCounters(1).translate_counts
         if acc + rej == 0:
@@ -806,7 +824,7 @@ class VirtualClusterMoves(Updater):
         else:
             return acc / (acc + rej)
 
-    @log(category='scalar', requires_run=True)
+    @log(category="scalar", requires_run=True)
     def rotate_acceptance_rate(self):
         acc, rej = self._cpp_obj.getCounters(1).rotate_counts
         if acc + rej == 0:
@@ -814,27 +832,27 @@ class VirtualClusterMoves(Updater):
         else:
             return acc / (acc + rej)
 
-    @log(category='scalar', requires_run=True)
+    @log(category="scalar", requires_run=True)
     def average_cluster_size(self):
         return self._cpp_obj.getCounters(1).average_cluster_size
 
-    @log(category='scalar', requires_run=False)
+    @log(category="scalar", requires_run=False)
     def maximum_trial_rotation(self):
         return self._cpp_obj.getMaximumTrialRotation
 
-    @log(category='scalar', requires_run=True)
+    @log(category="scalar", requires_run=True)
     def total_num_particles_in_clusters(self):
         return self._cpp_obj.getCounters(1).total_num_particles_in_clusters
 
-    @log(category='scalar', requires_run=True)
+    @log(category="scalar", requires_run=True)
     def early_abort_counts_no_reverse_link(self):
         return self._cpp_obj.getCounters(1).early_abort_counts[0]
 
-    @log(category='scalar', requires_run=True)
+    @log(category="scalar", requires_run=True)
     def early_abort_counts_forced_reverse_link(self):
         return self._cpp_obj.getCounters(1).early_abort_counts[1]
 
-    @log(category='scalar', requires_run=True)
+    @log(category="scalar", requires_run=True)
     def average_cluster_size_accepted(self):
         return self._cpp_obj.getCounters(1).average_cluster_size_accepted
 

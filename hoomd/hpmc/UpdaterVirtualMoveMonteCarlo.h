@@ -108,16 +108,6 @@ class UpdaterVMMC : public Updater
             return m_attempts_per_particle;
             }
 
-        void setBetaFicticious(std::shared_ptr<Variant> beta_ficticious)
-            {
-            m_beta_ficticious = beta_ficticious;
-            }
-
-        std::shared_ptr<Variant> getBetaFicticious()
-            {
-            return m_beta_ficticious;
-            }
-
         void setTranslationMoveProbability(LongReal p)
             {
             m_translation_move_probability = p;
@@ -214,26 +204,6 @@ class UpdaterVMMC : public Updater
             m_instance = instance;
             }
 
-        bool getStaticLinkingMode()
-            {
-            return m_static_linking_mode;
-            }
-
-        void setStaticLinkingMode(bool b)
-            {
-            m_static_linking_mode = b;
-            }
-
-        bool getRandomBetaFicticious()
-            {
-            return m_random_beta_ficticious;
-            }
-
-        void setRandomBetaFicticious(bool b)
-            {
-            m_random_beta_ficticious = b;
-            }
-
 
         /*! \param mode 0 -> Absolute count, 1 -> relative to the start of the run, 2 -> relative to the last executed step
             \return The current state of the acceptance counters
@@ -253,14 +223,11 @@ class UpdaterVMMC : public Updater
     protected:
         std::shared_ptr< IntegratorHPMCMono<Shape> > m_mc; //!< HPMC integrator
         unsigned int m_attempts_per_particle;  //!< Number of attempted moves per particle each time update() is called
-        std::shared_ptr<Variant> m_beta_ficticious;  //!< Ficticious inverse temperature for creating links between particles
         LongReal m_translation_move_probability;
         unsigned int m_maximum_allowed_cluster_size;
         LongReal m_cluster_size_distribution_prefactor;
         std::string m_cluster_size_limit_mode;
         bool m_always_rebuild_tree;
-        bool m_static_linking_mode;
-        bool m_random_beta_ficticious;
 
         detail::UpdateOrder m_update_order;
 
@@ -288,7 +255,7 @@ UpdaterVMMC<Shape>::UpdaterVMMC(
         std::shared_ptr<Trigger> trigger,
         std::shared_ptr<IntegratorHPMCMono<Shape> > mc,
         std::shared_ptr<Variant> beta_ficticious
-        ) : Updater(sysdef, trigger), m_mc(mc), m_beta_ficticious(beta_ficticious), m_update_order(m_pdata->getN())
+        ) : Updater(sysdef, trigger), m_mc(mc), m_update_order(m_pdata->getN())
     {
     m_exec_conf->msg->notice(5) << "Constructing UpdaterVMMC" << std::endl;
 
@@ -340,7 +307,6 @@ void UpdaterVMMC<Shape>::update(uint64_t timestep)
     m_count_step_start = m_count_total;
 
     // get stuff needed for the calculation
-    LongReal current_beta_ficticious = m_static_linking_mode ? m_beta_ficticious->operator()(timestep) : 1.0;
     const Scalar kT = m_mc->getKT()->operator()(timestep);
     const LongReal min_core_radius = m_mc->getMinCoreDiameter() * LongReal(0.5);
     const auto& pair_energy_search_radius = m_mc->getPairEnergySearchRadius();
@@ -404,10 +370,6 @@ void UpdaterVMMC<Shape>::update(uint64_t timestep)
             // generate the virtual move
             hoomd::RandomGenerator rng_i(hoomd::Seed(hoomd::RNGIdentifier::UpdaterVMMC, timestep, user_seed),
                                          hoomd::Counter(seed_idx, (m_exec_conf->getRank() << 16) + m_instance, i_trial));
-            if (m_static_linking_mode && m_random_beta_ficticious)
-                {
-                current_beta_ficticious = hoomd::UniformDistribution<LongReal>()(rng_i);
-                }
             LongReal move_type_select = hoomd::UniformDistribution<LongReal>()(rng_i);
             bool move_type_translate = move_type_select < m_translation_move_probability;
             vec3<Scalar> virtual_translate_move(0, 0, 0);
@@ -470,8 +432,6 @@ void UpdaterVMMC<Shape>::update(uint64_t timestep)
                     pos_linker_after_move_primary_image = rotate(virtual_rotate_move, pos_linker - center_of_rotation) + center_of_rotation;
                     m_exec_conf->msg->notice(5) << "center of rotation for particle " << i_linker << " = " << center_of_rotation.x << " " << center_of_rotation.y << " " << center_of_rotation.z << std::endl;
                     pos_linker_after_reverse_move_primary_image = rotate(conj(virtual_rotate_move), pos_linker - center_of_rotation) + center_of_rotation;
-                    /* box.wrap(pos_linker_after_move_primary_image, _images); */
-                    /* box.wrap(pos_linker_after_reverse_move_primary_image, _images); */
                     }
                 m_positions_after_move[i_linker] = pos_linker_after_move_primary_image;
 
@@ -629,11 +589,6 @@ void UpdaterVMMC<Shape>::update(uint64_t timestep)
                                         // account for probability of forming this link: denominator of p_link_probability_ratio *= 1
                                         p_link_probability_ratio /= 1.0;
 
-                                        if (m_static_linking_mode)
-                                            {
-                                            continue;
-                                            }
-
                                         // account for probability of forming this link on the reverse move:
                                         // numerator of p_link_probability_ratio p_ij_reverse gets multiplied by p_ij_reverse
                                         // if overlap after reverse move of i, p_ij_reverse = 1, otherwise we look at energies
@@ -672,7 +627,7 @@ void UpdaterVMMC<Shape>::update(uint64_t timestep)
                                                         shape_linkee.orientation,
                                                         h_diameter.data[j_linkee],
                                                         h_charge.data[j_linkee]);
-                                            p_ij_reverse = std::max(0.0, 1 - exp(-current_beta_ficticious*(u_ij_after_reverse_move_of_linker - u_ij) / kT));
+                                            p_ij_reverse = std::max(0.0, 1 - exp(-(u_ij_after_reverse_move_of_linker - u_ij) / kT));
                                             }
                                         if (p_ij_reverse == 0.0)
                                             {
@@ -724,14 +679,7 @@ void UpdaterVMMC<Shape>::update(uint64_t timestep)
                                         }
 
                                     LongReal p_ij_forward;
-                                    if (m_static_linking_mode)
-                                        {
-                                        p_ij_forward = 1.0 - exp(-current_beta_ficticious * abs(u_ij / kT));
-                                        }
-                                    else
-                                        {
-                                        p_ij_forward = std::max(0.0, 1.0 - exp(-current_beta_ficticious * (u_ij_after_move - u_ij) / kT));
-                                        }
+                                    p_ij_forward = std::max(0.0, 1.0 - exp(-(u_ij_after_move - u_ij) / kT));
                                     Scalar r = hoomd::UniformDistribution<Scalar>()(rng_i);
                                     bool link_formed = r < p_ij_forward;
                                     if (link_formed)
@@ -756,13 +704,6 @@ void UpdaterVMMC<Shape>::update(uint64_t timestep)
                                             {
                                             m_cluster_data.update_cluster(j_linkee, center_of_rotation_image);
                                             }
-                                        if (m_static_linking_mode)
-                                            {
-                                            // do not need to modify deltaU since they're both in the cluster
-                                            // only need to just update the cluster data (done just above) and continue, so we just continue
-                                            continue;
-                                            }
-
                                         // numerator of p_link_probability_ratio gets multiplied by p_ij_reverse
                                         Scalar p_ij_reverse;
                                         bool overlap_after_reverse_move =
@@ -788,7 +729,7 @@ void UpdaterVMMC<Shape>::update(uint64_t timestep)
                                                         h_diameter.data[j_linkee],
                                                         h_charge.data[j_linkee]);
                                             m_exec_conf->msg->notice(5) << "  u_ij_after_reverse_move = "  << u_ij_after_move << std::endl;
-                                            p_ij_reverse = std::max(0.0, 1.0 - exp(-current_beta_ficticious * (u_ij_after_reverse_move - u_ij) / kT));
+                                            p_ij_reverse = std::max(0.0, 1.0 - exp(-(u_ij_after_reverse_move - u_ij) / kT));
                                             if (p_ij_reverse == 0.0)
                                                 {
                                                 m_count_total.early_abort_no_reverse_link++;
@@ -829,17 +770,9 @@ void UpdaterVMMC<Shape>::update(uint64_t timestep)
                                         // relevant states for a non-linker pair are (x_i, x_j) and (x_i + dx, x_j) (where dx is
                                         // a generic virtual move) so the only relevant energies are beta_u_ij and beta_u_ij_after_move
 
-                                        // for the cluster cleaving version, the only thing we need to do here is update the potential link data container
-                                        // because we don't yet know if j_linkee will eventually join the cult
-                                        if (m_static_linking_mode)
-                                            {
-                                            m_potential_link_data.update(i_linker, j_linkee, (LongReal)u_ij_after_move - (LongReal)u_ij);
-                                            continue;
-                                            }
-
                                         // account for probabilities of not forming this link
                                         Scalar q_ij_forward = 1.0 - p_ij_forward;
-                                        Scalar q_ij_reverse = std::min(1.0, fast::exp(-current_beta_ficticious * (u_ij - u_ij_after_move)));
+                                        Scalar q_ij_reverse = std::min(1.0, fast::exp(-(u_ij - u_ij_after_move) / kT));
                                         if (q_ij_reverse == 0.0)
                                             {
                                             m_count_total.early_abort_forced_reverse_link++;
@@ -910,14 +843,7 @@ void UpdaterVMMC<Shape>::update(uint64_t timestep)
             m_exec_conf->msg->notice(5) << "  beta*dU = " << deltaU / kT << std::endl;
             m_exec_conf->msg->notice(5) << "  exp(-beta*dU) = " << exp(-deltaU / kT) << std::endl;
             LongReal p_acc;
-            if (m_static_linking_mode)
-                {
-                p_acc = std::min(1.0, exp((current_beta_ficticious - 1/kT) * deltaU));
-                }
-            else
-                {
-                p_acc = std::min(1.0, exp(-deltaU / kT) * p_link_probability_ratio * p_failed_link_probability_ratio);
-                }
+            p_acc = std::min(1.0, exp(-deltaU / kT) * p_link_probability_ratio * p_failed_link_probability_ratio);
             Scalar r = hoomd::UniformDistribution<Scalar>()(rng_i);
             bool accept_cluster_move = r <= p_acc;
             m_exec_conf->msg->notice(4) << "  VMMC p_acc: " << p_acc << std::endl;
@@ -1016,7 +942,6 @@ template < class Shape> void export_UpdaterVirtualMoveMonteCarlo(pybind11::modul
                             std::shared_ptr<Variant>
                             >())
         .def("getCounters", &UpdaterVMMC<Shape>::getCounters)
-        .def_property("beta_ficticious", &UpdaterVMMC<Shape>::getBetaFicticious, &UpdaterVMMC<Shape>::setBetaFicticious)
         .def_property("translation_move_probability", &UpdaterVMMC<Shape>::getTranslationMoveProbability, &UpdaterVMMC<Shape>::setTranslationMoveProbability)
         .def_property("maximum_trial_rotation", &UpdaterVMMC<Shape>::getMaximumTrialRotation, &UpdaterVMMC<Shape>::setMaximumTrialRotation)
         .def_property("maximum_trial_translation", &UpdaterVMMC<Shape>::getMaximumTrialTranslation, &UpdaterVMMC<Shape>::setMaximumTrialTranslation)
@@ -1026,9 +951,7 @@ template < class Shape> void export_UpdaterVirtualMoveMonteCarlo(pybind11::modul
         .def_property("cluster_size_limit_mode", &UpdaterVMMC<Shape>::getClusterSizeLimitMode, &UpdaterVMMC<Shape>::setClusterSizeLimitMode)
         .def_property("cluster_size_distribution_prefactor", &UpdaterVMMC<Shape>::getClusterSizeDistributionPrefactor, &UpdaterVMMC<Shape>::setClusterSizeDistributionPrefactor)
         .def_property("always_rebuild_tree", &UpdaterVMMC<Shape>::getAlwaysRebuildTree, &UpdaterVMMC<Shape>::setAlwaysRebuildTree)
-        .def_property("static_linking_mode", &UpdaterVMMC<Shape>::getStaticLinkingMode, &UpdaterVMMC<Shape>::setStaticLinkingMode)
         .def_property("instance", &UpdaterVMMC<Shape>::getInstance, &UpdaterVMMC<Shape>::setInstance)
-        .def_property("random_beta_ficticious", &UpdaterVMMC<Shape>::getRandomBetaFicticious, &UpdaterVMMC<Shape>::setRandomBetaFicticious)
     ;
     }
 
