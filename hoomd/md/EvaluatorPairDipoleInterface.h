@@ -53,6 +53,7 @@ class EvaluatorPairDipoleInterface
     struct param_type
         {
         Scalar A;
+	//Scalar kappa;
 
         DEVICE void load_shared(char*& ptr, unsigned int& available_bytes) { }
 
@@ -70,23 +71,28 @@ class EvaluatorPairDipoleInterface
         param_type()
             {
             A = 0;
+	    //kappa=0;
             }
 
         param_type(pybind11::dict v, bool managed = false)
             {
             A = v["A"].cast<Scalar>();
+            //kappa = v["kappa"].cast<Scalar>();
             }
 
         // this constructor facilitates unit testing
+        //param_type(Scalar A_val, Scalar kappa_val, bool managed = false)
         param_type(Scalar A_val, bool managed = false)
             {
             A = A_val;
+            //kappa = kappa_val;
             }
 
         pybind11::dict asDict()
             {
             pybind11::dict v;
             v["A"] = A;
+            //v["kappa"] = kappa;
             return v;
             }
 #endif
@@ -103,7 +109,7 @@ class EvaluatorPairDipoleInterface
         \param _params Per type pair parameters of this potential
     */
     DEVICE EvaluatorPairDipoleInterface(Scalar _rsq, Scalar _rcutsq, const param_type& _params)
-        : rsq(_rsq), rcutsq(_rcutsq), A(_params.A)
+        : rsq(_rsq), rcutsq(_rcutsq), A(_params.A)//, kappa(_params.kappa)
         {
         }
 
@@ -145,15 +151,18 @@ class EvaluatorPairDipoleInterface
             {
             Scalar r2inv = Scalar(1.0) / rsq;
             Scalar rinv = fast::sqrt(r2inv);
+	    //Scalar screen = fast::exp(-kappa/rinv);
 
-            pair_eng = A * r2inv * rinv;
-            force_divr = 3. * r2inv * pair_eng;
+            pair_eng = A * r2inv * rinv;// * screen;
+            //force_divr = (3. * r2inv + kappa * rinv) * pair_eng;
+            force_divr = 3. * r2inv  * pair_eng;
 
             if (energy_shift)
                 {
                 Scalar rcut2inv = Scalar(1.0) / rcutsq;
                 Scalar rcutinv = fast::sqrt(rcut2inv);
-                pair_eng -= rcutinv * rcut2inv * A;
+                //Scalar rcutscreen = fast::exp(-kappa/rcutinv);
+                pair_eng -= rcutinv * rcut2inv * A;// * rcutscreen;
                 }
 
             return true;
@@ -191,6 +200,7 @@ class EvaluatorPairDipoleInterface
     Scalar rsq;    //!< Stored rsq from the constructor
     Scalar rcutsq; //!< Stored rcutsq from the constructor
     Scalar A;      //!< A parameter extracted from the params passed to the constructor
+    //Scalar kappa;
     };
 
     } // end namespace md

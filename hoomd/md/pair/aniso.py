@@ -342,7 +342,8 @@ class RotationalCoupling(AnisotropicPair):
         super().__init__(nlist, default_r_cut, mode)
         params = TypeParameter(
             'params', 'particle_types',
-            TypeParameterDict(epsilon=float, kappa=float, take_momentum=bool, to_zero=int, len_keys=2))
+            TypeParameterDict(epsilon=float, take_momentum=bool, to_zero=int, len_keys=2))
+            #TypeParameterDict(epsilon=float, kappa=float, take_momentum=bool, to_zero=int, len_keys=2))
         self._add_typeparam(params)
         self.third_law = third_law
 

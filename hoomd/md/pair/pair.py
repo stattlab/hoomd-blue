@@ -1901,6 +1901,8 @@ class DipoleInterface(Pair):
           Gaussian width :math:`\sigma` :math:`[\mathrm{length}]`
         * ``r0`` (`float`, **required**) -
           Gaussian center :math:`r_0` :math:`[\mathrm{length}]`
+        * ``kappa`` (`float`) -
+          screen length :math:`kappa` :math:`[\mathrm{length}]`
 
     Example::
 
@@ -1921,5 +1923,6 @@ class DipoleInterface(Pair):
                  mode='none'):
         super().__init__(nlist, default_r_cut, default_r_on, mode)
         params = TypeParameter('params', 'particle_types',
-                               TypeParameterDict(A=float, len_keys=2))
+                               TypeParameterDict(A=float,len_keys=2))
+                               #TypeParameterDict(A=float,kappa=0.0,len_keys=2))
         self._add_typeparam(params)
