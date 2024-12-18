@@ -182,14 +182,14 @@ template<class Shape> class UpdaterVMMC : public Updater
         m_count_run_start = m_count_total;
         }
 
-    bool getAlwaysRebuildTree()
+    LongReal getRebuildTreeBuffer()
         {
-        return m_always_rebuild_tree;
+        return m_rebuild_tree_buffer;
         }
 
-    void setAlwaysRebuildTree(bool b)
+    void setRebuildTreeBuffer(LongReal d)
         {
-        m_always_rebuild_tree = b;
+        m_rebuild_tree_buffer = d;
         }
 
     uint16_t getInstance()
@@ -225,7 +225,7 @@ template<class Shape> class UpdaterVMMC : public Updater
     unsigned int m_maximum_allowed_cluster_size;
     LongReal m_cluster_size_distribution_prefactor;
     std::string m_cluster_size_limit_mode;
-    bool m_always_rebuild_tree;
+    LongReal m_rebuild_tree_buffer;
 
     detail::UpdateOrder m_update_order;
 
@@ -342,7 +342,14 @@ template<class Shape> void UpdaterVMMC<Shape>::update(uint64_t timestep)
         {
         min_npd = detail::min(min_npd, npd_global.z);
         }
-    LongReal min_displacement_rebuild_tree = min_npd;
+
+    if (min_npd < m_rebuild_tree_buffer)
+        {
+        m_exec_conf->msg->warning()
+            << "aabb_tree_buffer too big for simulation box, reducing aabb_tree_buffer to "
+            << min_npd << "." << std::endl;
+        }
+    LongReal min_displacement_rebuild_tree = detail::min(min_npd, m_rebuild_tree_buffer);
 
     // Shuffle the order of particles for this step
     m_update_order.resize(m_pdata->getN());
@@ -1106,7 +1113,7 @@ template<class Shape> void UpdaterVMMC<Shape>::update(uint64_t timestep)
                     }
 
                 // move the particles that are in the cluster
-                bool rebuild_tree = m_always_rebuild_tree ? true : false;
+                bool rebuild_tree = false;
                     {
                     ArrayHandle<Scalar4> h_postype(m_pdata->getPositions(),
                                                    access_location::host,
@@ -1190,6 +1197,7 @@ template<class Shape> void UpdaterVMMC<Shape>::update(uint64_t timestep)
                     }
                 }
             m_exec_conf->msg->notice(5) << std::endl;
+            m_mc->buildAABBTree();
             } // end loop over seed particles
         } // end loop over trials
     m_mc->invalidateAABBTree();
@@ -1231,9 +1239,9 @@ void export_UpdaterVirtualMoveMonteCarlo(pybind11::module& m, const std::string&
         .def_property("cluster_size_distribution_prefactor",
                       &UpdaterVMMC<Shape>::getClusterSizeDistributionPrefactor,
                       &UpdaterVMMC<Shape>::setClusterSizeDistributionPrefactor)
-        .def_property("always_rebuild_tree",
-                      &UpdaterVMMC<Shape>::getAlwaysRebuildTree,
-                      &UpdaterVMMC<Shape>::setAlwaysRebuildTree)
+        .def_property("aabb_tree_buffer",
+                      &UpdaterVMMC<Shape>::getRebuildTreeBuffer,
+                      &UpdaterVMMC<Shape>::setRebuildTreeBuffer)
         .def_property("instance",
                       &UpdaterVMMC<Shape>::getInstance,
                       &UpdaterVMMC<Shape>::setInstance);
@@ -1254,7 +1262,8 @@ inline void export_hpmc_virtual_moves_counters(pybind11::module& m)
                                &hpmc_virtual_moves_counters_t::getRotateRejectCounts)
         .def_property_readonly(
             "rotate_num_particles_in_moved_clusters",
-            &hpmc_virtual_moves_counters_t::getTotalNumParticlesInClustersRotate);
+            &hpmc_virtual_moves_counters_t::getTotalNumParticlesInClustersRotate)
+        .def_property_readonly("num_aabbtree_builds", &hpmc_virtual_moves_counters_t::getNumAABBTreeBuilds);
     }
 
     } // end namespace detail

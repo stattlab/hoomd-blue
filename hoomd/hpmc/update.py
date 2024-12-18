@@ -757,6 +757,7 @@ class VirtualClusterMoves(Updater):
 
     def __init__(
         self,
+        aabb_tree_buffer,
         trigger=1,
         attempts_per_particle=1,
         translation_move_probability=0.5,
@@ -766,7 +767,6 @@ class VirtualClusterMoves(Updater):
         maximum_allowed_cluster_size=0,
         cluster_size_distribution_prefactor=1.0,
         cluster_size_limit_mode=None,
-        always_rebuild_tree=True,
         instance=0,
     ):
         super().__init__(trigger)
@@ -776,6 +776,7 @@ class VirtualClusterMoves(Updater):
         if cluster_size_limit_mode is None:
             cluster_size_limit_mode = ""
         param_dict = ParameterDict(
+            aabb_tree_buffer=float(aabb_tree_buffer),
             attempts_per_particle=int(attempts_per_particle),
             translation_move_probability=float(translation_move_probability),
             maximum_trial_rotation=float(maximum_trial_rotation),
@@ -788,7 +789,6 @@ class VirtualClusterMoves(Updater):
                 cluster_size_distribution_prefactor
             ),
             cluster_size_limit_mode=str(cluster_size_limit_mode),
-            always_rebuild_tree=bool(always_rebuild_tree),
             instance=int(instance),
         )
         self._param_dict.update(param_dict)
@@ -876,6 +876,15 @@ class VirtualClusterMoves(Updater):
 
         """
         return self._cpp_obj.getCounters(1).rotate_num_particles_in_moved_clusters
+
+    @log(category="scalar", requires_run=True)
+    def num_aabb_tree_builds(self):
+        """int: The number of times the AABB tree has been rebuilt.
+
+        Note:
+            The counts are reset to 0 at the start of each `hoomd.Simulation.run`.
+        """
+        return self._cpp_obj.getCounters(1).num_aabbtree_builds
 
     @log(category="scalar", requires_run=False)
     def maximum_trial_rotation(self):
