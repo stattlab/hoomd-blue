@@ -1128,7 +1128,6 @@ template<class Shape> void UpdaterVMMC<Shape>::update(uint64_t timestep)
                             vec3<Scalar> new_pos = m_positions_after_move[idx];
                             h_postype.data[idx]
                                 = make_scalar4(new_pos.x, new_pos.y, new_pos.z, postype_idx.w);
-                            box.wrap(h_postype.data[idx], h_image.data[idx]);
                             vec3<Scalar> displacement
                                 = vec3<Scalar>(h_postype.data[idx])
                                   - vec3<Scalar>(h_pos_last_tree_build.data[idx]);
@@ -1149,13 +1148,16 @@ template<class Shape> void UpdaterVMMC<Shape>::update(uint64_t timestep)
                         // update pos_last_tree_build
                         for (unsigned int idx = 0; idx < m_pdata->getN(); idx++)
                             {
+                            box.wrap(h_postype.data[idx], h_image.data[idx]);
                             h_pos_last_tree_build.data[idx] = h_postype.data[idx];
                             }
+                        m_count_total.num_aabbtree_builds++;
                         }
                     else
                         {
                         for (unsigned int idx = 0; idx < m_pdata->getN(); idx++)
                             {
+                            // TODO: only loop over the m_cluster_data elements
                             if (!(m_cluster_data.m_linkers_added.find(idx)
                                   == m_cluster_data.m_linkers_added.end()))
                                 {
