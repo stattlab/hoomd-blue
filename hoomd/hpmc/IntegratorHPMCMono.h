@@ -1089,6 +1089,9 @@ void IntegratorHPMCMono<Shape>::update(uint64_t timestep)
 
                 if (shape_i.hasOrientation())
                     {
+                        if(use_rotated_boundaries){
+                            shape_i.orientation = temp_orientation_i_old;
+                        }
                     h_orientation.data[i] = quat_to_scalar4(shape_i.orientation);
                     }
 
