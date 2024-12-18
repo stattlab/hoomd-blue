@@ -867,7 +867,7 @@ class VirtualClusterMoves(Updater):
         """
         return self._cpp_obj.getCounters(1).rotate_rejection_counts
 
-    @log(category="sequence", requires_run=True)
+    @log(category="scalar", requires_run=True)
     def rotate_num_particles_in_moved_clusters(self):
         """int: Total number of particles in clusters with accepted rotate moves.
 
