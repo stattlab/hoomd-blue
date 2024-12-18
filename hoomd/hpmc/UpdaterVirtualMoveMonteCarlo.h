@@ -374,7 +374,6 @@ template<class Shape> void UpdaterVMMC<Shape>::update(uint64_t timestep)
         {
         for (unsigned int current_seed = 0; current_seed < m_pdata->getN(); current_seed++)
             {
-            m_mc->buildAABBTree();
             m_cluster_data.clear();
             m_potential_link_data.clear();
             LongReal p_link_probability_ratio = 1.0;        // 3rd product in eqn 13 from the paper
@@ -416,529 +415,361 @@ template<class Shape> void UpdaterVMMC<Shape>::update(uint64_t timestep)
             // add linker and current image rotation center to their sets
             Scalar4 postype_seed;
                 {
+                // scope code that uses h_postype and h_orientation bc mc_aabb_tree.buildAABBTree()
+                // needs access to those arrays
                 ArrayHandle<Scalar4> h_postype(m_pdata->getPositions(),
                                                access_location::host,
                                                access_mode::readwrite);
-                postype_seed = h_postype.data[seed_idx];
-                }
-            vec3<Scalar> pos_seed = vec3<Scalar>(postype_seed);
-            m_cluster_data.update_cluster(seed_idx, virtual_translate_move + pos_seed);
-
-            m_exec_conf->msg->notice(6)
-                << " VMMC virtual translation = (" << virtual_translate_move.x << ", "
-                << virtual_translate_move.y << ", " << virtual_translate_move.z << ")" << std::endl;
-
-            // loop over neighbors of cluster members to find new cluster members
-            m_exec_conf->msg->notice(5) << "VMMC seed tag: " << seed_idx << std::endl;
-            /* int3 _images = make_int3(0, 0, 0); */
-            while (m_cluster_data.m_linkers.size() > 0)
-                {
-                if (skip_to_next_seed)
-                    {
-                    break;
-                    }
-                unsigned int i_linker = m_cluster_data.m_linkers[0];
-                m_cluster_data.m_linkers.erase(m_cluster_data.m_linkers.begin());
-                vec3<Scalar> center_of_rotation = m_cluster_data.m_linker_rotation_centers[0];
-                m_cluster_data.m_linker_rotation_centers.erase(
-                    m_cluster_data.m_linker_rotation_centers.begin());
-                m_exec_conf->msg->notice(5) << "VMMC linker tag: " << i_linker << std::endl;
-
-                // get position and orientation of linker
-                Scalar4 postype_linker;
-                quat<Scalar> orientation_linker;
-                quat<Scalar> orientation_linker_after_move;
-                    {
-                    // scope the handle to postypes bc buildAABBTree needs it
-                    ArrayHandle<Scalar4> h_postype(m_pdata->getPositions(),
+                ArrayHandle<Scalar4> h_orientation(m_pdata->getOrientationArray(),
                                                    access_location::host,
                                                    access_mode::readwrite);
-                    ArrayHandle<Scalar4> h_orientation(m_pdata->getOrientationArray(),
-                                                       access_location::host,
-                                                       access_mode::readwrite);
-                    postype_linker = h_postype.data[i_linker];
-                    orientation_linker = quat<Scalar>(h_orientation.data[i_linker]);
-                    orientation_linker_after_move = virtual_translate_move * orientation_linker;
-                    }
-                vec3<Scalar> pos_linker = vec3<Scalar>(postype_linker);
-                vec3<Scalar> pos_linker_after_move_primary_image;
-                vec3<Scalar> pos_linker_after_reverse_move_primary_image;
-                if (move_type_translate)
-                    {
-                    pos_linker_after_move_primary_image = pos_linker + virtual_translate_move;
-                    pos_linker_after_reverse_move_primary_image
-                        = pos_linker - virtual_translate_move;
-                    /* box.wrap(pos_linker_after_move_primary_image, _images); */
-                    /* box.wrap(pos_linker_after_reverse_move_primary_image, _images); */
-                    }
-                else
-                    {
-                    pos_linker_after_move_primary_image
-                        = rotate(virtual_rotate_move, pos_linker - center_of_rotation)
-                          + center_of_rotation;
-                    m_exec_conf->msg->notice(5)
-                        << "center of rotation for particle " << i_linker << " = "
-                        << center_of_rotation.x << " " << center_of_rotation.y << " "
-                        << center_of_rotation.z << std::endl;
-                    pos_linker_after_reverse_move_primary_image
-                        = rotate(conj(virtual_rotate_move), pos_linker - center_of_rotation)
-                          + center_of_rotation;
-                    }
-                m_positions_after_move[i_linker] = pos_linker_after_move_primary_image;
+                postype_seed = h_postype.data[seed_idx];
+                vec3<Scalar> pos_seed = vec3<Scalar>(postype_seed);
+                m_cluster_data.update_cluster(seed_idx, virtual_translate_move + pos_seed);
 
-                int type_linker = __scalar_as_int(postype_linker.w);
-                Shape shape_linker(orientation_linker, mc_params[type_linker]);
-                Shape shape_linker_after_move(virtual_rotate_move * orientation_linker,
-                                              mc_params[type_linker]);
-                Shape shape_linker_after_reverse_move(conj(virtual_rotate_move)
-                                                          * orientation_linker,
-                                                      mc_params[type_linker]);
+                m_exec_conf->msg->notice(6)
+                    << " VMMC virtual translation = (" << virtual_translate_move.x << ", "
+                    << virtual_translate_move.y << ", " << virtual_translate_move.z << ")"
+                    << std::endl;
 
-// linker must be an active particle before and after the move
-#ifdef ENABLE_MPI
-                if (m_sysdef->isDomainDecomposed())
-                    {
-                    if (!isActive(make_scalar3(pos_linker.x, pos_linker.y, pos_linker.z),
-                                  box,
-                                  ghost_fraction)
-                        || (!isActive(make_scalar3(pos_linker_after_move_primary_image.x,
-                                                   pos_linker_after_move_primary_image.y,
-                                                   pos_linker_after_move_primary_image.z),
-                                      box,
-                                      ghost_fraction))
-
-                    )
-                        {
-                        if (move_type_translate)
-                            {
-                            m_count_total.translate_reject_count++;
-                            m_count_total.translate_reject_inactive_region++;
-                            }
-                        else
-                            {
-                            m_count_total.rotate_reject_count++;
-                            m_count_total.rotate_reject_inactive_region++;
-                            }
-                        skip_to_next_seed = true;
-                        break;
-                        }
-                    }
-#endif
-
-                // search for all particles that might touch this one
-                LongReal R_query = m_mc->getShapeCircumsphereRadius()[type_linker];
-
-                if (m_mc->hasPairInteractions())
-                    {
-                    // Extend the search to include the pair interaction r_cut
-                    // subtract minimum AABB extent from search radius
-                    R_query = std::max(R_query,
-                                       pair_energy_search_radius[type_linker] - min_core_radius);
-                    }
-                hoomd::detail::AABB aabb_linker_local_no_moves
-                    = hoomd::detail::AABB(vec3<Scalar>(0, 0, 0), R_query);
-                hoomd::detail::AABB aabb_linker_local_forward
-                    = hoomd::detail::AABB(pos_linker_after_move_primary_image - pos_linker,
-                                          R_query);
-                hoomd::detail::AABB aabb_linker_local_reverse
-                    = hoomd::detail::AABB(pos_linker_after_reverse_move_primary_image - pos_linker,
-                                          R_query);
-                hoomd::detail::AABB _aabb
-                    = hoomd::detail::merge(aabb_linker_local_no_moves, aabb_linker_local_forward);
-                hoomd::detail::AABB aabb_linker_local
-                    = hoomd::detail::merge(_aabb, aabb_linker_local_reverse);
-
-                // loop over all images
-                const unsigned int n_images = (unsigned int)image_list.size();
-                for (unsigned int current_image = 0; current_image < n_images; current_image++)
+                // loop over neighbors of cluster members to find new cluster members
+                m_exec_conf->msg->notice(5) << "VMMC seed tag: " << seed_idx << std::endl;
+                /* int3 _images = make_int3(0, 0, 0); */
+                while (m_cluster_data.m_linkers.size() > 0)
                     {
                     if (skip_to_next_seed)
                         {
                         break;
                         }
-                    // create an AABB centered on the linker particle in the current box image
-                    hoomd::detail::AABB aabb = aabb_linker_local;
-                    vec3<Scalar> pos_linker_image = pos_linker + image_list[current_image];
-                    vec3<Scalar> center_of_rotation_image
-                        = center_of_rotation + image_list[current_image];
-                    aabb.translate(pos_linker_image);
+                    unsigned int i_linker = m_cluster_data.m_linkers[0];
+                    m_cluster_data.m_linkers.erase(m_cluster_data.m_linkers.begin());
+                    vec3<Scalar> center_of_rotation = m_cluster_data.m_linker_rotation_centers[0];
+                    m_cluster_data.m_linker_rotation_centers.erase(
+                        m_cluster_data.m_linker_rotation_centers.begin());
+                    m_exec_conf->msg->notice(5) << "VMMC linker tag: " << i_linker << std::endl;
 
-                    // stackless search
-                    for (unsigned int current_node_index = 0;
-                         current_node_index < mc_aabb_tree.getNumNodes();
-                         current_node_index++)
+                    // get position and orientation of linker
+                    Scalar4 postype_linker = h_postype.data[i_linker];
+                    quat<Scalar> orientation_linker = quat<Scalar>(h_orientation.data[i_linker]);
+                    vec3<Scalar> pos_linker = vec3<Scalar>(postype_linker);
+                    vec3<Scalar> pos_linker_after_move_primary_image;
+                    vec3<Scalar> pos_linker_after_reverse_move_primary_image;
+                    if (move_type_translate)
+                        {
+                        pos_linker_after_move_primary_image = pos_linker + virtual_translate_move;
+                        pos_linker_after_reverse_move_primary_image
+                            = pos_linker - virtual_translate_move;
+                        }
+                    else
+                        {
+                        pos_linker_after_move_primary_image
+                            = rotate(virtual_rotate_move, pos_linker - center_of_rotation)
+                              + center_of_rotation;
+                        m_exec_conf->msg->notice(5)
+                            << "center of rotation for particle " << i_linker << " = "
+                            << center_of_rotation.x << " " << center_of_rotation.y << " "
+                            << center_of_rotation.z << std::endl;
+                        pos_linker_after_reverse_move_primary_image
+                            = rotate(conj(virtual_rotate_move), pos_linker - center_of_rotation)
+                              + center_of_rotation;
+                        }
+                    m_positions_after_move[i_linker] = pos_linker_after_move_primary_image;
+
+                    int type_linker = __scalar_as_int(postype_linker.w);
+                    Shape shape_linker(orientation_linker, mc_params[type_linker]);
+                    Shape shape_linker_after_move(virtual_rotate_move * orientation_linker,
+                                                  mc_params[type_linker]);
+                    Shape shape_linker_after_reverse_move(conj(virtual_rotate_move)
+                                                              * orientation_linker,
+                                                          mc_params[type_linker]);
+
+// linker must be an active particle before and after the move
+#ifdef ENABLE_MPI
+                    if (m_sysdef->isDomainDecomposed())
+                        {
+                        if (!isActive(make_scalar3(pos_linker.x, pos_linker.y, pos_linker.z),
+                                      box,
+                                      ghost_fraction)
+                            || (!isActive(make_scalar3(pos_linker_after_move_primary_image.x,
+                                                       pos_linker_after_move_primary_image.y,
+                                                       pos_linker_after_move_primary_image.z),
+                                          box,
+                                          ghost_fraction))
+
+                        )
+                            {
+                            if (move_type_translate)
+                                {
+                                m_count_total.translate_reject_count++;
+                                m_count_total.translate_reject_inactive_region++;
+                                }
+                            else
+                                {
+                                m_count_total.rotate_reject_count++;
+                                m_count_total.rotate_reject_inactive_region++;
+                                }
+                            skip_to_next_seed = true;
+                            break;
+                            }
+                        }
+#endif
+
+                    // search for all particles that might touch this one
+                    LongReal R_query = m_mc->getShapeCircumsphereRadius()[type_linker];
+
+                    if (m_mc->hasPairInteractions())
+                        {
+                        // Extend the search to include the pair interaction r_cut
+                        // subtract minimum AABB extent from search radius
+                        R_query
+                            = std::max(R_query,
+                                       pair_energy_search_radius[type_linker] - min_core_radius);
+                        }
+                    hoomd::detail::AABB aabb_linker_local_no_moves
+                        = hoomd::detail::AABB(vec3<Scalar>(0, 0, 0), R_query);
+                    hoomd::detail::AABB aabb_linker_local_forward
+                        = hoomd::detail::AABB(pos_linker_after_move_primary_image - pos_linker,
+                                              R_query);
+                    hoomd::detail::AABB aabb_linker_local_reverse = hoomd::detail::AABB(
+                        pos_linker_after_reverse_move_primary_image - pos_linker,
+                        R_query);
+                    hoomd::detail::AABB _aabb = hoomd::detail::merge(aabb_linker_local_no_moves,
+                                                                     aabb_linker_local_forward);
+                    hoomd::detail::AABB aabb_linker_local
+                        = hoomd::detail::merge(_aabb, aabb_linker_local_reverse);
+
+                    // loop over all images
+                    const unsigned int n_images = (unsigned int)image_list.size();
+                    for (unsigned int current_image = 0; current_image < n_images; current_image++)
                         {
                         if (skip_to_next_seed)
                             {
                             break;
                             }
-                        if (aabb.overlaps(mc_aabb_tree.getNodeAABB(current_node_index)))
+                        // create an AABB centered on the linker particle in the current box image
+                        hoomd::detail::AABB aabb = aabb_linker_local;
+                        vec3<Scalar> pos_linker_image = pos_linker + image_list[current_image];
+                        vec3<Scalar> center_of_rotation_image
+                            = center_of_rotation + image_list[current_image];
+                        aabb.translate(pos_linker_image);
+
+                        // stackless search
+                        for (unsigned int current_node_index = 0;
+                             current_node_index < mc_aabb_tree.getNumNodes();
+                             current_node_index++)
                             {
-                            if (mc_aabb_tree.isNodeLeaf(current_node_index))
+                            if (skip_to_next_seed)
                                 {
-                                for (unsigned int current_linkee = 0;
-                                     current_linkee
-                                     < mc_aabb_tree.getNodeNumParticles(current_node_index);
-                                     current_linkee++)
+                                break;
+                                }
+                            if (aabb.overlaps(mc_aabb_tree.getNodeAABB(current_node_index)))
+                                {
+                                if (mc_aabb_tree.isNodeLeaf(current_node_index))
                                     {
-                                    if (skip_to_next_seed)
+                                    for (unsigned int current_linkee = 0;
+                                         current_linkee
+                                         < mc_aabb_tree.getNodeNumParticles(current_node_index);
+                                         current_linkee++)
                                         {
-                                        break;
-                                        }
-                                    m_exec_conf->msg->notice(6)
-                                        << "linker_set_size = " << m_cluster_data.m_linkers.size()
-                                        << std::endl;
-                                    unsigned int j_linkee
-                                        = mc_aabb_tree.getNodeParticle(current_node_index,
-                                                                       current_linkee);
-                                    if (!(m_cluster_data.m_linkers_added.find(j_linkee)
-                                          == m_cluster_data.m_linkers_added.end()))
-                                        {
-                                        // j already in cluster
-                                        continue;
-                                        }
-                                    Scalar4 postype_linkee;
-                                        {
-                                        // scope the handle to postypes bc buildAABBTree needs it
-                                        ArrayHandle<Scalar4> h_postype(m_pdata->getPositions(),
-                                                                       access_location::host,
-                                                                       access_mode::readwrite);
-                                        postype_linkee = h_postype.data[j_linkee];
-                                        }
-                                    quat<LongReal> orientation_linkee;
-                                        {
-                                        ArrayHandle<Scalar4> h_orientation(
-                                            m_pdata->getOrientationArray(),
-                                            access_location::host,
-                                            access_mode::readwrite);
-                                        orientation_linkee
+                                        if (skip_to_next_seed)
+                                            {
+                                            break;
+                                            }
+                                        m_exec_conf->msg->notice(6)
+                                            << "linker_set_size = "
+                                            << m_cluster_data.m_linkers.size() << std::endl;
+                                        unsigned int j_linkee
+                                            = mc_aabb_tree.getNodeParticle(current_node_index,
+                                                                           current_linkee);
+                                        if (!(m_cluster_data.m_linkers_added.find(j_linkee)
+                                              == m_cluster_data.m_linkers_added.end()))
+                                            {
+                                            // j already in cluster
+                                            continue;
+                                            }
+                                        Scalar4 postype_linkee = h_postype.data[j_linkee];
+                                        quat<LongReal> orientation_linkee
                                             = quat<Scalar>(h_orientation.data[j_linkee]);
-                                        }
 
-                                    unsigned int type_linkee = __scalar_as_int(postype_linkee.w);
-                                    Shape shape_linkee(orientation_linkee, mc_params[type_linkee]);
-                                    LongReal max_overlap_distance
-                                        = m_mc->getShapeCircumsphereRadius()[type_linker]
-                                          + m_mc->getShapeCircumsphereRadius()[type_linkee];
+                                        unsigned int type_linkee
+                                            = __scalar_as_int(postype_linkee.w);
+                                        Shape shape_linkee(orientation_linkee,
+                                                           mc_params[type_linkee]);
+                                        LongReal max_overlap_distance
+                                            = m_mc->getShapeCircumsphereRadius()[type_linker]
+                                              + m_mc->getShapeCircumsphereRadius()[type_linkee];
 
-                                    // at this point we test for a link between the linker and
-                                    // linkee add j to the cluster with probability p_ij = 1 -
-                                    // exp(E_C - E_I) (hard overlap makes E_I go to infinity and
-                                    // p_ij = 1) so we need E_C (current pair energy) and E_I (pair
-                                    // energy after applying virtual move to i) we only need E_C if
-                                    // E_I, so we can check for overlaps first
+                                        // at this point we test for a link between the linker and
+                                        // linkee add j to the cluster with probability p_ij = 1 -
+                                        // exp(E_C - E_I) (hard overlap makes E_I go to infinity and
+                                        // p_ij = 1) so we need E_C (current pair energy) and E_I
+                                        // (pair energy after applying virtual move to i) we only
+                                        // need E_C if E_I, so we can check for overlaps first
 
-                                    // pair separation in current real (i.e. non-virtual)
-                                    // configuration
-                                    vec3<Scalar> r_linker_linkee
-                                        = vec3<Scalar>(postype_linkee) - pos_linker_image;
-                                    LongReal r_squared = dot(r_linker_linkee, r_linker_linkee);
+                                        // pair separation in current real (i.e. non-virtual)
+                                        // configuration
+                                        vec3<Scalar> r_linker_linkee
+                                            = vec3<Scalar>(postype_linkee) - pos_linker_image;
+                                        LongReal r_squared = dot(r_linker_linkee, r_linker_linkee);
 
-                                    // pair separation after applying virtual move to linker (i)
-                                    vec3<Scalar> r_linker_linkee_after_forward_move_of_linker
-                                        = vec3<Scalar>(postype_linkee)
-                                          - (pos_linker_after_move_primary_image
-                                             + image_list[current_image]);
-                                    LongReal r_squared_after_forward_move_of_linker
-                                        = dot(r_linker_linkee_after_forward_move_of_linker,
-                                              r_linker_linkee_after_forward_move_of_linker);
+                                        // pair separation after applying virtual move to linker (i)
+                                        vec3<Scalar> r_linker_linkee_after_forward_move_of_linker
+                                            = vec3<Scalar>(postype_linkee)
+                                              - (pos_linker_after_move_primary_image
+                                                 + image_list[current_image]);
+                                        LongReal r_squared_after_forward_move_of_linker
+                                            = dot(r_linker_linkee_after_forward_move_of_linker,
+                                                  r_linker_linkee_after_forward_move_of_linker);
 
-                                    // pair separation after applying reverse virtual move to linker
-                                    // (i)
-                                    vec3<Scalar> r_linker_linkee_after_reverse_move_of_linker
-                                        = vec3<Scalar>(postype_linkee)
-                                          - (pos_linker_after_reverse_move_primary_image
-                                             + image_list[current_image]);
-                                    LongReal r_squared_after_reverse_move_of_linker
-                                        = dot(r_linker_linkee_after_reverse_move_of_linker,
-                                              r_linker_linkee_after_reverse_move_of_linker);
+                                        // pair separation after applying reverse virtual move to
+                                        // linker (i)
+                                        vec3<Scalar> r_linker_linkee_after_reverse_move_of_linker
+                                            = vec3<Scalar>(postype_linkee)
+                                              - (pos_linker_after_reverse_move_primary_image
+                                                 + image_list[current_image]);
+                                        LongReal r_squared_after_reverse_move_of_linker
+                                            = dot(r_linker_linkee_after_reverse_move_of_linker,
+                                                  r_linker_linkee_after_reverse_move_of_linker);
 
-                                    m_exec_conf->msg->notice(5)
-                                        << "Test for links: pair " << i_linker << " and "
-                                        << j_linkee << std::endl;
-                                    m_exec_conf->msg->notice(5)
-                                        << "  Checking for overlap after moving linker between "
-                                           "pair "
-                                        << i_linker << " and " << j_linkee << std::endl;
-                                    bool overlap_after_forward_move_of_linker
-                                        = h_overlaps.data[m_mc->getOverlapIndexer()(type_linker,
-                                                                                    type_linkee)]
-                                          && r_squared_after_forward_move_of_linker
-                                                 < max_overlap_distance * max_overlap_distance
-                                          && test_overlap(
-                                              r_linker_linkee_after_forward_move_of_linker,
-                                              shape_linker_after_move,
-                                              shape_linkee,
-                                              counters.overlap_err_count);
-                                    if (overlap_after_forward_move_of_linker)
-                                        {
                                         m_exec_conf->msg->notice(5)
-                                            << "    Overlap found between " << i_linker << " and "
-                                            << j_linkee << " -> link formed!" << std::endl;
-
-                                        // add linkee to cluster if not in there already and after
-                                        // checking maximum cluster_size
-                                        if (m_cluster_size_limit_mode == "deterministic"
-                                            && m_cluster_data.current_cluster_size()
-                                                   == maximum_allowed_cluster_size)
-                                            {
-                                            // abort the move.
-                                            if (move_type_translate)
-                                                {
-                                                m_count_total.translate_reject_count++;
-                                                m_count_total.translate_reject_oversized_cluster++;
-                                                }
-                                            else
-                                                {
-                                                m_count_total.rotate_reject_count++;
-                                                m_count_total.rotate_reject_oversized_cluster++;
-                                                }
-                                            skip_to_next_seed = true;
-                                            break;
-                                            }
-                                        else if (m_cluster_size_limit_mode == "probabilistic"
-                                                 && hoomd::UniformDistribution<Scalar>()(rng_i)
-                                                        > m_cluster_size_distribution_prefactor
-                                                              / ((LongReal)m_cluster_data
-                                                                     .current_cluster_size()
-                                                                 + 1))
-                                            {
-                                            // abort the move.
-                                            if (move_type_translate)
-                                                {
-                                                m_count_total.translate_reject_count++;
-                                                m_count_total.translate_reject_oversized_cluster++;
-                                                }
-                                            else
-                                                {
-                                                m_count_total.rotate_reject_count++;
-                                                m_count_total.rotate_reject_oversized_cluster++;
-                                                }
-                                            skip_to_next_seed = true;
-                                            break;
-                                            }
-                                        else
-                                            {
-                                            m_cluster_data.update_cluster(j_linkee,
-                                                                          center_of_rotation_image);
-                                            }
-
-                                        // account for probability of forming this link: denominator
-                                        // of p_link_probability_ratio *= 1
-                                        p_link_probability_ratio /= 1.0;
-
-                                        // account for probability of forming this link on the
-                                        // reverse move: numerator of p_link_probability_ratio
-                                        // p_ij_reverse gets multiplied by p_ij_reverse if overlap
-                                        // after reverse move of i, p_ij_reverse = 1, otherwise we
-                                        // look at energies
-                                        Scalar p_ij_reverse;
-                                        bool overlap_after_reverse_move_of_linker
+                                            << "Test for links: pair " << i_linker << " and "
+                                            << j_linkee << std::endl;
+                                        m_exec_conf->msg->notice(5)
+                                            << "  Checking for overlap after moving linker between "
+                                               "pair "
+                                            << i_linker << " and " << j_linkee << std::endl;
+                                        bool overlap_after_forward_move_of_linker
                                             = h_overlaps
                                                   .data[m_mc->getOverlapIndexer()(type_linker,
                                                                                   type_linkee)]
-                                              && r_squared_after_reverse_move_of_linker
+                                              && r_squared_after_forward_move_of_linker
                                                      < max_overlap_distance * max_overlap_distance
                                               && test_overlap(
-                                                  r_linker_linkee_after_reverse_move_of_linker,
-                                                  shape_linker_after_reverse_move,
+                                                  r_linker_linkee_after_forward_move_of_linker,
+                                                  shape_linker_after_move,
                                                   shape_linkee,
                                                   counters.overlap_err_count);
-                                        if (overlap_after_reverse_move_of_linker)
+                                        if (overlap_after_forward_move_of_linker)
                                             {
-                                            p_ij_reverse = 1.0;
                                             m_exec_conf->msg->notice(5)
-                                                << "  p_ij_reverse = " << p_ij_reverse
-                                                << " by overlap on reverse move of linker."
+                                                << "    Overlap found between " << i_linker
+                                                << " and " << j_linkee << " -> link formed!"
                                                 << std::endl;
-                                            }
-                                        else
-                                            {
-                                            double u_ij = m_mc->computeOnePairEnergy(
-                                                r_squared,
-                                                r_linker_linkee,
-                                                type_linker,
-                                                shape_linker.orientation,
-                                                h_diameter.data[i_linker],
-                                                h_charge.data[i_linker],
-                                                type_linkee,
-                                                shape_linkee.orientation,
-                                                h_diameter.data[j_linkee],
-                                                h_charge.data[j_linkee]);
-                                            double u_ij_after_reverse_move_of_linker
-                                                = m_mc->computeOnePairEnergy(
-                                                    r_squared_after_reverse_move_of_linker,
-                                                    r_linker_linkee_after_reverse_move_of_linker,
+
+                                            // add linkee to cluster if not in there already and
+                                            // after checking maximum cluster_size
+                                            if (m_cluster_size_limit_mode == "deterministic"
+                                                && m_cluster_data.current_cluster_size()
+                                                       == maximum_allowed_cluster_size)
+                                                {
+                                                // abort the move.
+                                                if (move_type_translate)
+                                                    {
+                                                    m_count_total.translate_reject_count++;
+                                                    m_count_total
+                                                        .translate_reject_oversized_cluster++;
+                                                    }
+                                                else
+                                                    {
+                                                    m_count_total.rotate_reject_count++;
+                                                    m_count_total.rotate_reject_oversized_cluster++;
+                                                    }
+                                                skip_to_next_seed = true;
+                                                break;
+                                                }
+                                            else if (m_cluster_size_limit_mode == "probabilistic"
+                                                     && hoomd::UniformDistribution<Scalar>()(rng_i)
+                                                            > m_cluster_size_distribution_prefactor
+                                                                  / ((LongReal)m_cluster_data
+                                                                         .current_cluster_size()
+                                                                     + 1))
+                                                {
+                                                // abort the move.
+                                                if (move_type_translate)
+                                                    {
+                                                    m_count_total.translate_reject_count++;
+                                                    m_count_total
+                                                        .translate_reject_oversized_cluster++;
+                                                    }
+                                                else
+                                                    {
+                                                    m_count_total.rotate_reject_count++;
+                                                    m_count_total.rotate_reject_oversized_cluster++;
+                                                    }
+                                                skip_to_next_seed = true;
+                                                break;
+                                                }
+                                            else
+                                                {
+                                                m_cluster_data.update_cluster(
+                                                    j_linkee,
+                                                    center_of_rotation_image);
+                                                }
+
+                                            // account for probability of forming this link:
+                                            // denominator of p_link_probability_ratio *= 1
+                                            p_link_probability_ratio /= 1.0;
+
+                                            // account for probability of forming this link on the
+                                            // reverse move: numerator of p_link_probability_ratio
+                                            // p_ij_reverse gets multiplied by p_ij_reverse if
+                                            // overlap after reverse move of i, p_ij_reverse = 1,
+                                            // otherwise we look at energies
+                                            Scalar p_ij_reverse;
+                                            bool overlap_after_reverse_move_of_linker
+                                                = h_overlaps
+                                                      .data[m_mc->getOverlapIndexer()(type_linker,
+                                                                                      type_linkee)]
+                                                  && r_squared_after_reverse_move_of_linker
+                                                         < max_overlap_distance
+                                                               * max_overlap_distance
+                                                  && test_overlap(
+                                                      r_linker_linkee_after_reverse_move_of_linker,
+                                                      shape_linker_after_reverse_move,
+                                                      shape_linkee,
+                                                      counters.overlap_err_count);
+                                            if (overlap_after_reverse_move_of_linker)
+                                                {
+                                                p_ij_reverse = 1.0;
+                                                m_exec_conf->msg->notice(5)
+                                                    << "  p_ij_reverse = " << p_ij_reverse
+                                                    << " by overlap on reverse move of linker."
+                                                    << std::endl;
+                                                }
+                                            else
+                                                {
+                                                double u_ij = m_mc->computeOnePairEnergy(
+                                                    r_squared,
+                                                    r_linker_linkee,
                                                     type_linker,
-                                                    shape_linker_after_reverse_move.orientation,
+                                                    shape_linker.orientation,
                                                     h_diameter.data[i_linker],
                                                     h_charge.data[i_linker],
                                                     type_linkee,
                                                     shape_linkee.orientation,
                                                     h_diameter.data[j_linkee],
                                                     h_charge.data[j_linkee]);
-                                            p_ij_reverse = std::max(
-                                                0.0,
-                                                1
-                                                    - exp(
-                                                        -(u_ij_after_reverse_move_of_linker - u_ij)
-                                                        / kT));
-                                            }
-                                        if (p_ij_reverse == 0.0)
-                                            {
-                                            if (move_type_translate)
-                                                {
-                                                m_count_total.translate_reject_count++;
-                                                m_count_total
-                                                    .translate_reject_p_reverse_link_zero++;
+                                                double u_ij_after_reverse_move_of_linker
+                                                    = m_mc->computeOnePairEnergy(
+                                                        r_squared_after_reverse_move_of_linker,
+                                                        r_linker_linkee_after_reverse_move_of_linker,
+                                                        type_linker,
+                                                        shape_linker_after_reverse_move.orientation,
+                                                        h_diameter.data[i_linker],
+                                                        h_charge.data[i_linker],
+                                                        type_linkee,
+                                                        shape_linkee.orientation,
+                                                        h_diameter.data[j_linkee],
+                                                        h_charge.data[j_linkee]);
+                                                p_ij_reverse = std::max(
+                                                    0.0,
+                                                    1
+                                                        - exp(-(u_ij_after_reverse_move_of_linker
+                                                                - u_ij)
+                                                              / kT));
                                                 }
-                                            else
-                                                {
-                                                m_count_total.rotate_reject_count++;
-                                                m_count_total.rotate_reject_p_reverse_link_zero++;
-                                                }
-                                            skip_to_next_seed = true;
-                                            break; // break loop over linkees
-                                            }
-                                        p_link_probability_ratio *= p_ij_reverse;
-                                        continue; // to next linkee
-                                        } // end if (overlap_after_forward_move_of_linker)
-                                    m_exec_conf->msg->notice(5)
-                                        << "    No overlap after moving linker between " << i_linker
-                                        << " and " << j_linkee << std::endl;
-
-                                    // if no overlap, we have to calculate u_ij and u_ij_after_move
-                                    // to determine p_ij
-                                    double u_ij
-                                        = m_mc->computeOnePairEnergy(r_squared,
-                                                                     r_linker_linkee,
-                                                                     type_linker,
-                                                                     shape_linker.orientation,
-                                                                     h_diameter.data[i_linker],
-                                                                     h_charge.data[i_linker],
-                                                                     type_linkee,
-                                                                     shape_linkee.orientation,
-                                                                     h_diameter.data[j_linkee],
-                                                                     h_charge.data[j_linkee]);
-                                    double u_ij_after_move = m_mc->computeOnePairEnergy(
-                                        r_squared_after_forward_move_of_linker,
-                                        r_linker_linkee_after_forward_move_of_linker,
-                                        type_linker,
-                                        shape_linker_after_move.orientation,
-                                        h_diameter.data[i_linker],
-                                        h_charge.data[i_linker],
-                                        type_linkee,
-                                        shape_linkee.orientation,
-                                        h_diameter.data[j_linkee],
-                                        h_charge.data[j_linkee]);
-                                    if (u_ij_after_move == 0.0 && u_ij == 0.0)
-                                        {
-                                        // non-interacting -> non-interacting; continue to next
-                                        // linkee
-                                        continue; // to next linkee
-                                        }
-
-                                    LongReal p_ij_forward;
-                                    p_ij_forward
-                                        = std::max(0.0, 1.0 - exp(-(u_ij_after_move - u_ij) / kT));
-                                    Scalar r = hoomd::UniformDistribution<Scalar>()(rng_i);
-                                    bool link_formed = r < p_ij_forward;
-                                    if (link_formed)
-                                        {
-                                        m_exec_conf->msg->notice(5)
-                                            << "  p_ij_forward = " << p_ij_forward << " > " << r
-                                            << " -> link_formed!" << std::endl;
-                                        if (m_cluster_size_limit_mode == "deterministic"
-                                            && m_cluster_data.current_cluster_size()
-                                                   == maximum_allowed_cluster_size)
-                                            {
-                                            // abort the move.
-                                            if (move_type_translate)
-                                                {
-                                                m_count_total.translate_reject_count++;
-                                                m_count_total.translate_reject_oversized_cluster++;
-                                                }
-                                            else
-                                                {
-                                                m_count_total.rotate_reject_count++;
-                                                m_count_total.rotate_reject_oversized_cluster++;
-                                                }
-                                            skip_to_next_seed = true;
-                                            break;
-                                            }
-                                        else if (m_cluster_size_limit_mode == "probabilistic"
-                                                 && hoomd::UniformDistribution<Scalar>()(rng_i)
-                                                        > m_cluster_size_distribution_prefactor
-                                                              / ((LongReal)m_cluster_data
-                                                                     .current_cluster_size()
-                                                                 + 1))
-                                            {
-                                            // abort the move.
-                                            if (move_type_translate)
-                                                {
-                                                m_count_total.translate_reject_count++;
-                                                m_count_total.translate_reject_oversized_cluster++;
-                                                }
-                                            else
-                                                {
-                                                m_count_total.rotate_reject_count++;
-                                                m_count_total.rotate_reject_oversized_cluster++;
-                                                }
-                                            skip_to_next_seed = true;
-                                            break;
-                                            }
-                                        else
-                                            {
-                                            m_cluster_data.update_cluster(j_linkee,
-                                                                          center_of_rotation_image);
-                                            }
-                                        // numerator of p_link_probability_ratio gets multiplied by
-                                        // p_ij_reverse
-                                        Scalar p_ij_reverse;
-                                        bool overlap_after_reverse_move
-                                            = h_overlaps
-                                                  .data[m_mc->getOverlapIndexer()(type_linker,
-                                                                                  type_linkee)]
-                                              && r_squared_after_reverse_move_of_linker
-                                                     < max_overlap_distance * max_overlap_distance
-                                              && test_overlap(
-                                                  r_linker_linkee_after_reverse_move_of_linker,
-                                                  shape_linker_after_reverse_move,
-                                                  shape_linkee,
-                                                  counters.overlap_err_count);
-                                        if (overlap_after_reverse_move)
-                                            {
-                                            p_ij_reverse = 1.0;
-                                            m_exec_conf->msg->notice(5)
-                                                << "  Overlap found on reverse move -> "
-                                                   "p_ij_reverse = "
-                                                << p_ij_reverse << std::endl;
-                                            }
-                                        else
-                                            {
-                                            double u_ij_after_reverse_move
-                                                = m_mc->computeOnePairEnergy(
-                                                    r_squared_after_reverse_move_of_linker,
-                                                    r_linker_linkee_after_reverse_move_of_linker,
-                                                    type_linker,
-                                                    shape_linker_after_reverse_move.orientation,
-                                                    h_diameter.data[i_linker],
-                                                    h_charge.data[i_linker],
-                                                    type_linkee,
-                                                    shape_linkee.orientation,
-                                                    h_diameter.data[j_linkee],
-                                                    h_charge.data[j_linkee]);
-                                            m_exec_conf->msg->notice(5)
-                                                << "  u_ij_after_reverse_move = " << u_ij_after_move
-                                                << std::endl;
-                                            p_ij_reverse = std::max(
-                                                0.0,
-                                                1.0 - exp(-(u_ij_after_reverse_move - u_ij) / kT));
                                             if (p_ij_reverse == 0.0)
                                                 {
-                                                m_exec_conf->msg->notice(5)
-                                                    << "  p_ij_reverse = 0; aborting move."
-                                                    << std::endl;
                                                 if (move_type_translate)
                                                     {
                                                     m_count_total.translate_reject_count++;
@@ -952,95 +783,261 @@ template<class Shape> void UpdaterVMMC<Shape>::update(uint64_t timestep)
                                                         .rotate_reject_p_reverse_link_zero++;
                                                     }
                                                 skip_to_next_seed = true;
-                                                break;
+                                                break; // break loop over linkees
                                                 }
-                                            m_exec_conf->msg->notice(5)
-                                                << "  p_ij_reverse = " << p_ij_reverse << std::endl;
-                                            }
-                                        p_link_probability_ratio *= p_ij_reverse / p_ij_forward;
-                                        continue;
-                                        }
-                                    else // no link formed
-                                        {
+                                            p_link_probability_ratio *= p_ij_reverse;
+                                            continue; // to next linkee
+                                            } // end if (overlap_after_forward_move_of_linker)
                                         m_exec_conf->msg->notice(5)
-                                            << "  p_ij_forward = " << p_ij_forward
-                                            << "; random number = " << r << " -> no link_formed"
-                                            << std::endl;
-                                        // if j ultimately ends up in the cluster, the dU
-                                        // contribution is 0 if j ultimately does not end up in the
-                                        // cluster, we do have to account for the energy change, so
-                                        // dU_forward += dU either way, we still must account for
-                                        // the probability of not forming that link, so the
-                                        // denominator of p_failed_link_probability_ratio gets
-                                        // multiplied by 1 - p_ij_forward = 1 -
-                                        // (1 - exp(-beta * (beta_u_ij_after_move - beta_u_ij))) =
-                                        // exp(-beta * (beta_u_ij_after_move - beta_u_ij)) and the
-                                        // numerator of p_failed_link_probability_ratio gets
-                                        // multiplied by 1 - p_ij_reverse 1 - p_ij_reverse = 1 - (1
-                                        // - exp(-beta * (beta_u_ij - beta_u_ij_after_move))) =
-                                        // exp(-beta * (beta_u_ij - beta_u_ij_after_move)) which
-                                        // means no matter what we only need beta_u_ij (already
-                                        // have) and beta_u_ij_after_move (also already have)
-                                        // intuitively it makes sense that we don't need
-                                        // beta_u_ij_after_reverse move because the two relevant
-                                        // states for a non-linker pair are (x_i, x_j) and (x_i +
-                                        // dx, x_j) (where dx is a generic virtual move) so the only
-                                        // relevant energies are beta_u_ij and beta_u_ij_after_move
+                                            << "    No overlap after moving linker between "
+                                            << i_linker << " and " << j_linkee << std::endl;
 
-                                        // account for probabilities of not forming this link
-                                        Scalar q_ij_forward = 1.0 - p_ij_forward;
-                                        Scalar q_ij_reverse
-                                            = std::min(1.0,
-                                                       fast::exp(-(u_ij - u_ij_after_move) / kT));
-                                        if (q_ij_reverse == 0.0)
+                                        // if no overlap, we have to calculate u_ij and
+                                        // u_ij_after_move to determine p_ij
+                                        double u_ij
+                                            = m_mc->computeOnePairEnergy(r_squared,
+                                                                         r_linker_linkee,
+                                                                         type_linker,
+                                                                         shape_linker.orientation,
+                                                                         h_diameter.data[i_linker],
+                                                                         h_charge.data[i_linker],
+                                                                         type_linkee,
+                                                                         shape_linkee.orientation,
+                                                                         h_diameter.data[j_linkee],
+                                                                         h_charge.data[j_linkee]);
+                                        double u_ij_after_move = m_mc->computeOnePairEnergy(
+                                            r_squared_after_forward_move_of_linker,
+                                            r_linker_linkee_after_forward_move_of_linker,
+                                            type_linker,
+                                            shape_linker_after_move.orientation,
+                                            h_diameter.data[i_linker],
+                                            h_charge.data[i_linker],
+                                            type_linkee,
+                                            shape_linkee.orientation,
+                                            h_diameter.data[j_linkee],
+                                            h_charge.data[j_linkee]);
+                                        if (u_ij_after_move == 0.0 && u_ij == 0.0)
+                                            {
+                                            // non-interacting -> non-interacting; continue to next
+                                            // linkee
+                                            continue; // to next linkee
+                                            }
+
+                                        LongReal p_ij_forward;
+                                        p_ij_forward
+                                            = std::max(0.0,
+                                                       1.0 - exp(-(u_ij_after_move - u_ij) / kT));
+                                        Scalar r = hoomd::UniformDistribution<Scalar>()(rng_i);
+                                        bool link_formed = r < p_ij_forward;
+                                        if (link_formed)
                                             {
                                             m_exec_conf->msg->notice(5)
-                                                << "  q_ij_reverse = 0; aborting move."
-                                                << std::endl;
-                                            skip_to_next_seed = true;
-                                            if (move_type_translate)
+                                                << "  p_ij_forward = " << p_ij_forward << " > " << r
+                                                << " -> link_formed!" << std::endl;
+                                            if (m_cluster_size_limit_mode == "deterministic"
+                                                && m_cluster_data.current_cluster_size()
+                                                       == maximum_allowed_cluster_size)
                                                 {
-                                                m_count_total.translate_reject_count++;
-                                                m_count_total
-                                                    .translate_reject_q_reverse_link_zero++;
+                                                // abort the move.
+                                                if (move_type_translate)
+                                                    {
+                                                    m_count_total.translate_reject_count++;
+                                                    m_count_total
+                                                        .translate_reject_oversized_cluster++;
+                                                    }
+                                                else
+                                                    {
+                                                    m_count_total.rotate_reject_count++;
+                                                    m_count_total.rotate_reject_oversized_cluster++;
+                                                    }
+                                                skip_to_next_seed = true;
+                                                break;
+                                                }
+                                            else if (m_cluster_size_limit_mode == "probabilistic"
+                                                     && hoomd::UniformDistribution<Scalar>()(rng_i)
+                                                            > m_cluster_size_distribution_prefactor
+                                                                  / ((LongReal)m_cluster_data
+                                                                         .current_cluster_size()
+                                                                     + 1))
+                                                {
+                                                // abort the move.
+                                                if (move_type_translate)
+                                                    {
+                                                    m_count_total.translate_reject_count++;
+                                                    m_count_total
+                                                        .translate_reject_oversized_cluster++;
+                                                    }
+                                                else
+                                                    {
+                                                    m_count_total.rotate_reject_count++;
+                                                    m_count_total.rotate_reject_oversized_cluster++;
+                                                    }
+                                                skip_to_next_seed = true;
+                                                break;
                                                 }
                                             else
                                                 {
-                                                m_count_total.rotate_reject_count++;
-                                                m_count_total.rotate_reject_q_reverse_link_zero++;
+                                                m_cluster_data.update_cluster(
+                                                    j_linkee,
+                                                    center_of_rotation_image);
                                                 }
-                                            break;
+                                            // numerator of p_link_probability_ratio gets multiplied
+                                            // by p_ij_reverse
+                                            Scalar p_ij_reverse;
+                                            bool overlap_after_reverse_move
+                                                = h_overlaps
+                                                      .data[m_mc->getOverlapIndexer()(type_linker,
+                                                                                      type_linkee)]
+                                                  && r_squared_after_reverse_move_of_linker
+                                                         < max_overlap_distance
+                                                               * max_overlap_distance
+                                                  && test_overlap(
+                                                      r_linker_linkee_after_reverse_move_of_linker,
+                                                      shape_linker_after_reverse_move,
+                                                      shape_linkee,
+                                                      counters.overlap_err_count);
+                                            if (overlap_after_reverse_move)
+                                                {
+                                                p_ij_reverse = 1.0;
+                                                m_exec_conf->msg->notice(5)
+                                                    << "  Overlap found on reverse move -> "
+                                                       "p_ij_reverse = "
+                                                    << p_ij_reverse << std::endl;
+                                                }
+                                            else
+                                                {
+                                                double u_ij_after_reverse_move
+                                                    = m_mc->computeOnePairEnergy(
+                                                        r_squared_after_reverse_move_of_linker,
+                                                        r_linker_linkee_after_reverse_move_of_linker,
+                                                        type_linker,
+                                                        shape_linker_after_reverse_move.orientation,
+                                                        h_diameter.data[i_linker],
+                                                        h_charge.data[i_linker],
+                                                        type_linkee,
+                                                        shape_linkee.orientation,
+                                                        h_diameter.data[j_linkee],
+                                                        h_charge.data[j_linkee]);
+                                                m_exec_conf->msg->notice(5)
+                                                    << "  u_ij_after_reverse_move = "
+                                                    << u_ij_after_move << std::endl;
+                                                p_ij_reverse = std::max(
+                                                    0.0,
+                                                    1.0
+                                                        - exp(-(u_ij_after_reverse_move - u_ij)
+                                                              / kT));
+                                                if (p_ij_reverse == 0.0)
+                                                    {
+                                                    m_exec_conf->msg->notice(5)
+                                                        << "  p_ij_reverse = 0; aborting move."
+                                                        << std::endl;
+                                                    if (move_type_translate)
+                                                        {
+                                                        m_count_total.translate_reject_count++;
+                                                        m_count_total
+                                                            .translate_reject_p_reverse_link_zero++;
+                                                        }
+                                                    else
+                                                        {
+                                                        m_count_total.rotate_reject_count++;
+                                                        m_count_total
+                                                            .rotate_reject_p_reverse_link_zero++;
+                                                        }
+                                                    skip_to_next_seed = true;
+                                                    break;
+                                                    }
+                                                m_exec_conf->msg->notice(5)
+                                                    << "  p_ij_reverse = " << p_ij_reverse
+                                                    << std::endl;
+                                                }
+                                            p_link_probability_ratio *= p_ij_reverse / p_ij_forward;
+                                            continue;
                                             }
-                                        m_exec_conf->msg->notice(5)
-                                            << "  q_ij_forward = " << q_ij_forward << std::endl;
-                                        m_exec_conf->msg->notice(5)
-                                            << "  q_ij_reverse = " << q_ij_reverse << std::endl;
-                                        p_failed_link_probability_ratio
-                                            *= q_ij_reverse / q_ij_forward;
+                                        else // no link formed
+                                            {
+                                            m_exec_conf->msg->notice(5)
+                                                << "  p_ij_forward = " << p_ij_forward
+                                                << "; random number = " << r << " -> no link_formed"
+                                                << std::endl;
+                                            // if j ultimately ends up in the cluster, the dU
+                                            // contribution is 0 if j ultimately does not end up in
+                                            // the cluster, we do have to account for the energy
+                                            // change, so dU_forward += dU either way, we still must
+                                            // account for the probability of not forming that link,
+                                            // so the denominator of p_failed_link_probability_ratio
+                                            // gets multiplied by 1 - p_ij_forward = 1 - (1 -
+                                            // exp(-beta * (beta_u_ij_after_move - beta_u_ij))) =
+                                            // exp(-beta * (beta_u_ij_after_move - beta_u_ij)) and
+                                            // the numerator of p_failed_link_probability_ratio gets
+                                            // multiplied by 1 - p_ij_reverse 1 - p_ij_reverse = 1 -
+                                            // (1
+                                            // - exp(-beta * (beta_u_ij - beta_u_ij_after_move))) =
+                                            // exp(-beta * (beta_u_ij - beta_u_ij_after_move)) which
+                                            // means no matter what we only need beta_u_ij (already
+                                            // have) and beta_u_ij_after_move (also already have)
+                                            // intuitively it makes sense that we don't need
+                                            // beta_u_ij_after_reverse move because the two relevant
+                                            // states for a non-linker pair are (x_i, x_j) and (x_i
+                                            // + dx, x_j) (where dx is a generic virtual move) so
+                                            // the only relevant energies are beta_u_ij and
+                                            // beta_u_ij_after_move
 
-                                        // add to possible contributions to deltaU for the cluster
-                                        // move
-                                        m_potential_link_data.update(i_linker,
-                                                                     j_linkee,
-                                                                     (LongReal)u_ij_after_move
-                                                                         - (LongReal)u_ij);
-                                        continue;
-                                        }
-                                    } // end loop over linkees
-                                } // end if (mc_aabb_tree.isNodeLeaf(current_node_index))
-                            } // end if
-                              // (aabb.overlaps(mc_aabb_tree.getNodeAABB(current_node_index)))
-                        else
-                            {
-                            // skip ahead
-                            current_node_index += mc_aabb_tree.getNodeSkip(current_node_index);
-                            }
-                        } // end loop over nodes in AABBTree
-                    } // end loop over images
-                } // end loop over linkers
-            if (skip_to_next_seed)
-                {
-                continue;
+                                            // account for probabilities of not forming this link
+                                            Scalar q_ij_forward = 1.0 - p_ij_forward;
+                                            Scalar q_ij_reverse = std::min(
+                                                1.0,
+                                                fast::exp(-(u_ij - u_ij_after_move) / kT));
+                                            if (q_ij_reverse == 0.0)
+                                                {
+                                                m_exec_conf->msg->notice(5)
+                                                    << "  q_ij_reverse = 0; aborting move."
+                                                    << std::endl;
+                                                skip_to_next_seed = true;
+                                                if (move_type_translate)
+                                                    {
+                                                    m_count_total.translate_reject_count++;
+                                                    m_count_total
+                                                        .translate_reject_q_reverse_link_zero++;
+                                                    }
+                                                else
+                                                    {
+                                                    m_count_total.rotate_reject_count++;
+                                                    m_count_total
+                                                        .rotate_reject_q_reverse_link_zero++;
+                                                    }
+                                                break;
+                                                }
+                                            m_exec_conf->msg->notice(5)
+                                                << "  q_ij_forward = " << q_ij_forward << std::endl;
+                                            m_exec_conf->msg->notice(5)
+                                                << "  q_ij_reverse = " << q_ij_reverse << std::endl;
+                                            p_failed_link_probability_ratio
+                                                *= q_ij_reverse / q_ij_forward;
+
+                                            // add to possible contributions to deltaU for the
+                                            // cluster move
+                                            m_potential_link_data.update(i_linker,
+                                                                         j_linkee,
+                                                                         (LongReal)u_ij_after_move
+                                                                             - (LongReal)u_ij);
+                                            continue;
+                                            }
+                                        } // end loop over linkees
+                                    } // end if (mc_aabb_tree.isNodeLeaf(current_node_index))
+                                } // end if
+                                  // (aabb.overlaps(mc_aabb_tree.getNodeAABB(current_node_index)))
+                            else
+                                {
+                                // skip ahead
+                                current_node_index += mc_aabb_tree.getNodeSkip(current_node_index);
+                                }
+                            } // end loop over nodes in AABBTree
+                        } // end loop over images
+                    } // end loop over linkers
+                if (skip_to_next_seed)
+                    {
+                    continue;
+                    }
                 }
 
             // find which of the potential cluster members ended up in the cluster
@@ -1079,7 +1076,7 @@ template<class Shape> void UpdaterVMMC<Shape>::update(uint64_t timestep)
                     }
                 }
 
-            // now we can accept or reject the move
+            // test for acceptance
             m_exec_conf->msg->notice(5)
                 << "  failed_link_probability_ratio = " << p_failed_link_probability_ratio
                 << std::endl;
