@@ -35,7 +35,8 @@ class PYBIND11_EXPORT WallForceConstraintComputeGPU
     //! Constructs the compute
     WallForceConstraintComputeGPU(std::shared_ptr<SystemDefinition> sysdef,
                                     std::shared_ptr<ParticleGroup> group,
-                                    Manifold manifold);
+                                    Manifold manifold,
+				    bool brownian);
 
     protected:
     std::shared_ptr<Autotuner<1>> m_tuner_friction;  //!< Autotuner for block size (diff kernel)
@@ -183,7 +184,8 @@ void export_WallForceConstraintComputeGPU(pybind11::module& m, const std::string
                      std::shared_ptr<WallForceConstraintComputeGPU<Manifold>>>(m, name.c_str())
         .def(pybind11::init<std::shared_ptr<SystemDefinition>,
                             std::shared_ptr<ParticleGroup>,
-                            Manifold>());
+                            Manifold,
+			    bool>());
     }
 
     } // end namespace detail

@@ -194,6 +194,15 @@ void export_ForceCompositeGPU(pybind11::module& m);
 void export_PPPMForceComputeGPU(pybind11::module& m);
 void export_LocalNeighborListDataGPU(pybind11::module& m);
 
+void export_WallForceConstraintComputeCuboidGPU(pybind11::module& m);
+void export_WallForceConstraintComputeCylinderGPU(pybind11::module& m);
+void export_WallForceConstraintComputeDiamondGPU(pybind11::module& m);
+void export_WallForceConstraintComputeEllipsoidGPU(pybind11::module& m);
+void export_WallForceConstraintComputeGyroidGPU(pybind11::module& m);
+void export_WallForceConstraintComputePlaneGPU(pybind11::module& m);
+void export_WallForceConstraintComputePrimitiveGPU(pybind11::module& m);
+void export_WallForceConstraintComputeSphereGPU(pybind11::module& m);
+
 void export_PotentialPairBuckinghamGPU(pybind11::module& m);
 void export_PotentialPairLJGPU(pybind11::module& m);
 void export_PotentialPairLJ1208GPU(pybind11::module& m);
@@ -466,6 +475,15 @@ PYBIND11_MODULE(_md, m)
     export_ComputeThermoGPU(m);
     export_ComputeThermoHMAGPU(m);
     export_PPPMForceComputeGPU(m);
+    export_WallForceConstraintComputeCuboidGPU(m);
+    export_WallForceConstraintComputeCylinderGPU(m);
+    export_WallForceConstraintComputeDiamondGPU(m);
+    export_WallForceConstraintComputeEllipsoidGPU(m);
+    export_WallForceConstraintComputeGyroidGPU(m);
+    export_WallForceConstraintComputePlaneGPU(m);
+    export_WallForceConstraintComputePrimitiveGPU(m);
+    export_WallForceConstraintComputeSphereGPU(m);
+
     export_ActiveForceComputeGPU(m);
     export_ActiveForceConstraintComputeCylinderGPU(m);
     export_ActiveForceConstraintComputeDiamondGPU(m);
