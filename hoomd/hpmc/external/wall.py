@@ -44,7 +44,7 @@ class _HPMCWallsMetaList(_WallsMetaList):
             hoomd.wall.Sphere, hoomd.wall.Cylinder, hoomd.wall.Plane
         ],
         hpmc.integrate.ConvexSpheropolyhedron: [
-            hoomd.wall.Sphere, hoomd.wall.Plane
+            hoomd.wall.Sphere, hoomd.wall.Cylinder, hoomd.wall.Plane
         ]
     }
 
