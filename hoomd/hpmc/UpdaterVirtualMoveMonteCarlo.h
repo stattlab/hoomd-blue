@@ -315,8 +315,9 @@ template<class Shape> void UpdaterVMMC<Shape>::update(uint64_t timestep)
     unsigned int ndim = this->m_sysdef->getNDimensions();
     uint16_t user_seed = m_sysdef->getSeed();
     const auto& mc_params = m_mc->getParams();
-    unsigned int maximum_allowed_cluster_size
-        = m_maximum_allowed_cluster_size == 0 ? m_pdata->getN() : m_maximum_allowed_cluster_size;
+    unsigned int maximum_allowed_cluster_size = m_maximum_allowed_cluster_size == 0
+                                                    ? m_pdata->getNGlobal()
+                                                    : m_maximum_allowed_cluster_size;
     GPUArray<Scalar4> pos_last_tree_build(m_pdata->getN(), m_exec_conf);
     ArrayHandle<Scalar4> h_pos_last_tree_build(pos_last_tree_build,
                                                access_location::host,
