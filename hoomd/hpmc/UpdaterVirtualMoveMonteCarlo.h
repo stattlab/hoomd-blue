@@ -1260,10 +1260,10 @@ inline void export_hpmc_virtual_moves_counters(pybind11::module& m)
         .def_property_readonly("rotate_counts", &hpmc_virtual_moves_counters_t::getRotateCounts)
         .def_property_readonly("rotate_rejection_counts",
                                &hpmc_virtual_moves_counters_t::getRotateRejectCounts)
-        .def_property_readonly(
-            "rotate_num_particles_in_moved_clusters",
-            &hpmc_virtual_moves_counters_t::getTotalNumParticlesInClustersRotate)
-        .def_property_readonly("num_aabbtree_builds", &hpmc_virtual_moves_counters_t::getNumAABBTreeBuilds);
+        .def_property_readonly("rotate_num_particles_in_moved_clusters",
+                               &hpmc_virtual_moves_counters_t::getTotalNumParticlesInClustersRotate)
+        .def_property_readonly("num_aabbtree_builds",
+                               &hpmc_virtual_moves_counters_t::getNumAABBTreeBuilds);
     }
 
     } // end namespace detail
