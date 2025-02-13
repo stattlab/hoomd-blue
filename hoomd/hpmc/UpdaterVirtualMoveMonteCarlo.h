@@ -583,7 +583,7 @@ template<class Shape> void UpdaterVMMC<Shape>::update(uint64_t timestep)
                                             = mc_aabb_tree.getNodeParticle(current_node_index,
                                                                            current_linkee);
                                         if (!(m_cluster_data.m_linkers_added.find(j_linkee)
-                                              == m_cluster_data.m_linkers_added.end()))
+                                              == m_cluster_data.m_linkers_added.end()) || j_linkee >= m_pdata->getN())
                                             {
                                             // j already in cluster
                                             continue;
