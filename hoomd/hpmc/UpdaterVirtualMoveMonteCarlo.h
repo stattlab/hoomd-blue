@@ -310,7 +310,6 @@ template<class Shape> void UpdaterVMMC<Shape>::update(uint64_t timestep)
     ArrayHandle<Scalar> h_diameter(m_pdata->getDiameters(),
                                    access_location::host,
                                    access_mode::read);
-    ArrayHandle<int3> h_image(m_pdata->getImages(), access_location::host, access_mode::readwrite);
     const BoxDim box = m_pdata->getBox();
     unsigned int ndim = this->m_sysdef->getNDimensions();
     uint16_t user_seed = m_sysdef->getSeed();
@@ -413,7 +412,7 @@ template<class Shape> void UpdaterVMMC<Shape>::update(uint64_t timestep)
                     }
                 }
 
-            // add linker and current image rotation center to their sets
+            // add linker and current image rotation center to their containers
             Scalar4 postype_seed;
                 {
                 // scope code that uses h_postype and h_orientation bc mc_aabb_tree.buildAABBTree()
@@ -496,6 +495,12 @@ template<class Shape> void UpdaterVMMC<Shape>::update(uint64_t timestep)
                                                        pos_linker_after_move_primary_image.z),
                                           box,
                                           ghost_fraction))
+                            || (!isActive(
+                                make_scalar3(pos_linker_after_reverse_move_primary_image.x,
+                                             pos_linker_after_reverse_move_primary_image.y,
+                                             pos_linker_after_reverse_move_primary_image.z),
+                                box,
+                                ghost_fraction))
 
                         )
                             {
@@ -583,9 +588,10 @@ template<class Shape> void UpdaterVMMC<Shape>::update(uint64_t timestep)
                                             = mc_aabb_tree.getNodeParticle(current_node_index,
                                                                            current_linkee);
                                         if (!(m_cluster_data.m_linkers_added.find(j_linkee)
-                                              == m_cluster_data.m_linkers_added.end()) || j_linkee >= m_pdata->getN())
+                                              == m_cluster_data.m_linkers_added.end())
+                                            || j_linkee >= m_pdata->getN())
                                             {
-                                            // j already in cluster
+                                            // j already in cluster or is a ghost particle
                                             continue;
                                             }
                                         Scalar4 postype_linkee = h_postype.data[j_linkee];
@@ -1119,6 +1125,7 @@ template<class Shape> void UpdaterVMMC<Shape>::update(uint64_t timestep)
                     ArrayHandle<Scalar4> h_orientation(m_pdata->getOrientationArray(),
                                                        access_location::host,
                                                        access_mode::readwrite);
+                    ArrayHandle<int3> h_image(m_pdata->getImages(), access_location::host, access_mode::readwrite);
                     for (unsigned int idx = 0; idx < m_pdata->getN(); idx++)
                         {
                         if (!(m_cluster_data.m_linkers_added.find(idx)
