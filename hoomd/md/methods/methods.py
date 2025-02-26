@@ -230,6 +230,63 @@ class ConstantVolume(Thermostatted):
         super()._attach_hook()
 
 
+class ConstantVolumeSLLOD(Thermostatted):
+    r"""SLLOD equation of motion.
+
+
+    """
+
+    __doc__ = __doc__.replace("{inherited}", Thermostatted._doc_inherited)
+
+    _doc_inherited = (
+        Thermostatted._doc_inherited
+        + """
+    ----------
+
+    **Members inherited from**
+    `ConstantVolume <hoomd.md.methods.ConstantVolume>`:
+
+    .. py:attribute:: filter
+
+        Subset of particles on which to apply this method.
+        `Read more... <hoomd.md.methods.ConstantVolume.filter>`
+    """
+    )
+
+    def __init__(self, filter, thermostat=None, shear_rate=0):
+        super().__init__()
+        # store metadata
+        param_dict = ParameterDict(
+            filter=ParticleFilter,
+            thermostat=OnlyTypes(Thermostat, allow_none=True),
+            shear_rate=shear_rate
+        )
+        param_dict.update(dict(filter=filter, thermostat=thermostat, shear_rate=shear_rate))
+        # set defaults
+        self._param_dict.update(param_dict)
+
+    def _attach_hook(self):
+        # initialize the reflected cpp class
+        if isinstance(self._simulation.device, hoomd.device.CPU):
+            cls = _md.TwoStepConstantVolumeSLLOD
+            thermo_cls = _md.ComputeThermoSLLOD
+        else:
+            cls = _md.TwoStepConstantVolumeSLLODGPU
+            thermo_cls = _md.ComputeThermoSLLODGPU
+
+        group = self._simulation.state._get_group(self.filter)
+        cpp_sys_def = self._simulation.state._cpp_sys_def
+        self._thermo = thermo_cls(cpp_sys_def, group,self.shear_rate)
+
+        if self.thermostat is None:
+            self._cpp_obj = cls(cpp_sys_def, group, None, self.shear_rate)
+        else:
+            self.thermostat._set_thermo(self.filter, self._thermo)
+            self.thermostat._attach(self._simulation)
+            self._cpp_obj = cls(cpp_sys_def, group, self.thermostat._cpp_obj, self.shear_rate)
+        super()._attach_hook()
+
+
 class ConstantPressure(Thermostatted):
     r"""Constant pressure dynamics.
 

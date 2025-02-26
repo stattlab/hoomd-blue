@@ -21,6 +21,7 @@ void export_ActiveForceConstraintComputeSphere(pybind11::module& m);
 void export_ActiveRotationalDiffusionUpdater(pybind11::module& m);
 void export_ComputeThermo(pybind11::module& m);
 void export_ComputeThermoHMA(pybind11::module& m);
+void export_ComputeThermoSLLOD(pybind11::module& m);
 void export_ConstantForceCompute(pybind11::module& m);
 void export_HarmonicAngleForceCompute(pybind11::module& m);
 void export_CosineSqAngleForceCompute(pybind11::module& m);
@@ -127,6 +128,7 @@ void export_BussiThermostat(pybind11::module& m);
 void export_BerendsenThermostat(pybind11::module& m);
 
 void export_TwoStepConstantVolume(pybind11::module& m);
+void export_TwoStepConstantVolumeSLLOD(pybind11::module& m);
 void export_TwoStepLangevinBase(pybind11::module& m);
 void export_TwoStepLangevin(pybind11::module& m);
 void export_TwoStepBD(pybind11::module& m);
@@ -184,6 +186,7 @@ void export_ActiveForceConstraintComputeSphereGPU(pybind11::module& m);
 void export_ActiveForceComputeGPU(pybind11::module& m);
 void export_ComputeThermoGPU(pybind11::module& m);
 void export_ComputeThermoHMAGPU(pybind11::module& m);
+void export_ComputeThermoSLLODGPU(pybind11::module& m);
 void export_ConstantForceComputeGPU(pybind11::module& m);
 void export_HarmonicAngleForceComputeGPU(pybind11::module& m);
 void export_CosineSqAngleForceComputeGPU(pybind11::module& m);
@@ -278,6 +281,7 @@ void export_PotentialPairDPDThermoDPDGPU(pybind11::module& m);
 void export_PotentialPairDPDThermoLJGPU(pybind11::module& m);
 
 void export_TwoStepConstantVolumeGPU(pybind11::module& m);
+void export_TwoStepConstantVolumeSLLODGPU(pybind11::module& m);
 void export_TwoStepLangevinGPU(pybind11::module& m);
 void export_TwoStepBDGPU(pybind11::module& m);
 void export_TwoStepConstantPressureGPU(pybind11::module& m);
@@ -333,6 +337,7 @@ PYBIND11_MODULE(_md, m)
     export_ActiveRotationalDiffusionUpdater(m);
     export_ComputeThermo(m);
     export_ComputeThermoHMA(m);
+    export_ComputeThermoSLLOD(m);
     export_ConstantForceCompute(m);
     export_HarmonicAngleForceCompute(m);
     export_CosineSqAngleForceCompute(m);
@@ -516,6 +521,7 @@ PYBIND11_MODULE(_md, m)
     export_ForceDistanceConstraintGPU(m);
     export_ComputeThermoGPU(m);
     export_ComputeThermoHMAGPU(m);
+    export_ComputeThermoSLLODGPU(m);
     export_PeriodicImproperForceComputeGPU(m);
     export_PPPMForceComputeGPU(m);
     export_ActiveForceComputeGPU(m);
@@ -549,6 +555,7 @@ PYBIND11_MODULE(_md, m)
     export_IntegrationMethodTwoStep(m);
     export_ZeroMomentumUpdater(m);
     export_TwoStepConstantVolume(m);
+    export_TwoStepConstantVolumeSLLOD(m);
     export_TwoStepLangevinBase(m);
     export_TwoStepLangevin(m);
     export_TwoStepBD(m);
@@ -586,6 +593,7 @@ PYBIND11_MODULE(_md, m)
 
 #ifdef ENABLE_HIP
     export_TwoStepConstantVolumeGPU(m);
+    export_TwoStepConstantVolumeSLLODGPU(m);
     export_TwoStepLangevinGPU(m);
     export_TwoStepBDGPU(m);
     export_TwoStepConstantPressureGPU(m);

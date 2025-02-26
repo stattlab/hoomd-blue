@@ -22,6 +22,7 @@ from .methods import (
     Brownian,
     Thermostatted,
     ConstantVolume,
+    ConstantVolumeSLLOD,
     ConstantPressure,
     DisplacementCapped,
     OverdampedViscous,
@@ -32,6 +33,7 @@ __all__ = [
     "Brownian",
     "ConstantPressure",
     "ConstantVolume",
+    "ConstantVolumeSLLOD"
     "DisplacementCapped",
     "Langevin",
     "Method",

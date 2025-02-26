@@ -15,6 +15,7 @@ set(_md_sources module-md.cc
                    CommunicatorGrid.cc
                    ComputeThermo.cc
                    ComputeThermoHMA.cc
+                   ComputeThermoSLLOD.cc
                    ConstantForceCompute.cc
                    CosineSqAngleForceCompute.cc
                    CustomForceCompute.cc
@@ -52,6 +53,7 @@ set(_md_sources module-md.cc
                    TwoStepLangevinBase.cc
                    TwoStepLangevin.cc
                    TwoStepConstantVolume.cc
+                   TwoStepConstantVolumeSLLOD.cc
                    TwoStepConstantPressure.cc
                    Thermostat.cc
                    TwoStepNVTAlchemy.cc
@@ -84,8 +86,11 @@ set(_md_headers ActiveForceComputeGPU.h
                 ComputeThermoGPU.h
                 ComputeThermoHMAGPU.cuh
                 ComputeThermoHMAGPU.h
+                ComputeThermoSLLODGPU.cuh
+                ComputeThermoSLLODGPU.h
                 ComputeThermo.h
                 ComputeThermoHMA.h
+                ComputeThermoSLLOD.h
                 ComputeThermoTypes.h
                 ComputeThermoHMATypes.h
                 ConstantForceComputeGPU.h
@@ -217,6 +222,8 @@ set(_md_headers ActiveForceComputeGPU.h
                 TwoStepRATTLENVE.h
                 TwoStepConstantVolume.h
                 TwoStepConstantVolumeGPU.h
+                TwoStepConstantVolumeSLLOD.h
+                TwoStepConstantVolumeSLLODGPU.h
                 TwoStepConstantPressure.h
                 AlchemostatTwoStep.h
                 TwoStepNVTAlchemy.h
@@ -240,6 +247,7 @@ list(APPEND _md_sources ActiveForceComputeGPU.cc
                            CommunicatorGridGPU.cc
                            ComputeThermoGPU.cc
                            ComputeThermoHMAGPU.cc
+                           ComputeThermoSLLODGPU.cc
                            ConstantForceComputeGPU.cc
                            FIREEnergyMinimizerGPU.cc
                            ForceCompositeGPU.cc
@@ -263,6 +271,7 @@ list(APPEND _md_sources ActiveForceComputeGPU.cc
                            TwoStepLangevinGPU.cc
                   			   VolumeConservationMeshForceComputeGPU.cc
                            TwoStepConstantVolumeGPU.cc
+                           TwoStepConstantVolumeGPUSLLOD.cc
                            TwoStepConstantPressureGPU.cc
                            MuellerPlatheFlowGPU.cc
                            CosineSqAngleForceComputeGPU.cc
@@ -304,6 +313,7 @@ set(_md_cu_sources ActiveForceComputeGPU.cu
                       TwoStepRATTLELangevinGPU.cu
                       TwoStepConstantPressureGPU.cu
                       TwoStepConstantVolumeGPU.cu
+                      TwoStepConstantVolumeSLLODGPU.cu
                       TwoStepNVEGPU.cu
                       TwoStepRATTLENVEGPU.cu
             		      VolumeConservationMeshForceComputeGPU.cu
