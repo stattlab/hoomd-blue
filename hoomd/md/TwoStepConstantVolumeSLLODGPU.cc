@@ -54,6 +54,9 @@ void TwoStepConstantVolumeSLLODGPU::integrateStepOne(uint64_t timestep)
 
         auto limits = getKernelLimitValues(timestep);
 
+        // box deformation: update tilt factor of global box
+        bool flipped = deformGlobalBox();
+
         m_exec_conf->setDevice();
 
         // perform the update on the GPU
@@ -69,7 +72,10 @@ void TwoStepConstantVolumeSLLODGPU::integrateStepOne(uint64_t timestep)
                                          rescalingFactors[0], // m_exp_thermo_fac,
                                          m_deltaT,
                                          limits.first,
-                                         limits.second);
+                                         limits.second,
+                                         m_shear_rate,
+                                         flipped,
+                                         m_boundary_shear_velocity);
 
         if (m_exec_conf->isCUDAErrorCheckingEnabled())
             CHECK_CUDA_ERROR();
@@ -151,7 +157,8 @@ void TwoStepConstantVolumeSLLODGPU::integrateStepTwo(uint64_t timestep)
                                          d_net_force.data,
                                          m_tuner_two->getParam()[0],
                                          m_deltaT,
-                                         rescalingFactors[0]);
+                                         rescalingFactors[0],
+                                         m_shear_rate);
 
         if (m_exec_conf->isCUDAErrorCheckingEnabled())
             CHECK_CUDA_ERROR();

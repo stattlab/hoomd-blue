@@ -38,14 +38,83 @@ ComputeThermoSLLOD::~ComputeThermoSLLOD()
     }
 
 
+void ComputeThermoSLLOD::removeFlowField()
+{
+  std::cout<< "in ComputeThermoSLLOD::removeFlowField "<< m_shear_rate << "\n";
+  unsigned int group_size = m_group->getNumMembers();
+  {
+  assert(m_pdata);
+  ArrayHandle<Scalar4> h_vel(m_pdata->getVelocities(), access_location::host, access_mode::readwrite);
+  ArrayHandle<Scalar4> h_pos(m_pdata->getPositions(), access_location::host, access_mode::read);
+
+  for (unsigned int group_idx = 0; group_idx < group_size; group_idx++)
+      {
+      unsigned int j = m_group->getMemberIndex(group_idx);
+
+      // load velocity & position
+      Scalar3 v = make_scalar3(h_vel.data[j].x, h_vel.data[j].y, h_vel.data[j].z);
+      const Scalar4 p = h_pos.data[j];
+
+      // remove flow field
+      v.x -= m_shear_rate*p.y;
+
+      // store velocity
+      h_vel.data[j].x = v.x;
+      h_vel.data[j].y = v.y;
+      h_vel.data[j].z = v.z;
+
+      }
+  }
+
+}
+
+void ComputeThermoSLLOD::addFlowField()
+{
+  std::cout<< "in ComputeThermoSLLOD::addFlowField "<< m_shear_rate << "\n";
+  unsigned int group_size = m_group->getNumMembers();
+
+ {
+  assert(m_pdata);
+  ArrayHandle<Scalar4> h_vel(m_pdata->getVelocities(), access_location::host, access_mode::readwrite);
+  ArrayHandle<Scalar4> h_pos(m_pdata->getPositions(), access_location::host, access_mode::read);
+
+  for (unsigned int group_idx = 0; group_idx < group_size; group_idx++)
+      {
+      unsigned int j = m_group->getMemberIndex(group_idx);
+
+      // load velocity & position
+      Scalar3 v = make_scalar3(h_vel.data[j].x, h_vel.data[j].y, h_vel.data[j].z);
+      const Scalar4 p = h_pos.data[j];
+
+      // add flow field
+      v.x += m_shear_rate*p.y;
+
+      // store velocity
+      h_vel.data[j].x = v.x;
+      h_vel.data[j].y = v.y;
+      h_vel.data[j].z = v.z;
+
+      }
+  }
+
+}
+
+
 void ComputeThermoSLLOD::computeProperties()
     {
+    std::cout<< "in ComputeThermoSLLOD::computeProperties begin\n";
+
     // just drop out if the group is an empty group
     if (m_group->getNumMembersGlobal() == 0)
         return;
 
     unsigned int group_size = m_group->getNumMembers();
 
+    // remove streaming velocity flow field created by SLLOD to calculate accurate
+    // thermodynamic properties.
+    removeFlowField();
+
+    {
     assert(m_pdata);
 
     // access the particle data
@@ -61,7 +130,7 @@ void ComputeThermoSLLOD::computeProperties()
     ArrayHandle<Scalar4> h_net_force(net_force, access_location::host, access_mode::read);
     ArrayHandle<Scalar> h_net_virial(net_virial, access_location::host, access_mode::read);
 
-    std::cout<< "in ComputeThermoSLLOD::computeProperties \n";
+
 
     // total kinetic energy
     double ke_trans_total = 0.0;
@@ -252,10 +321,17 @@ void ComputeThermoSLLOD::computeProperties()
     h_properties.data[thermo_index::pressure_yz] = pressure_yz;
     h_properties.data[thermo_index::pressure_zz] = pressure_zz;
 
+    } //TODO: question: does the below MPI call go inside the array scope that ends here?
+
 #ifdef ENABLE_MPI
     // in MPI, reduce extensive quantities only when they're needed
     m_properties_reduced = !m_pdata->getDomainDecomposition();
 #endif // ENABLE_MPI
+
+    // add streaming velocity flow field back after computing thermodynamic properties.
+    addFlowField();
+    std::cout<< "in ComputeThermoSLLOD::computeProperties end\n";
+
     }
 
 

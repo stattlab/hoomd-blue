@@ -4,6 +4,26 @@
 #include "TwoStepConstantVolumeSLLOD.h"
 #include "hoomd/VectorMath.h"
 
+bool hoomd::md::TwoStepConstantVolumeSLLOD::deformGlobalBox()
+{
+  // box deformation: update tilt factor of global box
+  BoxDim global_box = m_pdata->getGlobalBox();
+
+  Scalar xy = global_box.getTiltFactorXY();
+  Scalar yz = global_box.getTiltFactorYZ();
+  Scalar xz = global_box.getTiltFactorXZ();
+
+  xy += m_shear_rate * m_deltaT;
+  bool flipped = false;
+  if (xy > 0.5){
+      xy = -0.5;
+      flipped = true;
+  }
+  global_box.setTiltFactors(xy, xz, yz);
+  m_pdata->setGlobalBox(global_box);
+  return flipped;
+}
+
 void hoomd::md::TwoStepConstantVolumeSLLOD::integrateStepOne(uint64_t timestep)
     {
     std::cout<< "In TwoStepConstantVolumeSLLOD::integrateStepOne \n";
@@ -14,6 +34,13 @@ void hoomd::md::TwoStepConstantVolumeSLLOD::integrateStepOne(uint64_t timestep)
 
     auto rescaling_factors = m_thermostat ? m_thermostat->getRescalingFactorsOne(timestep, m_deltaT)
                                           : std::array<Scalar, 2> {1., 1.};
+
+    // box deformation: update tilt factor of global box
+    bool flipped = deformGlobalBox();
+
+    BoxDim global_box = m_pdata->getGlobalBox();
+    const Scalar3 global_hi = global_box.getHi();
+    const Scalar3 global_lo = global_box.getLo();
 
     unsigned int group_size = m_group->getNumMembers();
 
@@ -28,6 +55,9 @@ void hoomd::md::TwoStepConstantVolumeSLLOD::integrateStepOne(uint64_t timestep)
         ArrayHandle<Scalar4> h_pos(m_pdata->getPositions(),
                                    access_location::host,
                                    access_mode::readwrite);
+        ArrayHandle<int3> h_image(m_pdata->getImages(),
+                                   access_location::host,
+                                   access_mode::readwrite);
 
         for (unsigned int group_idx = 0; group_idx < group_size; group_idx++)
             {
@@ -38,11 +68,23 @@ void hoomd::md::TwoStepConstantVolumeSLLOD::integrateStepOne(uint64_t timestep)
             Scalar3 pos = make_scalar3(h_pos.data[j].x, h_pos.data[j].y, h_pos.data[j].z);
             Scalar3 accel = h_accel.data[j];
 
-            // update velocity and position
-            v = v + Scalar(1.0 / 2.0) * accel * m_deltaT;
+            // remove flow field
+            v.x -= m_shear_rate*pos.y;
 
             // rescale velocity
             v *= rescaling_factors[0];
+
+            // apply sllod velocity correction
+            v.x -= Scalar(0.5)*m_shear_rate*v.y*m_deltaT;
+
+            // add flow field
+            v.x += m_shear_rate*pos.y;
+
+            // update velocity
+            v += Scalar(0.5)* accel * m_deltaT;
+
+            //TODO: this might not make too much sense to keep - we don't need/want
+            // limit on how far particles can move with SLLOD...
             if (m_limit)
                 {
                 auto maximum_displacement = m_limit->operator()(timestep);
@@ -53,6 +95,26 @@ void hoomd::md::TwoStepConstantVolumeSLLOD::integrateStepOne(uint64_t timestep)
                     }
                 }
             pos += m_deltaT * v;
+
+            // if box deformation caused a flip, account for the box wrapping by modifying images
+            if (flipped){
+                h_image.data[j].x += h_image.data[j].y;
+                //  pos.x *= -1;
+            }
+
+            // Periodic boundary correction to velocity:
+            // if particle leaves from (+/-) y boundary it gets (-/+) velocity at boundary
+            // TODO: pair potentials dependent on differences in
+            // velocities (e.g. DPD) are not supported!
+
+            if (pos.y > global_hi.y) // crossed pbc in +y
+            {
+                v.x -= m_boundary_shear_velocity;//Scalar(2.0)*m_shear_rate*global_hi.y;
+            }
+            else if (pos.y < global_lo.y) // crossed pbc in -y
+            {
+                v.x += m_boundary_shear_velocity;//-= Scalar(2.0)*m_shear_rate*global_lo.y;
+            }
 
             // store updated variables
             h_vel.data[j].x = v.x;
@@ -68,10 +130,6 @@ void hoomd::md::TwoStepConstantVolumeSLLOD::integrateStepOne(uint64_t timestep)
         // into place
         const BoxDim& box = m_pdata->getBox();
 
-        ArrayHandle<int3> h_image(m_pdata->getImages(),
-                                  access_location::host,
-                                  access_mode::readwrite);
-
         for (unsigned int group_idx = 0; group_idx < group_size; group_idx++)
             {
             unsigned int j = m_group->getMemberIndex(group_idx);
@@ -80,6 +138,7 @@ void hoomd::md::TwoStepConstantVolumeSLLOD::integrateStepOne(uint64_t timestep)
             }
         }
 
+    //TODO: anything in the aniso part that needs SLLOD modification?
     // Integration of angular degrees of freedom using symplectic and
     // time-reversal symmetric integration scheme of Miller et al., extended by thermostat
     if (m_aniso)
@@ -218,7 +277,7 @@ void hoomd::md::TwoStepConstantVolumeSLLOD::integrateStepTwo(uint64_t timestep)
 
     auto rescaling_factors = m_thermostat ? m_thermostat->getRescalingFactorsTwo(timestep, m_deltaT)
                                           : std::array<Scalar, 2> {1., 1.};
-
+    {
     const GPUArray<Scalar4>& net_force = m_pdata->getNetForce();
 
     ArrayHandle<Scalar4> h_vel(m_pdata->getVelocities(),
@@ -227,8 +286,12 @@ void hoomd::md::TwoStepConstantVolumeSLLOD::integrateStepTwo(uint64_t timestep)
     ArrayHandle<Scalar3> h_accel(m_pdata->getAccelerations(),
                                  access_location::host,
                                  access_mode::readwrite);
-
-    ArrayHandle<Scalar4> h_net_force(net_force, access_location::host, access_mode::read);
+    ArrayHandle<Scalar4> h_pos(m_pdata->getPositions(),
+                                   access_location::host,
+                                   access_mode::read);
+    ArrayHandle<Scalar4> h_net_force(net_force,
+                              access_location::host,
+                              access_mode::read);
 
     // perform second half step of Nose-Hoover integration
 
@@ -247,11 +310,20 @@ void hoomd::md::TwoStepConstantVolumeSLLOD::integrateStepTwo(uint64_t timestep)
         Scalar minv = Scalar(1.0) / m;
         accel = net_force * minv;
 
+        // update velocity
+        v += Scalar(0.5)*accel*m_deltaT;
+
+        // remove flow field
+        v.x -= m_shear_rate*h_pos.data[j].y;
+
         // rescale velocity
         v *= rescaling_factors[0];
 
-        // update velocity
-        v += Scalar(1.0 / 2.0) * m_deltaT * accel;
+        // apply sllod velocity correction
+        v.x -= Scalar(0.5)*m_shear_rate*v.y*m_deltaT;
+
+        // add flow field
+        v.x += m_shear_rate*h_pos.data[j].y;
 
         // store velocity
         h_vel.data[j].x = v.x;
@@ -313,6 +385,7 @@ void hoomd::md::TwoStepConstantVolumeSLLOD::integrateStepTwo(uint64_t timestep)
             h_angmom.data[j] = quat_to_scalar4(p);
             }
         }
+     }
     }
 
 namespace hoomd::md::detail

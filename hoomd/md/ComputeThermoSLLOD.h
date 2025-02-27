@@ -45,6 +45,10 @@ class PYBIND11_EXPORT ComputeThermoSLLOD : public ComputeThermo
     virtual void computeProperties();
 
     protected:
+
+    virtual void removeFlowField();
+    virtual void addFlowField();
+
     Scalar m_shear_rate;
     };
 

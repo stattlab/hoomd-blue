@@ -41,6 +41,31 @@ ComputeThermoSLLODGPU::ComputeThermoSLLODGPU(std::shared_ptr<SystemDefinition> s
 //! Destructor
 ComputeThermoSLLODGPU::~ComputeThermoSLLODGPU() { }
 
+
+void ComputeThermoSLLODGPU::removeFlowField()
+{
+    // just drop out if the group is an empty group
+    if (m_group->getNumMembersGlobal() == 0)
+        return;
+
+    unsigned int group_size = m_group->getNumMembers();
+
+    assert(m_pdata);
+    {
+    ArrayHandle<Scalar4> d_vel(m_pdata->getVelocities(), access_location::device, access_mode::readwrite);
+    ArrayHandle<Scalar4> d_pos(m_pdata->getPositions(), access_location::device, access_mode::read);
+    ArrayHandle< unsigned int > d_index_array(m_group->getIndexArray(), access_location::device, access_mode::read);
+
+    // perform the removal of the flow field on the GPU
+    remove_flow_field(d_vel.data,
+                    d_pos.data,
+                    d_index_array.data,
+                    group_size,
+                    m_shear_rate,
+                    );
+    }
+
+}
 /*! Computes all thermodynamic properties of the system in one fell swoop, on the GPU.
  */
 void ComputeThermoSLLODGPU::computeProperties()
