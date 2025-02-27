@@ -35,6 +35,11 @@ class PYBIND11_EXPORT ComputeThermoSLLODGPU : public ComputeThermoSLLOD
     //! Does the actual computation
     virtual void computeProperties();
 
+    protected:
+
+    virtual void addFlowField();
+    virtual void removeFlowField();
+
     };
 
     } // end namespace md

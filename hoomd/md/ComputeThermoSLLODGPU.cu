@@ -503,6 +503,7 @@ __global__ void gpu_compute_pressure_tensor_final_sums(Scalar* d_properties,
         d_properties[thermo_index::pressure_zz] = final_sum[5] / V;
         }
     }
+
 //! Compute partial sums of thermodynamic properties of a group on the GPU,
 /*! \param d_properties Array to write computed properties
     \param d_vel particle velocities and masses on the GPU
@@ -518,7 +519,6 @@ __global__ void gpu_compute_pressure_tensor_final_sums(Scalar* d_properties,
     This function drives gpu_compute_thermo_partial_sums and gpu_compute_thermo_final_sums, see them
    for details.
 */
-
 hipError_t gpu_compute_thermo_partial(Scalar* d_properties,
                                       Scalar4* d_vel,
                                       unsigned int* d_body,

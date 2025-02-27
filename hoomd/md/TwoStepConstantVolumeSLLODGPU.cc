@@ -54,11 +54,14 @@ void TwoStepConstantVolumeSLLODGPU::integrateStepOne(uint64_t timestep)
 
         auto limits = getKernelLimitValues(timestep);
 
+        // box deformation: update tilt factor of global box
+        bool flipped = deformGlobalBox();
+
         m_exec_conf->setDevice();
 
         // perform the update on the GPU
         m_tuner_one->begin();
-        kernel::gpu_nvt_rescale_step_one(d_pos.data,
+        kernel::gpu_nvt_sllod_rescale_step_one(d_pos.data,
                                          d_vel.data,
                                          d_accel.data,
                                          d_image.data,
@@ -69,7 +72,10 @@ void TwoStepConstantVolumeSLLODGPU::integrateStepOne(uint64_t timestep)
                                          rescalingFactors[0], // m_exp_thermo_fac,
                                          m_deltaT,
                                          limits.first,
-                                         limits.second);
+                                         limits.second,
+                                         m_shear_rate,
+                                         flipped,
+                                         m_boundary_shear_velocity);
 
         if (m_exec_conf->isCUDAErrorCheckingEnabled())
             CHECK_CUDA_ERROR();
@@ -144,14 +150,15 @@ void TwoStepConstantVolumeSLLODGPU::integrateStepTwo(uint64_t timestep)
 
         // perform the update on the GPU
         m_tuner_two->begin();
-        kernel::gpu_nvt_rescale_step_two(d_vel.data,
+        kernel::gpu_nvt_sllod_rescale_step_two(d_vel.data,
                                          d_accel.data,
                                          d_index_array.data,
                                          group_size,
                                          d_net_force.data,
                                          m_tuner_two->getParam()[0],
                                          m_deltaT,
-                                         rescalingFactors[0]);
+                                         rescalingFactors[0],
+                                         m_shear_rate);
 
         if (m_exec_conf->isCUDAErrorCheckingEnabled())
             CHECK_CUDA_ERROR();

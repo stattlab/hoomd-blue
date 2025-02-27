@@ -31,17 +31,20 @@ namespace kernel
     See gpu_nve_step_one_kernel() for some performance notes on how to handle the group data reads
    efficiently.
 */
-__global__ void gpu_nvt_rescale_step_one_kernel(Scalar4* d_pos,
-                                                Scalar4* d_vel,
-                                                const Scalar3* d_accel,
-                                                int3* d_image,
-                                                unsigned int* d_group_members,
-                                                unsigned int work_size,
-                                                BoxDim box,
-                                                Scalar rescale_factor,
-                                                Scalar deltaT,
-                                                bool limit = false,
-                                                Scalar maximum_displacement = Scalar(0.))
+__global__ void gpu_nvt_sllod_rescale_step_one_kernel(Scalar4* d_pos,
+                                                      Scalar4* d_vel,
+                                                      const Scalar3* d_accel,
+                                                      int3* d_image,
+                                                      unsigned int* d_group_members,
+                                                      unsigned int work_size,
+                                                      BoxDim box,
+                                                      Scalar rescale_factor,
+                                                      Scalar deltaT,
+                                                      bool limit = false,
+                                                      Scalar maximum_displacement = Scalar(0.),
+                                                      Scalar shear_rate,
+                                                      bool flipped,
+                                                      Scalar boundary_shear_velocity)
     {
     // determine which particle this thread works on
     int group_idx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -58,11 +61,20 @@ __global__ void gpu_nvt_rescale_step_one_kernel(Scalar4* d_pos,
         Scalar3 vel = make_scalar3(velmass.x, velmass.y, velmass.z);
         Scalar3 accel = d_accel[idx];
 
-        // velocity update
-        vel = vel + Scalar(1.0 / 2.0) * accel * deltaT;
+        // remove flow field
+        vel.x -= shear_rate * pos.y;
 
-        // velocity rescale
+        // rescale velocity
         vel *= rescale_factor;
+
+        // apply sllod velocity correction
+        vel.x -= Scalar(0.5) * shear_rate * vel.y * deltaT;
+
+        // add flow field
+        vel.x += shear_rate * pos.y;
+
+        // update velocity
+        vel += Scalar(0.5) * accel * deltaT;
 
         if (limit)
             {
@@ -76,8 +88,29 @@ __global__ void gpu_nvt_rescale_step_one_kernel(Scalar4* d_pos,
         // read in the image flags
         int3 image = d_image[idx];
 
+        // if box deformation caused a flip, wrap pos back into box
+        if (flipped)
+            {
+            d_image[idx].x += d_image[idx].y;
+            //    pos.x *= -1;
+            }
+
         // time to fix the periodic boundary conditions
         box.wrap(pos, image);
+
+        // Periodic boundary correction to velocity:
+        // if particle leaves from (+/-) y boundary it gets (-/+) velocity at boundary
+        // NOTE: pair potentials dependent on differences in
+        // velocities (e.g. DPD) are not supported.
+
+        if ((image.y - d_image[idx].y) == 1) // crossed pbc in +y, image increased by 1
+            {
+            vel.x -= boundary_shear_velocity;
+            }
+        else if ((image.y - d_image[idx].y) == -1) // crossed pbc in -y, image decreased by 1
+            {
+            vel.x += boundary_shear_velocity;
+            }
 
         // write out the results
         d_pos[idx] = make_scalar4(pos.x, pos.y, pos.z, postype.w);
@@ -97,18 +130,21 @@ __global__ void gpu_nvt_rescale_step_one_kernel(Scalar4* d_pos,
     \param rescale_factor Thermostat rescaling factor
     \param deltaT Amount of real time to step forward in one time step
 */
-hipError_t gpu_nvt_rescale_step_one(Scalar4* d_pos,
-                                    Scalar4* d_vel,
-                                    const Scalar3* d_accel,
-                                    int3* d_image,
-                                    unsigned int* d_group_members,
-                                    unsigned int group_size,
-                                    const BoxDim& box,
-                                    unsigned int block_size,
-                                    Scalar rescale_factor,
-                                    Scalar deltaT,
-                                    bool use_limit,
-                                    Scalar maximum_displacement)
+hipError_t gpu_nvt_sllod_rescale_step_one(Scalar4* d_pos,
+                                          Scalar4* d_vel,
+                                          const Scalar3* d_accel,
+                                          int3* d_image,
+                                          unsigned int* d_group_members,
+                                          unsigned int group_size,
+                                          const BoxDim& box,
+                                          unsigned int block_size,
+                                          Scalar rescale_factor,
+                                          Scalar deltaT,
+                                          bool use_limit,
+                                          Scalar maximum_displacement,
+                                          Scalar shear_rate,
+                                          bool flipped,
+                                          Scalar boundary_shear_velocity)
     {
     unsigned int max_block_size;
     hipFuncAttributes attr;
@@ -139,7 +175,10 @@ hipError_t gpu_nvt_rescale_step_one(Scalar4* d_pos,
                        rescale_factor,
                        deltaT,
                        use_limit,
-                       maximum_displacement);
+                       maximum_displacement,
+                       shear_rate,
+                       flipped,
+                       boundary_shear_velocity);
 
     return hipSuccess;
     }
@@ -152,13 +191,14 @@ hipError_t gpu_nvt_rescale_step_one(Scalar4* d_pos,
     \param d_net_force Net force on each particle
     \param deltaT Amount of real time to step forward in one time step
 */
-__global__ void gpu_nvt_rescale_step_two_kernel(Scalar4* d_vel,
-                                                Scalar3* d_accel,
-                                                unsigned int* d_group_members,
-                                                unsigned int work_size,
-                                                Scalar4* d_net_force,
-                                                Scalar deltaT,
-                                                Scalar rescale_factor)
+__global__ void gpu_nvt_sllod_rescale_step_two_kernel(Scalar4* d_vel,
+                                                      Scalar3* d_accel,
+                                                      unsigned int* d_group_members,
+                                                      unsigned int work_size,
+                                                      Scalar4* d_net_force,
+                                                      Scalar deltaT,
+                                                      Scalar rescale_factor,
+                                                      Scalar shear_rate)
     {
     // determine which particle this thread works on
     int group_idx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -177,11 +217,14 @@ __global__ void gpu_nvt_rescale_step_two_kernel(Scalar4* d_vel,
         Scalar mass = vel.w;
         accel = accel / mass;
 
+        // SLLOD correction to velocity: shear rate tensor dotted with velocity
+        const Scalar3 v_del_u = make_scalar3(shear_rate * vel.y, 0.0, 0.0);
+
+        // update velocity
+        v += Scalar(0.5) * (accel - v_del_u) * deltaT;
+
         // rescale
         v *= rescale_factor;
-
-        // update
-        v += Scalar(1.0 / 2.0) * deltaT * accel;
 
         // write out data
         d_vel[idx] = make_scalar4(v.x, v.y, v.z, vel.w);
@@ -200,14 +243,15 @@ __global__ void gpu_nvt_rescale_step_two_kernel(Scalar4* d_vel,
     \param deltaT Amount of real time to step forward in one time step
     \param rescale_factor Exponential velocity scaling factor
 */
-hipError_t gpu_nvt_rescale_step_two(Scalar4* d_vel,
-                                    Scalar3* d_accel,
-                                    unsigned int* d_group_members,
-                                    unsigned int group_size,
-                                    Scalar4* d_net_force,
-                                    unsigned int block_size,
-                                    Scalar deltaT,
-                                    Scalar rescale_factor)
+hipError_t gpu_nvt_sllod_rescale_step_two(Scalar4* d_vel,
+                                          Scalar3* d_accel,
+                                          unsigned int* d_group_members,
+                                          unsigned int group_size,
+                                          Scalar4* d_net_force,
+                                          unsigned int block_size,
+                                          Scalar deltaT,
+                                          Scalar rescale_factor,
+                                          Scalar shear_rate)
     {
     unsigned int max_block_size;
     hipFuncAttributes attr;
@@ -234,7 +278,8 @@ hipError_t gpu_nvt_rescale_step_two(Scalar4* d_vel,
                        nwork,
                        d_net_force,
                        deltaT,
-                       rescale_factor);
+                       rescale_factor,
+                       shear_rate);
 
     return hipSuccess;
     }
