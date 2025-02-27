@@ -58,7 +58,7 @@ void TwoStepConstantVolumeSLLODGPU::integrateStepOne(uint64_t timestep)
 
         // perform the update on the GPU
         m_tuner_one->begin();
-        kernel::gpu_nvt_rescale_step_one(d_pos.data,
+        kernel::gpu_nvt_sllod_rescale_step_one(d_pos.data,
                                          d_vel.data,
                                          d_accel.data,
                                          d_image.data,
@@ -144,7 +144,7 @@ void TwoStepConstantVolumeSLLODGPU::integrateStepTwo(uint64_t timestep)
 
         // perform the update on the GPU
         m_tuner_two->begin();
-        kernel::gpu_nvt_rescale_step_two(d_vel.data,
+        kernel::gpu_nvt_sllod_rescale_step_two(d_vel.data,
                                          d_accel.data,
                                          d_index_array.data,
                                          group_size,

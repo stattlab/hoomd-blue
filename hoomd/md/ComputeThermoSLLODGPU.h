@@ -1,7 +1,7 @@
 // Copyright (c) 2009-2025 The Regents of the University of Michigan.
 // Part of HOOMD-blue, released under the BSD 3-Clause License.
 
-#include "ComputeThermo.h"
+#include "ComputeThermoSLLOD.h"
 
 /*! \file ComputeThermoGPU.h
     \brief Declares a class for computing thermodynamic quantities on the GPU
@@ -29,8 +29,15 @@ class PYBIND11_EXPORT ComputeThermoSLLODGPU : public ComputeThermoSLLOD
     public:
     //! Constructs the compute
     ComputeThermoSLLODGPU(std::shared_ptr<SystemDefinition> sysdef,
-                     std::shared_ptr<ParticleGroup> group);
+                     std::shared_ptr<ParticleGroup> group,
+		     Scalar shear_rate);
     virtual ~ComputeThermoSLLODGPU();
+    
+    protected:
+    GPUVector<Scalar4> m_scratch;                //!< Scratch space for partial sums
+    GPUVector<Scalar> m_scratch_pressure_tensor; //!< Scratch space for pressure tensor partial sums
+    GPUVector<Scalar> m_scratch_rot; //!< Scratch space for rotational kinetic energy partial sums
+    unsigned int m_block_size;       //!< Block size executed
 
     //! Does the actual computation
     virtual void computeProperties();

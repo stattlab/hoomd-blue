@@ -5,7 +5,7 @@
 #define HOOMD_TWOSTEPCONSTANTVOLUME_SLLOD_GPU_H
 
 #include "Thermostat.h"
-#include "TwoStepConstantVolume.h"
+#include "TwoStepConstantVolumeSLLOD.h"
 #include <hoomd/Autotuner.h>
 
 namespace hoomd::md
@@ -27,6 +27,17 @@ class PYBIND11_EXPORT TwoStepConstantVolumeSLLODGPU : public TwoStepConstantVolu
     virtual void integrateStepTwo(uint64_t timestep);
 
     protected:
+    /// Autotuner for block size (step one kernel).
+    std::shared_ptr<Autotuner<1>> m_tuner_one;
+
+    /// Autotuner for block size (step two kernel).
+    std::shared_ptr<Autotuner<1>> m_tuner_two;
+
+    /// Autotuner_angular for block size (angular step one kernel).
+    std::shared_ptr<Autotuner<1>> m_tuner_angular_one;
+
+    /// Autotuner_angular for block size (angular step two kernel).
+    std::shared_ptr<Autotuner<1>> m_tuner_angular_two;
 
     };
     } // namespace hoomd::md

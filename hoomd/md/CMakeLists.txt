@@ -271,7 +271,7 @@ list(APPEND _md_sources ActiveForceComputeGPU.cc
                            TwoStepLangevinGPU.cc
                   			   VolumeConservationMeshForceComputeGPU.cc
                            TwoStepConstantVolumeGPU.cc
-                           TwoStepConstantVolumeGPUSLLOD.cc
+                           TwoStepConstantVolumeSLLODGPU.cc
                            TwoStepConstantPressureGPU.cc
                            MuellerPlatheFlowGPU.cc
                            CosineSqAngleForceComputeGPU.cc

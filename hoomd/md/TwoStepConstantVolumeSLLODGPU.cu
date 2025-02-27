@@ -31,7 +31,7 @@ namespace kernel
     See gpu_nve_step_one_kernel() for some performance notes on how to handle the group data reads
    efficiently.
 */
-__global__ void gpu_nvt_rescale_step_one_kernel(Scalar4* d_pos,
+__global__ void gpu_nvt_sllod_rescale_step_one_kernel(Scalar4* d_pos,
                                                 Scalar4* d_vel,
                                                 const Scalar3* d_accel,
                                                 int3* d_image,
@@ -97,7 +97,7 @@ __global__ void gpu_nvt_rescale_step_one_kernel(Scalar4* d_pos,
     \param rescale_factor Thermostat rescaling factor
     \param deltaT Amount of real time to step forward in one time step
 */
-hipError_t gpu_nvt_rescale_step_one(Scalar4* d_pos,
+hipError_t gpu_nvt_sllod_rescale_step_one(Scalar4* d_pos,
                                     Scalar4* d_vel,
                                     const Scalar3* d_accel,
                                     int3* d_image,
@@ -112,7 +112,7 @@ hipError_t gpu_nvt_rescale_step_one(Scalar4* d_pos,
     {
     unsigned int max_block_size;
     hipFuncAttributes attr;
-    hipFuncGetAttributes(&attr, (const void*)gpu_nvt_rescale_step_one_kernel);
+    hipFuncGetAttributes(&attr, (const void*)gpu_nvt_sllod_rescale_step_one_kernel);
     max_block_size = attr.maxThreadsPerBlock;
 
     unsigned int run_block_size = min(block_size, max_block_size);
@@ -124,7 +124,7 @@ hipError_t gpu_nvt_rescale_step_one(Scalar4* d_pos,
     dim3 threads(run_block_size, 1, 1);
 
     // run the kernel
-    hipLaunchKernelGGL((gpu_nvt_rescale_step_one_kernel),
+    hipLaunchKernelGGL((gpu_nvt_sllod_rescale_step_one_kernel),
                        dim3(grid),
                        dim3(threads),
                        0,
@@ -152,7 +152,7 @@ hipError_t gpu_nvt_rescale_step_one(Scalar4* d_pos,
     \param d_net_force Net force on each particle
     \param deltaT Amount of real time to step forward in one time step
 */
-__global__ void gpu_nvt_rescale_step_two_kernel(Scalar4* d_vel,
+__global__ void gpu_nvt_sllod_rescale_step_two_kernel(Scalar4* d_vel,
                                                 Scalar3* d_accel,
                                                 unsigned int* d_group_members,
                                                 unsigned int work_size,
@@ -200,7 +200,7 @@ __global__ void gpu_nvt_rescale_step_two_kernel(Scalar4* d_vel,
     \param deltaT Amount of real time to step forward in one time step
     \param rescale_factor Exponential velocity scaling factor
 */
-hipError_t gpu_nvt_rescale_step_two(Scalar4* d_vel,
+hipError_t gpu_nvt_sllod_rescale_step_two(Scalar4* d_vel,
                                     Scalar3* d_accel,
                                     unsigned int* d_group_members,
                                     unsigned int group_size,
@@ -211,7 +211,7 @@ hipError_t gpu_nvt_rescale_step_two(Scalar4* d_vel,
     {
     unsigned int max_block_size;
     hipFuncAttributes attr;
-    hipFuncGetAttributes(&attr, (const void*)gpu_nvt_rescale_step_two_kernel);
+    hipFuncGetAttributes(&attr, (const void*)gpu_nvt_sllod_rescale_step_two_kernel);
     max_block_size = attr.maxThreadsPerBlock;
 
     unsigned int run_block_size = min(block_size, max_block_size);
@@ -223,7 +223,7 @@ hipError_t gpu_nvt_rescale_step_two(Scalar4* d_vel,
     dim3 threads(run_block_size, 1, 1);
 
     // run the kernel
-    hipLaunchKernelGGL((gpu_nvt_rescale_step_two_kernel),
+    hipLaunchKernelGGL((gpu_nvt_sllod_rescale_step_two_kernel),
                        dim3(grid),
                        dim3(threads),
                        0,

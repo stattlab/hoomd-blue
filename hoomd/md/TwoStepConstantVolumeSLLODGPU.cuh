@@ -14,7 +14,7 @@ namespace md
 namespace kernel
     {
 //! Kernel driver for the first part of the NVT update called by TwoStepNVTGPU
-hipError_t gpu_nvt_rescale_step_one(Scalar4* d_pos,
+hipError_t gpu_nvt_sllod_rescale_step_one(Scalar4* d_pos,
                                     Scalar4* d_vel,
                                     const Scalar3* d_accel,
                                     int3* d_image,
@@ -28,7 +28,7 @@ hipError_t gpu_nvt_rescale_step_one(Scalar4* d_pos,
                                     Scalar limit_displacement = Scalar(0.));
 
 //! Kernel driver for the second part of the NVT update called by NVTUpdaterGPU
-hipError_t gpu_nvt_rescale_step_two(Scalar4* d_vel,
+hipError_t gpu_nvt_sllod_rescale_step_two(Scalar4* d_vel,
                                     Scalar3* d_accel,
                                     unsigned int* d_group_members,
                                     unsigned int group_size,

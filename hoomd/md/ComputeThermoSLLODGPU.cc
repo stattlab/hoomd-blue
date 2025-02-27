@@ -26,7 +26,7 @@ namespace md
 ComputeThermoSLLODGPU::ComputeThermoSLLODGPU(std::shared_ptr<SystemDefinition> sysdef,
                                    std::shared_ptr<ParticleGroup> group,
                                    Scalar shear_rate)
-    : ComputeThermoSLLOD(sysdef, group), m_shear_rate(shear_rate)
+    : ComputeThermoSLLOD(sysdef, group, shear_rate)
     {
     if (!m_exec_conf->isCUDAEnabled())
         {
