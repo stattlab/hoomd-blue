@@ -57,12 +57,45 @@ void ComputeThermoSLLODGPU::removeFlowField()
     ArrayHandle< unsigned int > d_index_array(m_group->getIndexArray(), access_location::device, access_mode::read);
 
     // perform the removal of the flow field on the GPU
-    remove_flow_field(d_vel.data,
+    gpu_remove_flow_field(d_vel.data,
                     d_pos.data,
                     d_index_array.data,
                     group_size,
                     m_shear_rate,
                     );
+    }
+
+    if (m_exec_conf->isCUDAErrorCheckingEnabled())
+    CHECK_CUDA_ERROR();
+    }
+
+}
+
+void ComputeThermoSLLODGPU::addFlowField()
+{
+    // just drop out if the group is an empty group
+    if (m_group->getNumMembersGlobal() == 0)
+        return;
+
+    unsigned int group_size = m_group->getNumMembers();
+
+    assert(m_pdata);
+    {
+    ArrayHandle<Scalar4> d_vel(m_pdata->getVelocities(), access_location::device, access_mode::readwrite);
+    ArrayHandle<Scalar4> d_pos(m_pdata->getPositions(), access_location::device, access_mode::read);
+    ArrayHandle< unsigned int > d_index_array(m_group->getIndexArray(), access_location::device, access_mode::read);
+
+    // perform the removal of the flow field on the GPU
+    gpu_add_flow_field(d_vel.data,
+                    d_pos.data,
+                    d_index_array.data,
+                    group_size,
+                    m_shear_rate,
+                    );
+    }
+
+    if (m_exec_conf->isCUDAErrorCheckingEnabled())
+    CHECK_CUDA_ERROR();
     }
 
 }
@@ -75,6 +108,9 @@ void ComputeThermoSLLODGPU::computeProperties()
         return;
 
     unsigned int group_size = m_group->getNumMembers();
+
+    //before doing any calculations of thermodynamic quantities, remove imposed flow
+    removeFlowField();
 
     assert(m_pdata);
 
@@ -209,6 +245,10 @@ void ComputeThermoSLLODGPU::computeProperties()
     // in MPI, reduce extensive quantities only when they're needed
     m_properties_reduced = !m_pdata->getDomainDecomposition();
 #endif // ENABLE_MPI
+
+    // add flow field back at the end of calculations
+    addFlowField();
+
     }
 
 namespace detail
