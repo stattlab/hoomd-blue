@@ -2,6 +2,7 @@
 // Part of HOOMD-blue, released under the BSD 3-Clause License.
 
 #include "ComputeThermoGPU.cuh"
+#include "ComputeThermoSLLODGPU.cuh"
 #include "hoomd/HOOMDMath.h"
 #include "hoomd/VectorMath.h"
 #include <hip/hip_runtime.h>

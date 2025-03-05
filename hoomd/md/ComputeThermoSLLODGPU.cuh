@@ -1,12 +1,13 @@
 // Copyright (c) 2009-2025 The Regents of the University of Michigan.
 // Part of HOOMD-blue, released under the BSD 3-Clause License.
 
-#ifndef _COMPUTE_THERMO_GPU_CUH_
-#define _COMPUTE_THERMO_GPU_CUH_
+#ifndef _COMPUTE_THERMO_SLLOD_GPU_CUH_
+#define _COMPUTE_THERMO_SLLOD_GPU_CUH_
 
 #include "ComputeThermoTypes.h"
 #include "hoomd/HOOMDMath.h"
 #include "hoomd/ParticleData.cuh"
+#include "ComputeThermoGPU.cuh"
 
 /*! \file ComputeThermoGPU.cuh
     \brief Kernel driver function declarations for ComputeThermoGPU
