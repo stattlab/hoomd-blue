@@ -60,14 +60,14 @@ void ComputeThermoSLLODGPU::removeFlowField()
     kernel::gpu_remove_flow_field(d_vel.data,
                     d_pos.data,
                     d_index_array.data,
+                    m_shear_rate,
                     group_size,
-                    m_shear_rate
                     );
     }
 
     if (m_exec_conf->isCUDAErrorCheckingEnabled())
     CHECK_CUDA_ERROR();
-    
+
 
 }
 
@@ -89,14 +89,14 @@ void ComputeThermoSLLODGPU::addFlowField()
     kernel::gpu_add_flow_field(d_vel.data,
                     d_pos.data,
                     d_index_array.data,
-                    group_size,
-                    m_shear_rate
+                    m_shear_rate,
+                    group_size
                     );
     }
 
     if (m_exec_conf->isCUDAErrorCheckingEnabled())
     CHECK_CUDA_ERROR();
-    
+
 
 }
 /*! Computes all thermodynamic properties of the system in one fell swoop, on the GPU.
