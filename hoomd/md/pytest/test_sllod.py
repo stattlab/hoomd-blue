@@ -118,7 +118,6 @@ def test_sllod_correction(simulation_factory, two_particle_snapshot_factory):
     sllod = hoomd.md.methods.ConstantVolumeSLLOD(
         filter=hoomd.filter.All(), thermostat=None, shear_rate=shear_rate)
 
-
     integrator.methods.append(sllod)
 
     sim.operations.integrator = integrator
@@ -128,4 +127,23 @@ def test_sllod_correction(simulation_factory, two_particle_snapshot_factory):
     numpy.testing.assert_allclose(snap.particles.velocity[0][0],-shear_rate*velocity*timestep)
     numpy.testing.assert_allclose(snap.particles.velocity[1][0],-shear_rate*velocity*timestep)
 
+
 def test_thermo_compute(simulation_factory, two_particle_snapshot_factory):
+
+    thermo = hoomd.md.compute.ThermodynamicQuantities(hoomd.filter.All())
+
+    integrator = hoomd.md.Integrator(dt=0.0001)
+    thermostat = hoomd.md.methods.thermostats.MTTK(kT=1.0, tau=1.0)
+    integrator.methods.append(hoomd.md.methods.ConstantVolumeSLLOD(hoomd.filter.All(), thermostat,shear_rate=0.1))
+
+    snapshot = two_particle_snapshot_factory(dimensions=3, d=1, L=10)
+    if snapshot.communicator.rank == 0:
+        snapshot.particles.velocity[0] = (0.0,0.0,0.5)
+        snapshot.particles.velocity[1] = (0.5,0.0,0.0)
+
+    sim = simulation_factory(snapshot)
+    sim.operations.integrator = integrator
+    sim.operations.add(thermo)
+    sim.run(1)
+
+    np.testing.assert_allclose(thermo.kinetic_energy, 0.25)
