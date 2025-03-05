@@ -770,7 +770,8 @@ hipError_t gpu_remove_flow_field(Scalar4* d_pos,
                        d_pos,
                        d_vel,
                        d_group_members,
-                       shear_rate group_size);
+                       shear_rate,
+                       group_size);
 
     return hipSuccess;
     }
@@ -793,7 +794,8 @@ hipError_t gpu_add_flow_field(Scalar4* d_pos,
                        d_pos,
                        d_vel,
                        d_group_members,
-                       shear_rate group_size);
+                       shear_rate,
+                       group_size);
 
     return hipSuccess;
     }
