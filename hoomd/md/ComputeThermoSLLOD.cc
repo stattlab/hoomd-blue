@@ -40,7 +40,7 @@ ComputeThermoSLLOD::~ComputeThermoSLLOD()
 
 void ComputeThermoSLLOD::removeFlowField()
 {
-  std::cout<< "in ComputeThermoSLLOD::removeFlowField "<< m_shear_rate << "\n";
+
   unsigned int group_size = m_group->getNumMembers();
   {
   assert(m_pdata);
@@ -70,7 +70,7 @@ void ComputeThermoSLLOD::removeFlowField()
 
 void ComputeThermoSLLOD::addFlowField()
 {
-  std::cout<< "in ComputeThermoSLLOD::addFlowField "<< m_shear_rate << "\n";
+
   unsigned int group_size = m_group->getNumMembers();
 
  {
@@ -102,7 +102,6 @@ void ComputeThermoSLLOD::addFlowField()
 
 void ComputeThermoSLLOD::computeProperties()
     {
-    std::cout<< "in ComputeThermoSLLOD::computeProperties begin\n";
 
     // just drop out if the group is an empty group
     if (m_group->getNumMembersGlobal() == 0)
@@ -330,7 +329,6 @@ void ComputeThermoSLLOD::computeProperties()
 
     // add streaming velocity flow field back after computing thermodynamic properties.
     addFlowField();
-    std::cout<< "in ComputeThermoSLLOD::computeProperties end\n";
 
     }
 

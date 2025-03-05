@@ -26,7 +26,7 @@ bool hoomd::md::TwoStepConstantVolumeSLLOD::deformGlobalBox()
 
 void hoomd::md::TwoStepConstantVolumeSLLOD::integrateStepOne(uint64_t timestep)
     {
-    std::cout<< "In TwoStepConstantVolumeSLLOD::integrateStepOne \n";
+
     if (m_group->getNumMembersGlobal() == 0)
         {
         throw std::runtime_error("Empty integration group.");
@@ -272,7 +272,7 @@ void hoomd::md::TwoStepConstantVolumeSLLOD::integrateStepOne(uint64_t timestep)
 
 void hoomd::md::TwoStepConstantVolumeSLLOD::integrateStepTwo(uint64_t timestep)
     {
-    std::cout<< "In TwoStepConstantVolumeSLLOD::integrateStepTwo\n";
+
     unsigned int group_size = m_group->getNumMembers();
 
     auto rescaling_factors = m_thermostat ? m_thermostat->getRescalingFactorsTwo(timestep, m_deltaT)
