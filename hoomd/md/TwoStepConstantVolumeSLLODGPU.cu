@@ -226,7 +226,7 @@ __global__ void gpu_nvt_sllod_rescale_step_two_kernel(Scalar4* d_vel,
         // rescale
         v *= rescale_factor;
 
-        // write out data
+        // save
         d_vel[idx] = make_scalar4(v.x, v.y, v.z, vel.w);
 
         // since we calculate the acceleration, we need to write it for the next step

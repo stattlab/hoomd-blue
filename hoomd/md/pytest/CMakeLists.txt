@@ -45,6 +45,7 @@ set(files __init__.py
     aniso_forces_and_energies.json
     test_burst_writer.py
     test_hdf5.py
+    test_sllod.py
     )
 
 install(FILES ${files}

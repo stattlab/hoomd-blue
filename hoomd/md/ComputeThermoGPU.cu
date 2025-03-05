@@ -625,7 +625,8 @@ hipError_t gpu_compute_thermo_partial(Scalar* d_properties,
    for details.
 */
 
-hipError_t gpu_compute_thermo_final(Scalar* d_pos,
+hipError_t gpu_compute_thermo_final(Scalar* d_properties,
+                                    Scalar* d_pos,
                                     Scalar4* d_vel,
                                     unsigned int* d_index,
                                     unsigned int* d_group_members,
