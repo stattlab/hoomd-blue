@@ -61,7 +61,7 @@ void ComputeThermoSLLODGPU::removeFlowField()
                     d_pos.data,
                     d_index_array.data,
                     m_shear_rate,
-                    group_size,
+                    group_size
                     );
     }
 
