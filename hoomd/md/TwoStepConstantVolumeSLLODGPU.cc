@@ -71,11 +71,11 @@ void TwoStepConstantVolumeSLLODGPU::integrateStepOne(uint64_t timestep)
                                          m_tuner_one->getParam()[0],
                                          rescalingFactors[0], // m_exp_thermo_fac,
                                          m_deltaT,
-                                         limits.first,
-                                         limits.second,
                                          m_shear_rate,
                                          flipped,
-                                         m_boundary_shear_velocity);
+                                         m_boundary_shear_velocity,
+                                         limits.first,
+                                         limits.second);
 
         if (m_exec_conf->isCUDAErrorCheckingEnabled())
             CHECK_CUDA_ERROR();

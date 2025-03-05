@@ -40,11 +40,11 @@ __global__ void gpu_nvt_sllod_rescale_step_one_kernel(Scalar4* d_pos,
                                                       BoxDim box,
                                                       Scalar rescale_factor,
                                                       Scalar deltaT,
-                                                      bool limit = false,
-                                                      Scalar maximum_displacement = Scalar(0.),
                                                       Scalar shear_rate,
                                                       bool flipped,
-                                                      Scalar boundary_shear_velocity)
+                                                      Scalar boundary_shear_velocity,
+                                                      bool limit = false,
+                                                      Scalar maximum_displacement = Scalar(0.))
     {
     // determine which particle this thread works on
     int group_idx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -140,11 +140,11 @@ hipError_t gpu_nvt_sllod_rescale_step_one(Scalar4* d_pos,
                                           unsigned int block_size,
                                           Scalar rescale_factor,
                                           Scalar deltaT,
-                                          bool use_limit,
-                                          Scalar maximum_displacement,
                                           Scalar shear_rate,
                                           bool flipped,
-                                          Scalar boundary_shear_velocity)
+                                          Scalar boundary_shear_velocity,
+                                          bool use_limit,
+                                          Scalar maximum_displacement)
     {
     unsigned int max_block_size;
     hipFuncAttributes attr;
@@ -174,11 +174,11 @@ hipError_t gpu_nvt_sllod_rescale_step_one(Scalar4* d_pos,
                        box,
                        rescale_factor,
                        deltaT,
-                       use_limit,
-                       maximum_displacement,
                        shear_rate,
                        flipped,
-                       boundary_shear_velocity);
+                       boundary_shear_velocity,
+                       use_limit,
+                       maximum_displacement);
 
     return hipSuccess;
     }

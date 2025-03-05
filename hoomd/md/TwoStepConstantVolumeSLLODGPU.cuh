@@ -24,11 +24,11 @@ hipError_t gpu_nvt_sllod_rescale_step_one(Scalar4* d_pos,
                                           unsigned int block_size,
                                           Scalar rescale_factor,
                                           Scalar deltaT,
-                                          bool limit = false,
-                                          Scalar limit_displacement = Scalar(0.),
                                           Scalar shear_rate,
                                           bool flipped,
-                                          Scalar boundary_shear_velocity);
+                                          Scalar boundary_shear_velocity,
+                                          bool limit = false,
+                                          Scalar limit_displacement = Scalar(0.));
 
 //! Kernel driver for the second part of the NVT update called by NVTUpdaterGPU
 hipError_t gpu_nvt_sllod_rescale_step_two(Scalar4* d_vel,
