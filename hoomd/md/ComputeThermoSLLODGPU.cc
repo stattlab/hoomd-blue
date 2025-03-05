@@ -3,10 +3,11 @@
 
 /*! \file ComputeThermoGPU.cc
     \brief Contains code for the ComputeThermoGPU class
-*/
+ */
 
 #include "ComputeThermoSLLODGPU.h"
 #include "ComputeThermoSLLODGPU.cuh"
+#include "ComputeThermoGPU.cuh"
 
 #ifdef ENABLE_MPI
 #include "hoomd/Communicator.h"
