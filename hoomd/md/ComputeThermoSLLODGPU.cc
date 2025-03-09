@@ -57,7 +57,7 @@ void ComputeThermoSLLODGPU::removeFlowField()
     ArrayHandle< unsigned int > d_index_array(m_group->getIndexArray(), access_location::device, access_mode::read);
 
     // perform the removal of the flow field on the GPU
-    gpu_remove_flow_field(d_vel.data,
+    kernel::gpu_remove_flow_field(d_vel.data,
                     d_pos.data,
                     d_index_array.data,
                     m_shear_rate,
@@ -86,7 +86,7 @@ void ComputeThermoSLLODGPU::addFlowField()
     ArrayHandle< unsigned int > d_index_array(m_group->getIndexArray(), access_location::device, access_mode::read);
 
     // perform the removal of the flow field on the GPU
-    gpu_add_flow_field(d_vel.data,
+    kernel::gpu_add_flow_field(d_vel.data,
                     d_pos.data,
                     d_index_array.data,
                     m_shear_rate,
@@ -211,7 +211,7 @@ void ComputeThermoSLLODGPU::computeProperties()
         args.external_energy = m_pdata->getExternalEnergy();
 
         // perform the computation on the GPU(s)
-        gpu_compute_thermo_sllod_partial(d_properties.data,
+        kernel::gpu_compute_thermo_sllod_partial(d_properties.data,
                                    d_vel.data,
                                    d_body.data,
                                    d_tag.data,
@@ -226,7 +226,7 @@ void ComputeThermoSLLODGPU::computeProperties()
             CHECK_CUDA_ERROR();
 
         // perform the computation on GPU 0
-        gpu_compute_thermo_sllod_final(d_properties.data,
+        kernel::gpu_compute_thermo_sllod_final(d_properties.data,
                                  d_vel.data,
                                  d_body.data,
                                  d_tag.data,
