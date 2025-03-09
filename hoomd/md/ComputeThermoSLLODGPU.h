@@ -32,7 +32,7 @@ class PYBIND11_EXPORT ComputeThermoSLLODGPU : public ComputeThermoSLLOD
                      std::shared_ptr<ParticleGroup> group,
 		     Scalar shear_rate);
     virtual ~ComputeThermoSLLODGPU();
-    
+
     protected:
     GPUVector<Scalar4> m_scratch;                //!< Scratch space for partial sums
     GPUVector<Scalar> m_scratch_pressure_tensor; //!< Scratch space for pressure tensor partial sums
@@ -41,8 +41,6 @@ class PYBIND11_EXPORT ComputeThermoSLLODGPU : public ComputeThermoSLLOD
 
     //! Does the actual computation
     virtual void computeProperties();
-
-    protected:
 
     virtual void addFlowField();
     virtual void removeFlowField();
