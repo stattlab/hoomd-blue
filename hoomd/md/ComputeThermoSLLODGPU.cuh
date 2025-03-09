@@ -47,7 +47,7 @@ Scalar external_energy;    //!< External potential energy
 };
 
 //! Computes the partial sums of thermodynamic properties for ComputeThermo
-hipError_t gpu_compute_thermo_partial_sllod(Scalar* d_properties,
+hipError_t gpu_compute_thermo_sllod_partial(Scalar* d_properties,
                                   Scalar4* d_vel,
                                   unsigned int* d_body,
                                   unsigned int* d_tag,
@@ -59,7 +59,7 @@ hipError_t gpu_compute_thermo_partial_sllod(Scalar* d_properties,
                                   bool compute_rotational_energy);
 
 //! Computes the final sums of thermodynamic properties for ComputeThermo
-hipError_t gpu_compute_thermo_final_sllod(Scalar* d_properties,
+hipError_t gpu_compute_thermo_sllod_final(Scalar* d_properties,
                                 Scalar4* d_vel,
                                 unsigned int* d_body,
                                 unsigned int* d_tag,

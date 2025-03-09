@@ -315,7 +315,7 @@ d_properties.
 
 sizeof(Scalar4)*block_size bytes of shared memory are needed for this kernel to run.
 */
-__global__ void gpu_compute_thermo_final_sums_sllod(Scalar* d_properties,
+__global__ void gpu_compute_thermo_final_sllod_sums(Scalar* d_properties,
                                                     Scalar4* d_scratch,
                                                     Scalar* d_scratch_rot,
                                                     Scalar ndof,
@@ -432,7 +432,7 @@ d_properties.
 
 6*sizeof(Scalar)*block_size bytes of shared memory are needed for this kernel to run.
 */
-__global__ void gpu_compute_pressure_tensor_final_sums_sllod(Scalar* d_properties,
+__global__ void gpu_compute_pressure_tensor_final_sllod_sums(Scalar* d_properties,
                                                              Scalar* d_scratch,
                                                              BoxDim box,
                                                              unsigned int group_size,
@@ -523,7 +523,7 @@ This function drives gpu_compute_thermo_partial_sums and gpu_compute_thermo_fina
 for details.
 */
 
-hipError_t gpu_compute_thermo_partial_sllod(Scalar* d_properties,
+hipError_t gpu_compute_thermo_sllod_partial(Scalar* d_properties,
                                             Scalar4* d_vel,
                                             unsigned int* d_body,
                                             unsigned int* d_tag,
@@ -548,7 +548,7 @@ hipError_t gpu_compute_thermo_partial_sllod(Scalar* d_properties,
 
     size_t shared_bytes = sizeof(Scalar3) * args.block_size;
 
-    hipLaunchKernelGGL(gpu_compute_thermo_partial_sums_sllod,
+    hipLaunchKernelGGL(gpu_compute_thermo_sllod_partial_sums,
                        dim3(grid),
                        dim3(threads),
                        shared_bytes,
@@ -570,7 +570,7 @@ hipError_t gpu_compute_thermo_partial_sllod(Scalar* d_properties,
         shared_bytes = 6 * sizeof(Scalar) * args.block_size;
 
         // run the kernel
-        hipLaunchKernelGGL(gpu_compute_pressure_tensor_partial_sums_sllod,
+        hipLaunchKernelGGL(gpu_compute_pressure_tensor_sllod_partial_sums,
                            dim3(grid),
                            dim3(threads),
                            shared_bytes,
@@ -594,7 +594,7 @@ hipError_t gpu_compute_thermo_partial_sllod(Scalar* d_properties,
         shared_bytes = sizeof(Scalar) * args.block_size;
 
         // run the kernel
-        hipLaunchKernelGGL(gpu_compute_rotational_ke_partial_sums_sllod,
+        hipLaunchKernelGGL(gpu_compute_rotational_ke_sllod_partial_sums,
                            dim3(grid),
                            dim3(threads),
                            shared_bytes,
@@ -629,7 +629,7 @@ This function drives gpu_compute_thermo_partial_sums and gpu_compute_thermo_fina
 for details.
 */
 
-hipError_t gpu_compute_thermo_final_sllod(Scalar* d_properties,
+hipError_t gpu_compute_thermo_sllod_final(Scalar* d_properties,
                                           Scalar* d_pos,
                                           Scalar4* d_vel,
                                           unsigned int* d_index,
@@ -659,7 +659,7 @@ hipError_t gpu_compute_thermo_final_sllod(Scalar* d_properties,
           * (args.external_virial_xx + args.external_virial_yy + args.external_virial_zz);
 
     // run the kernel
-    hipLaunchKernelGGL(gpu_compute_thermo_final_sums_sllod,
+    hipLaunchKernelGGL(gpu_compute_thermo_sllod_final_sums,
                        dim3(grid),
                        dim3(threads),
                        shared_bytes,
@@ -679,7 +679,7 @@ hipError_t gpu_compute_thermo_final_sllod(Scalar* d_properties,
         {
         shared_bytes = 6 * sizeof(Scalar) * final_block_size;
         // run the kernel
-        hipLaunchKernelGGL(gpu_compute_pressure_tensor_final_sums_sllod,
+        hipLaunchKernelGGL(gpu_compute_pressure_tensor_sllod_final_sums,
                            dim3(grid),
                            dim3(threads),
                            shared_bytes,

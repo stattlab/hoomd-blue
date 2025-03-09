@@ -226,7 +226,7 @@ void ComputeThermoSLLODGPU::computeProperties()
             CHECK_CUDA_ERROR();
 
         // perform the computation on GPU 0
-        gpu_compute_thermo_final_sllod(d_properties.data,
+        gpu_compute_thermo_sllod_final(d_properties.data,
                                  d_vel.data,
                                  d_body.data,
                                  d_tag.data,
