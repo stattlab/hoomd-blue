@@ -70,6 +70,7 @@ hipError_t gpu_compute_thermo_sllod_final(Scalar* d_properties,
                                 bool compute_pressure_tensor,
                                 bool compute_rotational_energy);
 
+
 hipError_t gpu_remove_flow_field(Scalar4* d_pos,
                                  Scalar4* d_vel,
                                  unsigned int* d_group_members,

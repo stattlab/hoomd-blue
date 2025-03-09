@@ -45,7 +45,7 @@ namespace kernel
    sizeof(Scalar3)*block_size of dynamic shared memory are needed for this kernel to run.
 */
 
-__global__ void gpu_compute_thermo_partial_sums_sllod(Scalar4* d_scratch,
+__global__ void gpu_compute_thermo_sllod_partial_sums(Scalar4* d_scratch,
                                                       Scalar4* d_net_force,
                                                       Scalar* d_net_virial,
                                                       const size_t virial_pitch,
@@ -136,7 +136,7 @@ d_scratch[i*gridDim.x + blockIdx.x], where i=0..5 is the index of the component.
 to run, 6*sizeof(Scalar)*block_size of dynamic shared memory are needed.
 */
 
-__global__ void gpu_compute_pressure_tensor_partial_sums_sllod(Scalar* d_scratch,
+__global__ void gpu_compute_pressure_tensor_sllod_partial_sums(Scalar* d_scratch,
                                                                Scalar4* d_net_force,
                                                                Scalar* d_net_virial,
                                                                const size_t virial_pitch,
@@ -222,7 +222,7 @@ __global__ void gpu_compute_pressure_tensor_partial_sums_sllod(Scalar* d_scratch
 \param offset Offset of this GPU in the list of group members
 */
 
-__global__ void gpu_compute_rotational_ke_partial_sums_sllod(Scalar* d_scratch,
+__global__ void gpu_compute_rotational_ke_sllod_partial_sums(Scalar* d_scratch,
                                                              const Scalar4* d_orientation,
                                                              const Scalar4* d_angmom,
                                                              const Scalar3* d_inertia,
@@ -315,7 +315,7 @@ d_properties.
 
 sizeof(Scalar4)*block_size bytes of shared memory are needed for this kernel to run.
 */
-__global__ void gpu_compute_thermo_final_sllod_sums(Scalar* d_properties,
+__global__ void gpu_compute_thermo_sllod_final_sums(Scalar* d_properties,
                                                     Scalar4* d_scratch,
                                                     Scalar* d_scratch_rot,
                                                     Scalar ndof,
@@ -432,7 +432,7 @@ d_properties.
 
 6*sizeof(Scalar)*block_size bytes of shared memory are needed for this kernel to run.
 */
-__global__ void gpu_compute_pressure_tensor_final_sllod_sums(Scalar* d_properties,
+__global__ void gpu_compute_pressure_tensor_sllod_final_sums(Scalar* d_properties,
                                                              Scalar* d_scratch,
                                                              BoxDim box,
                                                              unsigned int group_size,
@@ -630,9 +630,9 @@ for details.
 */
 
 hipError_t gpu_compute_thermo_sllod_final(Scalar* d_properties,
-                                          Scalar* d_pos,
                                           Scalar4* d_vel,
-                                          unsigned int* d_index,
+                                          unsigned int* d_body,
+                                          unsigned int* d_tag,
                                           unsigned int* d_group_members,
                                           unsigned int group_size,
                                           const BoxDim& box,
