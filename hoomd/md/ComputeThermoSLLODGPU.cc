@@ -211,7 +211,7 @@ void ComputeThermoSLLODGPU::computeProperties()
         args.external_energy = m_pdata->getExternalEnergy();
 
         // perform the computation on the GPU(s)
-        gpu_compute_thermo_partial_sllod(d_properties.data,
+        gpu_compute_thermo_sllod_partial(d_properties.data,
                                    d_vel.data,
                                    d_body.data,
                                    d_tag.data,
