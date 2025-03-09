@@ -57,7 +57,7 @@ void ComputeThermoSLLODGPU::removeFlowField()
     ArrayHandle< unsigned int > d_index_array(m_group->getIndexArray(), access_location::device, access_mode::read);
 
     // perform the removal of the flow field on the GPU
-    kernel::gpu_remove_flow_field(d_vel.data,
+    gpu_remove_flow_field(d_vel.data,
                     d_pos.data,
                     d_index_array.data,
                     m_shear_rate,
@@ -86,7 +86,7 @@ void ComputeThermoSLLODGPU::addFlowField()
     ArrayHandle< unsigned int > d_index_array(m_group->getIndexArray(), access_location::device, access_mode::read);
 
     // perform the removal of the flow field on the GPU
-    kernel::gpu_add_flow_field(d_vel.data,
+    gpu_add_flow_field(d_vel.data,
                     d_pos.data,
                     d_index_array.data,
                     m_shear_rate,
