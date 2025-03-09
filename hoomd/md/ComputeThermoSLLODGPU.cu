@@ -44,6 +44,7 @@ namespace kernel
    for the block. These partial sums are written to d_scratch[blockIdx.x].
    sizeof(Scalar3)*block_size of dynamic shared memory are needed for this kernel to run.
 */
+
 __global__ void gpu_compute_thermo_sllod_partial_sums(Scalar4* d_scratch,
                                                       Scalar4* d_net_force,
                                                       Scalar* d_net_virial,
