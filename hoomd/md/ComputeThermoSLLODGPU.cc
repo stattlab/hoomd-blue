@@ -7,7 +7,7 @@
 
 #include "ComputeThermoSLLODGPU.h"
 #include "ComputeThermoSLLODGPU.cuh"
-
+#include "ComputeThermoGPU.cuh"
 #ifdef ENABLE_MPI
 #include "hoomd/Communicator.h"
 #include "hoomd/HOOMDMPI.h"
@@ -188,7 +188,7 @@ void ComputeThermoSLLODGPU::computeProperties()
         m_exec_conf->setDevice();
 
         // build up args list
-        kernel::compute_thermo_args_sllod args;
+        kernel::compute_thermo_args args;
         args.n_blocks = num_blocks;
         args.d_net_force = d_net_force.data;
         args.d_net_virial = d_net_virial.data;
@@ -211,7 +211,7 @@ void ComputeThermoSLLODGPU::computeProperties()
         args.external_energy = m_pdata->getExternalEnergy();
 
         // perform the computation on the GPU(s)
-        gpu_compute_thermo_sllod_partial(d_properties.data,
+        gpu_compute_thermo_partial(d_properties.data,
                                    d_vel.data,
                                    d_body.data,
                                    d_tag.data,
@@ -226,7 +226,7 @@ void ComputeThermoSLLODGPU::computeProperties()
             CHECK_CUDA_ERROR();
 
         // perform the computation on GPU 0
-        gpu_compute_thermo_sllod_final(d_properties.data,
+        gpu_compute_thermo_final(d_properties.data,
                                  d_vel.data,
                                  d_body.data,
                                  d_tag.data,
