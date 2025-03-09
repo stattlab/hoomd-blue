@@ -763,8 +763,9 @@ hipError_t gpu_remove_flow_field(Scalar4* d_pos,
                                  unsigned int group_size)
     {
     // setup the grid to run the kernel
-    dim3 grid(group_size / block_size + 1, 1, 1);
-    dim3 threads(block_size, 1, 1);
+    int final_block_size = 256;
+    dim3 grid(group_size / final_block_size + 1, 1, 1);
+    dim3 threads(final_block_size, 1, 1);
     // run the kernel
     hipLaunchKernelGGL(gpu_remove_flow_field_kernel,
                        dim3(grid),
@@ -787,8 +788,9 @@ hipError_t gpu_add_flow_field(Scalar4* d_pos,
                               unsigned int group_size)
     {
     // setup the grid to run the kernel
-    dim3 grid(group_size / block_size + 1, 1, 1);
-    dim3 threads(block_size, 1, 1);
+    int final_block_size = 256;
+    dim3 grid(group_size / final_block_size + 1, 1, 1);
+    dim3 threads(final_block_size, 1, 1);
     // run the kernel
     hipLaunchKernelGGL(gpu_add_flow_field_kernel,
                        dim3(grid),
