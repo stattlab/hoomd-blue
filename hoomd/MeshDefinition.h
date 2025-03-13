@@ -114,8 +114,7 @@ class PYBIND11_EXPORT MeshDefinition
 
     private:
     GPUArray<unsigned int> m_globalN;
-    std::shared_ptr<SystemDefinition>
-        m_sysdef; //!< System definition later needed for dynamic bonding
+    std::shared_ptr<SystemDefinition> m_sysdef;        //!< System definition
     std::shared_ptr<MeshBondData> m_meshbond_data;     //!< Bond data for the mesh
     std::shared_ptr<TriangleData> m_meshtriangle_data; //!< Triangle data for the mesh
 						       //

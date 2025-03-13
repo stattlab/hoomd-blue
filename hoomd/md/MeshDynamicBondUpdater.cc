@@ -29,16 +29,6 @@ MeshDynamicBondUpdater::MeshDynamicBondUpdater(std::shared_ptr<SystemDefinition>
                                                Scalar T)
     : Updater(sysdef, trigger), m_integrator(integrator), m_mesh(mesh), m_inv_T(1.0 / T)
     {
-    GlobalVector<bool> tmp_allowSwitch(m_pdata->getNTypes(), m_exec_conf);
-
-    m_allowSwitch.swap(tmp_allowSwitch);
-    TAG_ALLOCATION(m_allowSwitch);
-
-    ArrayHandle<bool> h_allowSwitch(m_allowSwitch, access_location::host, access_mode::overwrite);
-
-    for (unsigned int i = 0; i < m_allowSwitch.size(); i++)
-        h_allowSwitch.data[i] = true;
-
     assert(m_pdata);
     assert(m_integrator);
     assert(m_mesh);
@@ -50,31 +40,6 @@ MeshDynamicBondUpdater::~MeshDynamicBondUpdater()
     m_exec_conf->msg->notice(5) << "Destroying MeshDynamicBondUpdater" << endl;
     }
 
-void MeshDynamicBondUpdater::setAllowSwitch(const std::string& type_name, pybind11::bool_ v)
-    {
-    unsigned int typ = this->m_pdata->getTypeByName(type_name);
-
-    // check for user errors
-    if (typ >= m_pdata->getNTypes())
-        {
-        throw std::invalid_argument("Type does not exist");
-        }
-
-    bool allowSwitch = pybind11::cast<bool>(v);
-
-    ArrayHandle<bool> h_allowSwitch(m_allowSwitch, access_location::host, access_mode::readwrite);
-    h_allowSwitch.data[typ] = allowSwitch;
-    }
-
-pybind11::bool_ MeshDynamicBondUpdater::getAllowSwitch(const std::string& type_name)
-    {
-    unsigned int typ = this->m_pdata->getTypeByName(type_name);
-
-    ArrayHandle<bool> h_allowSwitch(m_allowSwitch, access_location::host, access_mode::read);
-
-    bool allowSwitch = h_allowSwitch.data[typ];
-    return pybind11::bool_(allowSwitch);
-    }
 
 /** Perform the needed calculations to update particle orientations
     \param timestep Current time step of the simulation
@@ -93,6 +58,11 @@ void MeshDynamicBondUpdater::update(uint64_t timestep)
     ArrayHandle<typename MeshBond::members_t> h_bonds(m_mesh->getMeshBondData()->getMembersArray(),
                                                       access_location::host,
                                                       access_mode::readwrite);
+
+    ArrayHandle<unit2> h_neigh_bonds(m_mesh->getNeighToBond()->getMembersArray(),
+                                                      access_location::host,
+                                                      access_mode::readwrite);
+
     ArrayHandle<typename MeshTriangle::members_t> h_triangles(
         m_mesh->getMeshTriangleData()->getMembersArray(),
         access_location::host,
@@ -103,8 +73,6 @@ void MeshDynamicBondUpdater::update(uint64_t timestep)
     ArrayHandle<typeval_t> h_typeval(m_mesh->getMeshBondData()->getTypeValArray(),
                                      access_location::host,
                                      access_mode::read);
-
-    ArrayHandle<bool> h_allowSwitch(m_allowSwitch, access_location::host, access_mode::read);
 
     ArrayHandle<Scalar4> h_pos(m_pdata->getPositions(), access_location::host, access_mode::read);
 
@@ -132,79 +100,43 @@ void MeshDynamicBondUpdater::update(uint64_t timestep)
         unsigned int type_a = __scalar_as_int(h_pos.data[idx_a].w);
         unsigned int type_b = __scalar_as_int(h_pos.data[idx_b].w);
 
-        bool allow_a = h_allowSwitch.data[type_a];
-        bool allow_b = h_allowSwitch.data[type_b];
+        //bool already_used = false;
+        //for (unsigned int j = 0; j < changed.size(); j++)
+        //    {
+        //    if (tag_a == changed[j] || tag_b == changed[j])
+        //        {
+        //        already_used = true;
+        //        break;
+        //        }
+        //    }
 
-        if (!allow_a && !allow_b)
+        //if (already_used)
+        //    continue;
+
+        unsigned int tag_c = bond.tag[2];
+        unsigned int tag_d = bond.tag[3];
+
+        if (tag_c == tag_d)
             continue;
 
-        bool already_used = false;
-        for (unsigned int j = 0; j < changed.size(); j++)
-            {
-            if (tag_a == changed[j] || tag_b == changed[j])
-                {
-                already_used = true;
-                break;
-                }
-            }
+        unsigned int idx_c = h_rtag.data[tag_c];
+        unsigned int idx_d = h_rtag.data[tag_d];
 
-        if (already_used)
-            continue;
-
-        unsigned int tr_idx1 = bond.tag[2];
-        unsigned int tr_idx2 = bond.tag[3];
-
-        if (tr_idx1 == tr_idx2)
-            continue;
+	unsigned int tr_idx1 = h_neigh_bonds.data[i].tag[0];
 
         const typename MeshTriangle::members_t& triangle1 = h_triangles.data[tr_idx1];
-        const typename MeshTriangle::members_t& triangle2 = h_triangles.data[tr_idx2];
 
         unsigned int iterator = 0;
 
-        bool a_before_b = true;
+        bool a_before_b = false;
 
-        while (idx_b == h_rtag.data[triangle1.tag[iterator]])
+        while (tag_a != triangle1.tag[iterator])
             iterator++;
 
         iterator = (iterator + 1) % 3;
 
-        if (idx_a == h_rtag.data[triangle1.tag[iterator]])
-            a_before_b = false;
-
-        unsigned int tag_c = triangle1.tag[0];
-        unsigned int idx_c = h_rtag.data[tag_c];
-
-        iterator = 0;
-        while (idx_a == idx_c || idx_b == idx_c)
-            {
-            iterator++;
-            tag_c = triangle1.tag[iterator];
-            idx_c = h_rtag.data[tag_c];
-            }
-
-        unsigned int tag_d = triangle2.tag[0];
-        unsigned int idx_d = h_rtag.data[tag_d];
-
-        iterator = 0;
-        while (idx_a == idx_d || idx_b == idx_d)
-            {
-            iterator++;
-            tag_d = triangle2.tag[iterator];
-            idx_d = h_rtag.data[tag_d];
-            }
-
-        for (unsigned int j = 0; j < changed.size(); j++)
-            {
-            if (tag_c == changed[j] || tag_d == changed[j])
-                {
-                already_used = true;
-                break;
-                }
-            }
-
-        if (already_used)
-            continue;
+        if (tag_b == triangle1.tag[iterator])
+            a_before_b = true;
 
         unsigned int type_id = h_typeval.data[i].type;
 
@@ -230,74 +162,28 @@ void MeshDynamicBondUpdater::update(uint64_t timestep)
 
 	if(have_to_check_surrounding)
            {
-           unsigned int idx_1, idx_2, idx_3, idx_4, idx_5;
-	   for( int bo_i = 3; bo_i < 6; bo_i++)
-	      {
-	      unsigned int new_bo = triangle1.tag[bo_i];
-	      if( new_bo == i) continue;
-	      const typename MeshBond::members_t& bond1 = h_bonds.data[new_bo];
+	   std::vector<unsigned int> tr_idx(6);
+	   counter = 2;
+	   tr_idx[0] = tr_idx1;
+	   tr_idx[1] = h_neigh_bonds.data[i].tag[1];
 
-	      idx_1 = h_rtag.data[bond1.tag[0]];
-	      idx_2 = h_rtag.data[bond1.tag[1]];
 
-	      for( int tr_i = 2; tr_i < 4; tr_i++)
-	      	{
-	   	if(bond1.tag[tr_i] == tr_idx1) continue;
+	   for(unsigned int j = 0; j < 2; ++j)
+	   	{
+	   	for(unsigned int k = 0; k < 3; ++k)
+	   		{
+		   	unsigned int tr_idx_candidate = h_neigh_triags.data[tr_idx[j]].tag[k];
+			if(tr_idx_candidate != i)
+				{
+				tr_idx[counter] = tr_idx_candidate;
+				counter++;
+	   			}
+	   		}
+		}
 
-	      	const typename MeshTriangle::members_t& triangle1 = h_triangles.data[bond1.tag[tr_i]];
-	      	for( int idx_i = 0; idx_i < 3; idx_i++)
-	   	   {
-	   	   if( triangle1.tag[idx_i] != bond1.tag[0] &&  triangle1.tag[idx_i] != bond1.tag[1] )
-		      {
-	   	      idx_3 = h_rtag.data[triangle1.tag[idx_i]];
-		      break;
-		      }
-	   	   }
-		break;
-	   	}
+           for (auto& force : forces)
+	      	energyDifference += force->energyDiffSurrounding(tr_idx, type_id);
 
-	      idx_4 = idx_a;
-	      if(idx_1 == idx_4 || idx_2 == idx_4) idx_4 = idx_b;
-	      idx_5 = idx_d;
-
-              for (auto& force : forces)
-	      	energyDifference += force->energyDiffSurrounding(idx_1, idx_2, idx_3, idx_4, idx_5, type_id);
-
-	      }
-
-	   for( int bo_i = 3; bo_i < 6; bo_i++)
-	      {
-	      unsigned int new_bo = triangle2.tag[bo_i];
-	      if( new_bo == i) continue;
-	      const typename MeshBond::members_t& bond1 = h_bonds.data[new_bo];
-
-	      idx_1 = h_rtag.data[bond1.tag[0]];
-	      idx_2 = h_rtag.data[bond1.tag[1]];
-
-	      for( int tr_i = 2; tr_i < 4; tr_i++)
-	      	{
-	   	if(bond1.tag[tr_i] == tr_idx2) continue;
-
-	      	const typename MeshTriangle::members_t& triangle2 = h_triangles.data[bond1.tag[tr_i]];
-	      	for( int idx_i = 0; idx_i < 3; idx_i++)
-	   	   {
-	   	   if( triangle2.tag[idx_i] != bond1.tag[0] &&  triangle2.tag[idx_i] != bond1.tag[1] )
-		      {
-	   	      idx_3 = h_rtag.data[triangle2.tag[idx_i]];
-		      break;
-		      }
-	   	   }
-		break;
-                }
-
-	      idx_4 = idx_a;
-	      if(idx_1 == idx_4 || idx_2 == idx_4) idx_4 = idx_b;
-	      idx_5 = idx_c;
-
-              for (auto& force : forces)
-	      	energyDifference += force->energyDiffSurrounding(idx_1, idx_2, idx_3, idx_4, idx_5, type_id);
-
-	      }
 	   }
 
         // Initialize the RNG
@@ -450,8 +336,6 @@ void export_MeshDynamicBondUpdater(pybind11::module& m)
                             std::shared_ptr<Integrator>,
                             std::shared_ptr<MeshDefinition>,
                             Scalar>())
-        .def("setAllowSwitch", &MeshDynamicBondUpdater::setAllowSwitch)
-        .def("getAllowSwitch", &MeshDynamicBondUpdater::getAllowSwitch)
         .def_property("kT", &MeshDynamicBondUpdater::getT, &MeshDynamicBondUpdater::setT);
     }
 
