@@ -25,6 +25,8 @@ mpcd::CollisionMethod::CollisionMethod(std::shared_ptr<SystemDefinition> sysdef,
       m_mpcd_pdata(sysdef->getMPCDParticleData()), m_exec_conf(m_pdata->getExecConf()),
       m_period(period)
     {
+    // set warning checks to false
+    m_checked_collision_warnings = false;
     // setup next timestep for collision
     m_next_timestep = cur_timestep;
     if (phase >= 0)
@@ -67,17 +69,17 @@ void mpcd::CollisionMethod::checkCollisionWarnings(uint64_t timestep)
         {
         unsigned int N_tot = m_embed_group->getNumMembers();
         ArrayHandle<unsigned int> h_embed_group(m_embed_group->getIndexArray(),
-                                                          access_location::host,
-                                                          access_mode::read);
-       ArrayHandle<Scalar4> h_vel_embed(m_pdata->getVelocities(),
-                                                   access_location::host,
-                                                   access_mode::read);
-       ArrayHandle<unsigned int> h_bodies_embed(m_pdata->getBodies(),
-                                                           access_location::host,
-                                                           access_mode::read);
-       ArrayHandle<unsigned int> h_embed_group(m_pdata->getRTags(),
-                                                          access_location::host,
-                                                          access_mode::read);
+                                                access_location::host,
+                                                access_mode::read);
+        ArrayHandle<Scalar4> h_vel_embed(m_pdata->getVelocities(),
+                                         access_location::host,
+                                         access_mode::read);
+        ArrayHandle<unsigned int> h_body_embed(m_pdata->getBodies(),
+                                               access_location::host,
+                                               access_mode::read);
+        ArrayHandle<unsigned int> h_rtag_embed(m_pdata->getRTags(),
+                                               access_location::host,
+                                               access_mode::read);
 
         // check if some of the masses are less or equal to 0
         bool invalid_mass = false;
@@ -92,15 +94,15 @@ void mpcd::CollisionMethod::checkCollisionWarnings(uint64_t timestep)
                 }
             }
 
-        #ifdef ENABLE_MPI
-        // MPI_Reduce invalid_mass using logical or if communicating
-        #endif // ENABLE_MPI
+#ifdef ENABLE_MPI
+// MPI_Reduce invalid_mass using logical or if communicating
+#endif // ENABLE_MPI
 
         if (invalid_mass)
             {
-                m_exec_conf->msg->warning() << "Some particles have a mass <= 0, may lead to "
-                                               "invalid results during momentum transfer."
-                                            << std::endl;
+            m_exec_conf->msg->warning() << "Some particles have a mass <= 0, may lead to "
+                                           "invalid results during momentum transfer."
+                                        << std::endl;
             }
         }
     m_checked_collision_warnings = true;
