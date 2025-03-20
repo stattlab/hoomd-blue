@@ -58,7 +58,10 @@ void mpcd::CollisionMethod::collide(uint64_t timestep)
     m_cl->compute(timestep);
 
     // create auxillary array for rigid bodies
-    beginRigidBodyCollision(timestep);
+    if (m_embed_group)
+        {
+        beginRigidBodyCollision(timestep);
+        }
 
     // apply collisions
     rule(timestep);
