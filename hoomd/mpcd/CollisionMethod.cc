@@ -23,7 +23,7 @@ mpcd::CollisionMethod::CollisionMethod(std::shared_ptr<SystemDefinition> sysdef,
                                        int phase)
     : m_sysdef(sysdef), m_pdata(m_sysdef->getParticleData()),
       m_mpcd_pdata(sysdef->getMPCDParticleData()), m_exec_conf(m_pdata->getExecConf()),
-      m_period(period)
+      m_period(period), m_initial_velocity(m_exec_conf)
     {
     // set warning checks to false
     m_checked_collision_warnings = false;
@@ -56,7 +56,14 @@ void mpcd::CollisionMethod::collide(uint64_t timestep)
     // update cell list
     m_cl->compute(timestep);
 
+    // create auxillary array for rigid bodies
+    beginRigidBodyCollision(timestep);
+
+    // apply collisions
     rule(timestep);
+
+    // apply collisions to rigid bodies
+    finishRigidBodyCollision(timestep);
     }
 
 void mpcd::CollisionMethod::checkCollisionWarnings(uint64_t timestep)
@@ -127,7 +134,35 @@ void mpcd::CollisionMethod::checkCollisionWarnings(uint64_t timestep)
         }
     m_checked_collision_warnings = true;
     }
-void mpcd::CollisionMethod::beginRigidBodyCollision(uint64_t timestep) { }
+
+void mpcd::CollisionMethod::beginRigidBodyCollision(uint64_t timestep)
+    {
+    if (m_embed_group)
+        {
+        unsigned int N_tot = m_embed_group->getNumMembers();
+        m_initial_velocity.resize(N_tot);
+        ArrayHandle<Scalar4> h_initial_vel(m_initial_velocity,
+                                           access_location::host,
+                                           access_mode::overwrite);
+        ArrayHandle<unsigned int> h_embed_group(m_embed_group->getIndexArray(),
+                                                access_location::host,
+                                                access_mode::read);
+        ArrayHandle<Scalar4> h_vel_embed(m_pdata->getVelocities(),
+                                         access_location::host,
+                                         access_mode::read);
+        ArrayHandle<unsigned int> h_body_embed(m_pdata->getBodies(),
+                                               access_location::host,
+                                               access_mode::read);
+        ArrayHandle<unsigned int> h_rtag_embed(m_pdata->getRTags(),
+                                               access_location::host,
+                                               access_mode::read);
+        for (unsigned int idx = 0; idx < N_tot; ++idx)
+            {
+            unsigned int particle_index = h_embed_group.data[idx];
+            h_initial_vel.data[idx] = h_vel_embed.data[particle_index];
+            }
+        }
+    }
 void mpcd::CollisionMethod::finishRigidBodyCollision(uint64_t timestep) { }
 /*!
  * \param timestep Current timestep

@@ -109,6 +109,8 @@ class PYBIND11_EXPORT CollisionMethod : public Autotuned
 
     bool m_checked_collision_warnings; //!< True if collision related warnings have been checked
 
+    GPUArray<Scalar4> m_initial_velocity; //!< Initial velocities of the embedded particles
+
     //! Check if a collision should occur and advance the timestep counter
     virtual bool shouldCollide(uint64_t timestep);
 
