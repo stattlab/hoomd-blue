@@ -83,6 +83,7 @@ void mpcd::CollisionMethod::checkCollisionWarnings(uint64_t timestep)
 
         // check if some of the masses are less or equal to 0
         bool invalid_mass = false;
+        bool central_interacting = false;
         for (unsigned int idx = 0; idx < N_tot && !invalid_mass; ++idx)
             {
             unsigned int particle_index = h_embed_group.data[idx];
@@ -91,6 +92,19 @@ void mpcd::CollisionMethod::checkCollisionWarnings(uint64_t timestep)
             if (mass <= Scalar(0))
                 {
                 invalid_mass = true;
+                }
+            // get the index from the embedded group
+            particle_index = h_embed_group.data[idx];
+            // get the index of the central particle
+            unsigned int central_tag = h_body_embed.data[particle_index];
+            assert(central_tag <= m_pdata->getMaximumTag());
+            if (central_tag < MIN_FLOPPY)
+                {
+                unsigned int central_idx = h_rtag_embed.data[central_tag];
+                if (particle_index == central_idx)
+                    {
+                    central_interacting = true;
+                    }
                 }
             }
 
@@ -102,6 +116,12 @@ void mpcd::CollisionMethod::checkCollisionWarnings(uint64_t timestep)
             {
             m_exec_conf->msg->warning() << "Some particles have a mass <= 0, may lead to "
                                            "invalid results during momentum transfer."
+                                        << std::endl;
+            }
+        if (central_interacting)
+            {
+            m_exec_conf->msg->warning() << "Central particle of rigid body included in "
+                                           "MPCD collision. Check if this is intentional."
                                         << std::endl;
             }
         }
