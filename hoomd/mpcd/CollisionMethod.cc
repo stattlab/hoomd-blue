@@ -50,6 +50,9 @@ void mpcd::CollisionMethod::collide(uint64_t timestep)
     // sync the embedded group
     m_cl->setEmbeddedGroup(m_embed_group);
 
+    // check for collision warnings
+    checkCollisionWarnings(timestep);
+
     // set random grid shift
     m_cl->drawGridShift(timestep);
 
