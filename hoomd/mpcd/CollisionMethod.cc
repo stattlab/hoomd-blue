@@ -60,6 +60,13 @@ void mpcd::CollisionMethod::collide(uint64_t timestep)
     // create auxillary array for rigid bodies
     if (m_embed_group)
         {
+        // resize initial velocity array
+        unsigned int N_tot = m_embed_group->getNumMembers();
+        if (N_tot > m_initial_velocity.getNumElements())
+            {
+            GPUArray<Scalar4> initial_velocity(N_tot, m_exec_conf);
+            m_initial_velocity.swap(initial_velocity);
+            }
         beginRigidBodyCollision(timestep);
         }
 
@@ -144,88 +151,76 @@ void mpcd::CollisionMethod::checkCollisionWarnings(uint64_t timestep)
 
 void mpcd::CollisionMethod::beginRigidBodyCollision(uint64_t timestep)
     {
-        unsigned int N_tot = m_embed_group->getNumMembers();
-        m_initial_velocity.resize(N_tot);
-        ArrayHandle<Scalar4> h_initial_vel(m_initial_velocity,
-                                           access_location::host,
-                                           access_mode::overwrite);
-        ArrayHandle<unsigned int> h_embed_group(m_embed_group->getIndexArray(),
-                                                access_location::host,
-                                                access_mode::read);
-        ArrayHandle<Scalar4> h_vel_embed(m_pdata->getVelocities(),
-                                         access_location::host,
-                                         access_mode::read);
-        for (unsigned int idx = 0; idx < N_tot; ++idx)
-            {
-            const unsigned int particle_index = h_embed_group.data[idx];
-            h_initial_vel.data[idx] = h_vel_embed.data[particle_index];
-            }
+    unsigned int N_tot = m_embed_group->getNumMembers();
+    ArrayHandle<Scalar4> h_initial_vel(m_initial_velocity,
+                                       access_location::host,
+                                       access_mode::overwrite);
+    ArrayHandle<unsigned int> h_embed_group(m_embed_group->getIndexArray(),
+                                            access_location::host,
+                                            access_mode::read);
+    ArrayHandle<Scalar4> h_vel_embed(m_pdata->getVelocities(),
+                                     access_location::host,
+                                     access_mode::read);
+    for (unsigned int idx = 0; idx < N_tot; ++idx)
+        {
+        const unsigned int particle_index = h_embed_group.data[idx];
+        h_initial_vel.data[idx] = h_vel_embed.data[particle_index];
         }
     }
 void mpcd::CollisionMethod::finishRigidBodyCollision(uint64_t timestep)
     {
-    if (m_embed_group)
+    unsigned int N_tot = m_embed_group->getNumMembers();
+    ArrayHandle<Scalar4> h_initial_vel(m_initial_velocity,
+                                       access_location::host,
+                                       access_mode::overwrite);
+    ArrayHandle<unsigned int> h_embed_group(m_embed_group->getIndexArray(),
+                                            access_location::host,
+                                            access_mode::read);
+    ArrayHandle<Scalar4> h_velocity(m_pdata->getVelocities(),
+                                    access_location::host,
+                                    access_mode::read);
+    ArrayHandle<unsigned int> h_body(m_pdata->getBodies(),
+                                     access_location::host,
+                                     access_mode::read);
+    ArrayHandle<unsigned int> h_rtag(m_pdata->getRTags(), access_location::host, access_mode::read);
+    for (unsigned int idx = 0; idx < N_tot; ++idx)
         {
-        unsigned int N_tot = m_embed_group->getNumMembers();
-        if (N_tot > m_initial_velocity.getNumElements())
+        // get the index from the embedded group
+        unsigned int particle_index = h_embed_group.data[idx];
+        // check if particle is in a rigid body
+        unsigned int central_tag = h_body.data[particle_index];
+        assert(central_tag <= m_pdata->getMaximumTag());
+        if (central_tag >= MIN_FLOPPY)
             {
-            GPUArray<Scalar4> initial_velocity(N_tot, m_exec_conf);
-            m_initial_velocity.swap(initial_velocity);
+            continue;
             }
-        ArrayHandle<Scalar4> h_initial_vel(m_initial_velocity,
-                                           access_location::host,
-                                           access_mode::overwrite);
-        ArrayHandle<unsigned int> h_embed_group(m_embed_group->getIndexArray(),
-                                                access_location::host,
-                                                access_mode::read);
-        ArrayHandle<Scalar4> h_velocity(m_pdata->getVelocities(),
-                                        access_location::host,
-                                        access_mode::read);
-        ArrayHandle<unsigned int> h_body(m_pdata->getBodies(),
-                                         access_location::host,
-                                         access_mode::read);
-        ArrayHandle<unsigned int> h_rtag(m_pdata->getRTags(),
-                                         access_location::host,
-                                         access_mode::read);
-        for (unsigned int idx = 0; idx < N_tot; ++idx)
+        // if the central particle is not local, cannot read or write to it.
+        unsigned int central_idx = h_rtag.data[central_tag];
+        if (central_idx == NOT_LOCAL)
             {
-            // get the index from the embedded group
-            unsigned int particle_index = h_embed_group.data[idx];
-            // check if particle is in a rigid body
-            unsigned int central_tag = h_body.data[particle_index];
-            assert(central_tag <= m_pdata->getMaximumTag());
-            if (central_tag >= MIN_FLOPPY)
-                {
-                continue;
-                }
-            // if the central particle is not local, cannot read or write to it.
-            unsigned int central_idx = h_rtag.data[central_tag];
-            if (central_idx == NOT_LOCAL)
-                {
-                continue;
-                }
-            // collision on central particle itself already taken care of by collision rule
-            if (particle_index == central_idx)
-                {
-                continue;
-                }
-            // get velocities and masses
-            const Scalar4 vel_mass_const = h_velocity.data[particle_index];
-            const Scalar mass_const = vel_mass_const.w;
-            Scalar4 vel_mass_central = h_velocity.data[central_idx];
-            const Scalar mass_central = vel_mass_central.w;
+            continue;
+            }
+        // collision on central particle itself already taken care of by collision rule
+        if (particle_index == central_idx)
+            {
+            continue;
+            }
+        // get velocities and masses
+        const Scalar4 vel_mass_const = h_velocity.data[particle_index];
+        const Scalar mass_const = vel_mass_const.w;
+        Scalar4 vel_mass_central = h_velocity.data[central_idx];
+        const Scalar mass_central = vel_mass_central.w;
 
-            // update central particle velocity
-            // TO DO: Momentum transfer to central particle incorrect, rewrite to
-            // correctly apply the change in angular and linear momentum
-            vec3<Scalar> updated_vel(vel_mass_central);
-            vec3<Scalar> change_mom = (mass_const / mass_central)
-                                      * (vec3<Scalar>(h_velocity.data[particle_index])
-                                         - vec3<Scalar>(h_initial_vel.data[idx]));
-            updated_vel += change_mom;
-            h_velocity.data[central_idx]
-                = make_scalar4(updated_vel.x, updated_vel.y, updated_vel.z, mass_central);
-            }
+        // update central particle velocity
+        // TO DO: Momentum transfer to central particle incorrect, rewrite to
+        // correctly apply the change in angular and linear momentum
+        vec3<Scalar> updated_vel(vel_mass_central);
+        vec3<Scalar> change_mom = (mass_const / mass_central)
+                                  * (vec3<Scalar>(h_velocity.data[particle_index])
+                                     - vec3<Scalar>(h_initial_vel.data[idx]));
+        updated_vel += change_mom;
+        h_velocity.data[central_idx]
+            = make_scalar4(updated_vel.x, updated_vel.y, updated_vel.z, mass_central);
         }
     }
 /*!
