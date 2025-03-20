@@ -204,6 +204,11 @@ void mpcd::CollisionMethod::finishRigidBodyCollision(uint64_t timestep)
                 {
                 continue;
                 }
+            // collision on central particle itself already taken care of by collision rule
+            if (particle_index == central_idx)
+                {
+                continue;
+                }
             // get velocities and masses
             const Scalar4 vel_mass_const = h_velocity.data[particle_index];
             const Scalar mass_const = vel_mass_const.w;
