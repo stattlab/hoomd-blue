@@ -92,7 +92,7 @@ void mpcd::CollisionMethod::checkCollisionWarnings(uint64_t timestep)
         // check if some of the masses are less or equal to 0
         bool invalid_mass = false;
         bool central_interacting = false;
-        for (unsigned int idx = 0; idx < N_tot && !invalid_mass && !central_interacting; ++idx)
+        for (unsigned int idx = 0; idx < N_tot && !(invalid_mass && central_interacting); ++idx)
             {
             // get the index from the embedded group
             unsigned int particle_index = h_embed_group.data[idx];
