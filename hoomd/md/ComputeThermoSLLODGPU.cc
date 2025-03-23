@@ -218,8 +218,7 @@ void ComputeThermoSLLODGPU::computeProperties()
         args.external_virial_zz = m_pdata->getExternalVirial(5);
         args.external_energy = m_pdata->getExternalEnergy();
 
-        std::cout<< "in ComputeThermoSLLODGPU::computeProperties GPU before gpu_compute_thermo_partial(d_properties.data,
-"<< std::endl;
+        std::cout<< "in ComputeThermoSLLODGPU::computeProperties GPU before gpu_compute_thermo_partial"<< std::endl;
 
         // perform the computation on the GPU(s)
         // inherited from ComputeThermoGPU without any changes needed
