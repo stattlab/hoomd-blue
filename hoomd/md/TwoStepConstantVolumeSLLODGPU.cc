@@ -18,11 +18,12 @@ TwoStepConstantVolumeSLLODGPU::TwoStepConstantVolumeSLLODGPU(std::shared_ptr<Sys
                                                    Scalar shear_rate)
     : TwoStepConstantVolumeSLLOD(sysdef, group, thermostat, shear_rate)
     {
-
+        std::cout<< "in TwoStepConstantVolumeSLLODGPU create GPU"<< std::endl;
     }
 
 void TwoStepConstantVolumeSLLODGPU::integrateStepOne(uint64_t timestep)
     {
+    std::cout<< "in TwoStepConstantVolumeSLLODGPU::integrateStepOn GPU"<< std::endl;
     if (m_group->getNumMembersGlobal() == 0)
         {
         throw std::runtime_error("Empty integration group.");
@@ -126,6 +127,7 @@ void TwoStepConstantVolumeSLLODGPU::integrateStepOne(uint64_t timestep)
 
 void TwoStepConstantVolumeSLLODGPU::integrateStepTwo(uint64_t timestep)
     {
+    std::cout<< "in TwoStepConstantVolumeSLLODGPU::integrateStepTwo GPU"<< std::endl;
     unsigned int group_size = m_group->getNumMembers();
 
     const GPUArray<Scalar4>& net_force = m_pdata->getNetForce();

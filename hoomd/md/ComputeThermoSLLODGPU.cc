@@ -29,6 +29,7 @@ ComputeThermoSLLODGPU::ComputeThermoSLLODGPU(std::shared_ptr<SystemDefinition> s
                                    Scalar shear_rate)
     : ComputeThermoSLLOD(sysdef, group, shear_rate)
     {
+    std::cout<< "in ComputeThermoSLLODGPU  GPU"<< std::endl;
     if (!m_exec_conf->isCUDAEnabled())
         {
         m_exec_conf->msg->error()
@@ -45,6 +46,7 @@ ComputeThermoSLLODGPU::~ComputeThermoSLLODGPU() { }
 
 void ComputeThermoSLLODGPU::removeFlowField()
 {
+    std::cout<< "in ComputeThermoSLLODGPU::removeFlowField GPU"<< std::endl;
     // just drop out if the group is an empty group
     if (m_group->getNumMembersGlobal() == 0)
         return;
@@ -74,6 +76,7 @@ void ComputeThermoSLLODGPU::removeFlowField()
 
 void ComputeThermoSLLODGPU::addFlowField()
 {
+    std::cout<< "in ComputeThermoSLLODGPU::addFlowField GPU"<< std::endl;
     // just drop out if the group is an empty group
     if (m_group->getNumMembersGlobal() == 0)
         return;
@@ -104,6 +107,7 @@ void ComputeThermoSLLODGPU::addFlowField()
  */
 void ComputeThermoSLLODGPU::computeProperties()
     {
+    std::cout<< "in ComputeThermoSLLODGPU::computeProperties GPU"<< std::endl;
     // just drop out if the group is an empty group
     if (m_group->getNumMembersGlobal() == 0)
         return;
@@ -111,6 +115,7 @@ void ComputeThermoSLLODGPU::computeProperties()
     unsigned int group_size = m_group->getNumMembers();
 
     //before doing any calculations of thermodynamic quantities, remove imposed flow
+    std::cout<< "in ComputeThermoSLLODGPU::computeProperties GPU before remove flow field"<< std::endl;
     removeFlowField();
 
     assert(m_pdata);
@@ -119,6 +124,8 @@ void ComputeThermoSLLODGPU::computeProperties()
     unsigned int num_blocks = m_group->getNumMembers() / m_block_size + 1;
 
     // resize work space
+    std::cout<< "in ComputeThermoSLLODGPU::computeProperties GPU before resize work space"<< std::endl;
+
     size_t old_size = m_scratch.size();
 
     m_scratch.resize(num_blocks);
@@ -211,7 +218,11 @@ void ComputeThermoSLLODGPU::computeProperties()
         args.external_virial_zz = m_pdata->getExternalVirial(5);
         args.external_energy = m_pdata->getExternalEnergy();
 
+        std::cout<< "in ComputeThermoSLLODGPU::computeProperties GPU before gpu_compute_thermo_partial(d_properties.data,
+"<< std::endl;
+
         // perform the computation on the GPU(s)
+        // inherited from ComputeThermoGPU without any changes needed
         gpu_compute_thermo_partial(d_properties.data,
                                    d_vel.data,
                                    d_body.data,
@@ -226,7 +237,10 @@ void ComputeThermoSLLODGPU::computeProperties()
         if (m_exec_conf->isCUDAErrorCheckingEnabled())
             CHECK_CUDA_ERROR();
 
+        std::cout<< "in ComputeThermoSLLODGPU::computeProperties GPU before gpu_compute_thermo_final"<< std::endl;
+
         // perform the computation on GPU 0
+        // inherited from ComputeThermoGPU without any changes needed
         gpu_compute_thermo_final(d_properties.data,
                                  d_vel.data,
                                  d_body.data,
@@ -246,6 +260,7 @@ void ComputeThermoSLLODGPU::computeProperties()
     // in MPI, reduce extensive quantities only when they're needed
     m_properties_reduced = !m_pdata->getDomainDecomposition();
 #endif // ENABLE_MPI
+    std::cout<< "in ComputeThermoSLLODGPU::computeProperties GPU before add flow field"<< std::endl;
 
     // add flow field back at the end of calculations
     addFlowField();

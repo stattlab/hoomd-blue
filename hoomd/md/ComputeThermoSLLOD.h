@@ -8,6 +8,7 @@
 #include <limits>
 #include <memory>
 
+
 /*! \file ComputeThermo.h
     \brief Declares a class for computing thermodynamic quantities
 */
@@ -50,6 +51,7 @@ class PYBIND11_EXPORT ComputeThermoSLLOD : public ComputeThermo
     virtual void addFlowField();
 
     Scalar m_shear_rate;
+
     };
 
     } // end namespace md

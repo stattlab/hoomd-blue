@@ -233,7 +233,6 @@ class ConstantVolume(Thermostatted):
 class ConstantVolumeSLLOD(Thermostatted):
     r"""SLLOD equation of motion.
 
-
     """
 
     __doc__ = __doc__.replace("{inherited}", Thermostatted._doc_inherited)

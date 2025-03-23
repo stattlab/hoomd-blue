@@ -29,18 +29,19 @@ ComputeThermoSLLOD::ComputeThermoSLLOD(std::shared_ptr<SystemDefinition> sysdef,
     : ComputeThermo(sysdef,group), m_shear_rate(shear_rate)
     {
     m_exec_conf->msg->notice(5) << "Constructing ComputeThermoSLLOD" << endl;
-
+    std::cout<< "in ComputeThermoSLLOD CPU"<< std::endl;
     }
 
 ComputeThermoSLLOD::~ComputeThermoSLLOD()
     {
     m_exec_conf->msg->notice(5) << "Destroying ComputeThermoSLLOD" << endl;
+    std::cout<< "in ComputeThermoSLLOD destroy CPU"<< std::endl;
     }
 
 
 void ComputeThermoSLLOD::removeFlowField()
 {
-
+  std::cout<< "in ComputeThermoSLLOD::removeFlowField CPU"<< std::endl;
   unsigned int group_size = m_group->getNumMembers();
   {
   assert(m_pdata);
@@ -70,6 +71,7 @@ void ComputeThermoSLLOD::removeFlowField()
 
 void ComputeThermoSLLOD::addFlowField()
 {
+  std::cout<< "in ComputeThermoSLLOD::addFlowField CPU"<< std::endl;
 
   unsigned int group_size = m_group->getNumMembers();
 
@@ -102,7 +104,7 @@ void ComputeThermoSLLOD::addFlowField()
 
 void ComputeThermoSLLOD::computeProperties()
     {
-
+    std::cout<< "in ComputeThermoSLLOD::computeProperties CPU"<< std::endl;
     // just drop out if the group is an empty group
     if (m_group->getNumMembersGlobal() == 0)
         return;

@@ -6,6 +6,8 @@
 
 bool hoomd::md::TwoStepConstantVolumeSLLOD::deformGlobalBox()
 {
+    std::cout<< "in TwoStepConstantVolumeSLLOD::deformGlobalBox CPU"<< std::endl;
+
   // box deformation: update tilt factor of global box
   BoxDim global_box = m_pdata->getGlobalBox();
 
@@ -26,6 +28,8 @@ bool hoomd::md::TwoStepConstantVolumeSLLOD::deformGlobalBox()
 
 void hoomd::md::TwoStepConstantVolumeSLLOD::integrateStepOne(uint64_t timestep)
     {
+    std::cout<< "in TwoStepConstantVolumeSLLOD::integrateStepOne CPU"<< std::endl;
+
 
     if (m_group->getNumMembersGlobal() == 0)
         {
@@ -272,6 +276,8 @@ void hoomd::md::TwoStepConstantVolumeSLLOD::integrateStepOne(uint64_t timestep)
 
 void hoomd::md::TwoStepConstantVolumeSLLOD::integrateStepTwo(uint64_t timestep)
     {
+
+    std::cout<< "in TwoStepConstantVolumeSLLOD::integrateStepTwo CPU"<< std::endl;
 
     unsigned int group_size = m_group->getNumMembers();
 
