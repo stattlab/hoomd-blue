@@ -59,9 +59,10 @@ void TwoStepConstantVolumeSLLODGPU::integrateStepOne(uint64_t timestep)
         bool flipped = deformGlobalBox();
         std::cout<< "after deformGlobalBox "<< std::endl;
         m_exec_conf->setDevice();
-
+        std::cout<< "after setDevice "<< std::endl;
         // perform the update on the GPU
         m_tuner_one->begin();
+
         std::cout<< "before  gpu_nvt_sllod_rescale_step_one"<< std::endl;
         kernel::gpu_nvt_sllod_rescale_step_one(d_pos.data,
                                          d_vel.data,
