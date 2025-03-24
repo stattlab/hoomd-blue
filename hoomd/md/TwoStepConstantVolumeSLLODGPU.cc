@@ -19,6 +19,30 @@ TwoStepConstantVolumeSLLODGPU::TwoStepConstantVolumeSLLODGPU(std::shared_ptr<Sys
     : TwoStepConstantVolumeSLLOD(sysdef, group, thermostat, shear_rate)
     {
         std::cout<< "in TwoStepConstantVolumeSLLODGPU create GPU"<< std::endl;
+        if (!m_exec_conf->isCUDAEnabled())
+        {
+        throw std::runtime_error("Cannot create TwoStepNVTSLLODGPU on a CPU device.");
+        }
+
+    // Initialize autotuners.
+    m_tuner_one.reset(new Autotuner<1>({AutotunerBase::makeBlockSizeRange(m_exec_conf)},
+                                       m_exec_conf,
+                                       "nvt_mtk_step_one"));
+    m_tuner_two.reset(new Autotuner<1>({AutotunerBase::makeBlockSizeRange(m_exec_conf)},
+                                       m_exec_conf,
+                                       "nvt_mtk_step_two"));
+    m_tuner_angular_one.reset(new Autotuner<1>({AutotunerBase::makeBlockSizeRange(m_exec_conf)},
+                                               m_exec_conf,
+                                               "nvt_mtk_angular_one",
+                                               5,
+                                               true));
+    m_tuner_angular_two.reset(new Autotuner<1>({AutotunerBase::makeBlockSizeRange(m_exec_conf)},
+                                               m_exec_conf,
+                                               "nvt_mtk_angular_two",
+                                               5,
+                                               true));
+    m_autotuners.insert(m_autotuners.end(),
+                        {m_tuner_one, m_tuner_two, m_tuner_angular_one, m_tuner_angular_two});
     }
 
 void TwoStepConstantVolumeSLLODGPU::integrateStepOne(uint64_t timestep)
