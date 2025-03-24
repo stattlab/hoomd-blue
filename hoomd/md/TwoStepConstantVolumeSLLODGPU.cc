@@ -23,7 +23,7 @@ TwoStepConstantVolumeSLLODGPU::TwoStepConstantVolumeSLLODGPU(std::shared_ptr<Sys
 
 void TwoStepConstantVolumeSLLODGPU::integrateStepOne(uint64_t timestep)
     {
-    std::cout<< "in TwoStepConstantVolumeSLLODGPU::integrateStepOn GPU"<< std::endl;
+    std::cout<< "in TwoStepConstantVolumeSLLODGPU::integrateStepOne GPU"<< std::endl;
     if (m_group->getNumMembersGlobal() == 0)
         {
         throw std::runtime_error("Empty integration group.");
@@ -57,11 +57,12 @@ void TwoStepConstantVolumeSLLODGPU::integrateStepOne(uint64_t timestep)
 
         // box deformation: update tilt factor of global box
         bool flipped = deformGlobalBox();
-
+        std::cout<< "after deformGlobalBox "<< std::endl;
         m_exec_conf->setDevice();
 
         // perform the update on the GPU
         m_tuner_one->begin();
+        std::cout<< "before  gpu_nvt_sllod_rescale_step_one"<< std::endl;
         kernel::gpu_nvt_sllod_rescale_step_one(d_pos.data,
                                          d_vel.data,
                                          d_accel.data,
@@ -78,6 +79,7 @@ void TwoStepConstantVolumeSLLODGPU::integrateStepOne(uint64_t timestep)
                                          limits.first,
                                          limits.second);
 
+        std::cout<< "after gpu_nvt_sllod_rescale_step_one "<< std::endl;
         if (m_exec_conf->isCUDAErrorCheckingEnabled())
             CHECK_CUDA_ERROR();
         m_tuner_one->end();
@@ -117,7 +119,7 @@ void TwoStepConstantVolumeSLLODGPU::integrateStepOne(uint64_t timestep)
             CHECK_CUDA_ERROR();
         m_tuner_angular_one->end();
         }
-
+    std::cout<< "before advanceThermostat "<< std::endl;
     // advance thermostat
     if (m_thermostat)
         {
