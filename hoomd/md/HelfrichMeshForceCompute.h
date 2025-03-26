@@ -70,11 +70,32 @@ class PYBIND11_EXPORT HelfrichMeshForceCompute : public ForceCompute
     GPUArray<Scalar>
         m_sigma; //! sum of the vectors weighted by the bending angle over all neighbors
 
+    Scalar m_sigma_diff_a;
+    Scalar m_sigma_diff_b;
+    Scalar m_sigma_diff_c;
+    Scalar m_sigma_diff_d;
+
+    Scalar3 m_sigma_dash_diff_a;
+    Scalar3 m_sigma_dash_diff_b;
+    Scalar3 m_sigma_dash_diff_c;
+    Scalar3 m_sigma_dash_diff_d;
+
     //! Actually compute the forces
     virtual void computeForces(uint64_t timestep);
 
+    virtual Scalar energyDiff(unsigned int idx_a,
+		              unsigned int idx_b,
+			      unsigned int idx_c,
+			      unsigned int idx_d,
+			      unsigned int type_id);
+
     //! compute sigmas
     virtual void precomputeParameter();
+
+    virtual void postcomputeParameter(unsigned int idx_a,
+			    	      unsigned int idx_b,
+				      unsigned int idx_c,
+				      unsigned int idx_d);
     };
 
 namespace detail
