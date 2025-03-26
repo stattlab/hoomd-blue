@@ -78,6 +78,8 @@ class PYBIND11_EXPORT VolumeConservationMeshForceCompute : public ForceCompute
 
     GPUArray<Scalar> m_volume; //!< memory space for volume
 
+    Scalar m_volume_diff;
+
     bool m_ignore_type; //! do we ignore type to calculate global area
 
     //! Actually compute the forces
@@ -85,6 +87,24 @@ class PYBIND11_EXPORT VolumeConservationMeshForceCompute : public ForceCompute
 
     //! compute volumes
     virtual void precomputeParameter();
+
+    virtual void postcomputeParameter(unsigned int idx_a,
+                                      unsigned int idx_b,
+                                      unsigned int idx_c,
+                                      unsigned int idx_d,
+                                      unsigned int type_id)
+    	{
+ 	ArrayHandle<Scalar> h_volume(m_volume, access_location::host, access_mode::readwrite);
+	h_volume.data[type_id] += m_volume_diff;
+	};
+
+    virtual Scalar energyDiff(unsigned int idx_a,
+                              unsigned int idx_b,
+                              unsigned int idx_c,
+                              unsigned int idx_d,
+                              unsigned int type_id);
+
+
     };
 
 namespace detail
