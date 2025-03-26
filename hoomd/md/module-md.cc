@@ -117,6 +117,8 @@ void export_PotentialExternalWallMorse(pybind11::module& m);
 void export_PotentialPairDPDThermoDPD(pybind11::module& m);
 void export_PotentialPairDPDThermoLJ(pybind11::module& m);
 
+void export_MeshDynamicBondUpdater(pybind11::module& m);
+
 void export_IntegratorTwoStep(pybind11::module& m);
 void export_IntegrationMethodTwoStep(pybind11::module& m);
 void export_ZeroMomentumUpdater(pybind11::module& m);
@@ -544,6 +546,7 @@ PYBIND11_MODULE(_md, m)
     export_MTTKThermostat(m);
     export_BussiThermostat(m);
     export_BerendsenThermostat(m);
+    export_MeshDynamicBondUpdater(m);
 
     export_IntegratorTwoStep(m);
     export_IntegrationMethodTwoStep(m);

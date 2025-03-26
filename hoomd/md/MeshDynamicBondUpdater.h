@@ -41,7 +41,6 @@ class PYBIND11_EXPORT MeshDynamicBondUpdater : public Updater
     /// Constructor
     MeshDynamicBondUpdater(std::shared_ptr<SystemDefinition> sysdef,
                            std::shared_ptr<Trigger> trigger,
-                           std::shared_ptr<Integrator> integrator,
                            std::shared_ptr<MeshDefinition> mesh,
                            Scalar T);
 
@@ -50,6 +49,12 @@ class PYBIND11_EXPORT MeshDynamicBondUpdater : public Updater
 
     /// Update box interpolation based on provided timestep
     virtual void update(uint64_t timestep);
+
+    /// Get the list of force computes
+    std::vector<std::shared_ptr<ForceCompute>>& getForces()
+        {
+        return m_forces;
+        }
 
     Scalar getT()
         {
@@ -62,7 +67,8 @@ class PYBIND11_EXPORT MeshDynamicBondUpdater : public Updater
         };
 
     private:
-    std::shared_ptr<Integrator> m_integrator; //!< Integrator that advances time in this System
+    /// List of all the force computes
+    std::vector<std::shared_ptr<ForceCompute>> m_forces;
     std::shared_ptr<MeshDefinition> m_mesh;   //!< Active force to call rotationalDiffusion on
     Scalar m_inv_T;
     };

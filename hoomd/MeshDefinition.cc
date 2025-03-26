@@ -131,13 +131,6 @@ void MeshDefinition::setTriangulationData(pybind11::dict triangulation)
     m_meshbond_data = std::shared_ptr<MeshBondData>(
         new MeshBondData(m_sysdef->getParticleData(), triangle_data));
 
-    GPUArray<uint3> neigh_to_triag(len_triang, m_sysdef->getParticleData()->getExecConf());
-    m_neigh_to_triag.swap(neigh_to_triag);
-
-    unsigned int len_bond =  m_meshbond_data->getNGlobal();
-    GPUArray<uint2> neigh_to_bond(len_bond, m_sysdef->getParticleData()->getExecConf());
-    m_neigh_to_bond.swap(neigh_to_bond);
-
     createMeshNeighborhood();
 
 
@@ -156,6 +149,15 @@ void MeshDefinition::setTriangulationData(pybind11::dict triangulation)
 
 void MeshDefinition::createMeshNeighborhood()
     {
+
+    unsigned int len_triang =  m_meshtriangle_data->getNGlobal();
+    GPUArray<uint3> neigh_to_triag(len_triang, m_sysdef->getParticleData()->getExecConf());
+    m_neigh_to_triag.swap(neigh_to_triag);
+
+    unsigned int len_bond =  m_meshbond_data->getNGlobal();
+    GPUArray<uint2> neigh_to_bond(len_bond, m_sysdef->getParticleData()->getExecConf());
+    m_neigh_to_bond.swap(neigh_to_bond);
+
     ArrayHandle<uint2> h_neigh_to_bond(m_neigh_to_bond, access_location::host, access_mode::overwrite);
 
     ArrayHandle<uint3> h_neigh_to_triag(m_neigh_to_triag, access_location::host, access_mode::overwrite);

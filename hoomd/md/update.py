@@ -7,9 +7,11 @@ from hoomd.md import _md
 import hoomd
 from hoomd.error import SimulationDefinitionError
 from hoomd.operation import Updater
+from hoomd.data import syncedlist
 from hoomd.data.parameterdicts import ParameterDict
 from hoomd.data.typeconverter import OnlyTypes
 from hoomd.logging import log
+from hoomd.md.mesh.potential import MeshPotential
 
 
 class ZeroMomentum(Updater):
@@ -349,9 +351,63 @@ class ActiveRotationalDiffusion(Updater):
             raise ValueError("active_force is not settable after construction.")
         super()._setattr_param(attr, value)
 
+#class MeshDynamicalBonding(Updater):
+#    """Dynamical bonding of the applies mesh that allows edge flips according to a
+#    Metropolic Monte Carlo algorithm.
+#
+#    Args:
+#        trigger (hoomd.trigger.trigger_like): Select the timesteps to triger bond
+#            flip attempt.
+#        
+#        mesh (hoomd.mesh.Mesh): Mesh data structure.
+#
+#        kT (Scalar): Temperature of the simulation :math:`[\mathrm{energy}]`.
+#
+#        forces (Sequence[hoomd.md.force.Force]): Sequence of forces applied to
+#          the updater. The default value of ``None`` initializes
+#          an empty list. 
+#
+#    Examples::
+#
+#        mdb = hoomd.md.update.MeshDynamicalBonding(hoomd.trigger.Periodic(100),
+#              mesh, kT = 1, forces=[])
+#
+#    """
+#
+#    def __init__(self, trigger, mesh, kT, forces=[]):
+#        # initialize base class
+#        super().__init__(trigger)
+#
+#        self._forces = syncedlist.SyncedList(
+#            MeshPotential, syncedlist._PartialGetAttr("_cpp_obj"), iterable=forces
+#        )
+#
+#        param_dict = ParameterDict(kT=float(kT))
+#
+#        self._param_dict.update(param_dict)
+#
+#        allow_switch = TypeParameter("allow_switch",
+#                                     type_kind="particle_types",
+#                                     param_dict=TypeParameterDict(True,
+#                                                                  len_keys=1))
+#
+#        self._extend_typeparam([allow_switch])
+#
+#        self._mesh = mesh
+#
+#    def _attach_hook(self):
+#        # create the c++ mirror class
+#
+#        self._cpp_obj = _md.MeshDynamicBondUpdater(
+#            self._simulation.state._cpp_sys_def, self.trigger,
+#            self._mesh._cpp_obj, self.kT)
+#
+#        self._forces._sync(self._simulation, self._cpp_obj.forces)
+
 
 __all__ = [
     "ActiveRotationalDiffusion",
     "ReversePerturbationFlow",
     "ZeroMomentum",
+    #"MeshDynamicalBonding",
 ]

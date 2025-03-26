@@ -91,7 +91,8 @@ class PYBIND11_EXPORT ForceCompute : public Compute
 			                 unsigned int idx_e,
 			                 unsigned int idx_f,
 			                 unsigned int idx_g,
-			                 unsigned int idx_h){ return 0;};
+			                 unsigned int idx_h,
+					 unsigned int type_id){ return 0;};
 
     virtual void postcomputeParameter(unsigned int idx_a,
 			    	      unsigned int idx_b,

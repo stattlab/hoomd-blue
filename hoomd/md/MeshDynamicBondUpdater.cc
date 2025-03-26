@@ -24,14 +24,15 @@ namespace md
 
 MeshDynamicBondUpdater::MeshDynamicBondUpdater(std::shared_ptr<SystemDefinition> sysdef,
                                                std::shared_ptr<Trigger> trigger,
-                                               std::shared_ptr<Integrator> integrator,
                                                std::shared_ptr<MeshDefinition> mesh,
                                                Scalar T)
-    : Updater(sysdef, trigger), m_integrator(integrator), m_mesh(mesh), m_inv_T(1.0 / T)
+    : Updater(sysdef, trigger), m_mesh(mesh), m_inv_T(1.0 / T)
     {
     assert(m_pdata);
-    assert(m_integrator);
     assert(m_mesh);
+
+    m_mesh->createMeshNeighborhood();
+
     m_exec_conf->msg->notice(5) << "Constructing MeshDynamicBondUpdater" << endl;
     }
 
@@ -46,11 +47,9 @@ MeshDynamicBondUpdater::~MeshDynamicBondUpdater()
 */
 void MeshDynamicBondUpdater::update(uint64_t timestep)
     {
-    std::vector<std::shared_ptr<ForceCompute>> forces = m_integrator->getForces();
-
     uint16_t seed = m_sysdef->getSeed();
 
-    for (auto& force : forces)
+    for (auto& force : m_forces)
         {
         force->precomputeParameter();
         }
@@ -59,16 +58,16 @@ void MeshDynamicBondUpdater::update(uint64_t timestep)
                                                       access_location::host,
                                                       access_mode::readwrite);
 
-    ArrayHandle<uint2> h_neigh_bonds(m_mesh->getNeighToBond()->getMembersArray(),
+    ArrayHandle<uint2> h_neigh_bonds(m_mesh->getNeighToBond(),
                                                       access_location::host,
                                                       access_mode::readwrite);
 
-    ArrayHandle<typename MeshTriangle::members_t> h_triangles(
+    ArrayHandle<typename Angle::members_t> h_triangles(
         m_mesh->getMeshTriangleData()->getMembersArray(),
         access_location::host,
         access_mode::readwrite);
 
-    ArrayHandle<uint3> h_neigh_triags(m_mesh->getNeighToTriag()->getMembersArray(),
+    ArrayHandle<uint3> h_neigh_triags(m_mesh->getNeighToTriag(),
                                                       access_location::host,
                                                       access_mode::readwrite);
 
@@ -83,13 +82,11 @@ void MeshDynamicBondUpdater::update(uint64_t timestep)
     // for each of the angles
     const unsigned int size = (unsigned int)m_mesh->getMeshBondData()->getN();
 
-    bool changeDetected = false;
-
     std::vector<unsigned int> changed;
 
     for (unsigned int i = 0; i < size; i++)
         {
-        const typename MeshBond::members_t& bond = h_bonds.data[i];
+        typename MeshBond::members_t& bond = h_bonds.data[i];
         assert(bond.tag[0] < m_pdata->getMaximumTag() + 1);
         assert(bond.tag[1] < m_pdata->getMaximumTag() + 1);
 
@@ -100,9 +97,6 @@ void MeshDynamicBondUpdater::update(uint64_t timestep)
 
         unsigned int idx_a = h_rtag.data[tag_a];
         unsigned int idx_b = h_rtag.data[tag_b];
-
-        unsigned int type_a = __scalar_as_int(h_pos.data[idx_a].w);
-        unsigned int type_b = __scalar_as_int(h_pos.data[idx_b].w);
 
         //bool already_used = false;
         //for (unsigned int j = 0; j < changed.size(); j++)
@@ -129,12 +123,11 @@ void MeshDynamicBondUpdater::update(uint64_t timestep)
 	unsigned int tr_idx1 = h_neigh_bonds.data[i].x;
 	unsigned int tr_idx2 = h_neigh_bonds.data[i].y;
 
-        const typename MeshTriangle::members_t& triangle1 = h_triangles.data[tr_idx1];
+        typename Angle::members_t& triangle1 = h_triangles.data[tr_idx1];
 
         unsigned int iterator = 0;
 
         bool a_before_b = false;
-        bool tr1_with_c = false;
 
         while (tag_a != triangle1.tag[iterator])
             iterator++;
@@ -147,9 +140,6 @@ void MeshDynamicBondUpdater::update(uint64_t timestep)
             iterator = (iterator + 1) % 3;
 	    }
 	
-	if(tag_c == triangle1.tag[iterator])
-	    tr1_with_c = true;
-
         unsigned int type_id = h_typeval.data[i].type;
 
         Scalar energyDifference = 0;
@@ -164,7 +154,7 @@ void MeshDynamicBondUpdater::update(uint64_t timestep)
 	    }
 
 	bool have_to_check_surrounding = false;
-        for (auto& force : forces)
+        for (auto& force : m_forces)
 	    {
             energyDifference += force->energyDiff(idx_a, idx_b, idx_cc, idx_dd, type_id);
 
@@ -186,7 +176,7 @@ void MeshDynamicBondUpdater::update(uint64_t timestep)
 	std::vector<unsigned int> b_idx(4);
 	std::vector<unsigned int> v_idx(8);
 
-        if (have_to_check_surrounding || part_func > random_number )
+        if (have_to_check_surrounding || part_func > rand_number )
            {
 	   tr_idx[1] = tr_idx1;
 	   tr_idx[0] = tr_idx2;
@@ -200,7 +190,7 @@ void MeshDynamicBondUpdater::update(uint64_t timestep)
 	   v_idx[1]=idx_b;
 	   v_idx[2]=idx_cc;
 	   v_idx[3]=idx_dd;
-	   counter = 4;
+	   unsigned int counter = 4;
 
 	   for(unsigned int j = 0; j < 2; ++j)
 	   	{
@@ -230,7 +220,7 @@ void MeshDynamicBondUpdater::update(uint64_t timestep)
 			{
 			unsigned int tic =  h_neigh_bonds.data[b_idx[2*j+k]].x;
 			if(tic == tr_idx[j])
-				tic =  h_neigh_bonds.data[bic_idx[2*j+k]].y;
+				tic =  h_neigh_bonds.data[b_idx[2*j+k]].y;
 			unsigned int zaehler = 1;
 			unsigned int nv_idx =  h_triangles.data[tic].tag[0];
 			while(nv_idx == v_idx[k] || nv_idx == v_idx[2+j])
@@ -239,20 +229,20 @@ void MeshDynamicBondUpdater::update(uint64_t timestep)
 				zaehler++;
 				}
 			v_idx[counter] = nv_idx;
-			tr_idx[counter-2] = = tic;
+			tr_idx[counter-2] = tic;
 			counter++;
 			}
 		}
 
 	   if (have_to_check_surrounding)
 		   {
-		   for (auto& force : forces)
+		   for (auto& force : m_forces)
 			energyDifference += force->energyDiffSurrounding(v_idx[0],v_idx[1],v_idx[2],v_idx[3],v_idx[4],v_idx[5],v_idx[6],v_idx[7], type_id);
 		   part_func = exp(-m_inv_T * energyDifference);
 		   }
 	   }
 
-        if (part_func > random_number)
+        if (part_func > rand_number)
             {
 	    bond.tag[0] = v_idx[2];
 	    bond.tag[1] = v_idx[3];
@@ -270,12 +260,12 @@ void MeshDynamicBondUpdater::update(uint64_t timestep)
 	    triangle1.tag[0] = v_idx[0];
 	    triangle1.tag[1] = v_idx[3];
 	    triangle1.tag[2] = v_idx[2];
-	    h_triangles[tr_idx[0]] = triangle1; // triangle a,b,c to a,d,c 
+	    h_triangles.data[tr_idx[0]] = triangle1; // triangle a,b,c to a,d,c 
 
 	    triangle1.tag[0] = v_idx[1];
 	    triangle1.tag[1] = v_idx[2];
 	    triangle1.tag[2] = v_idx[3];
-	    h_triangles[tr_idx[1]] = triangle2; // triangle b,a,d to b,c,d 
+	    h_triangles.data[tr_idx[1]] = triangle1; // triangle b,a,d to b,c,d 
 
 	    bond = h_bonds.data[b_idx[0]];
 	    bond.tag[2] = v_idx[3];
@@ -302,34 +292,34 @@ void MeshDynamicBondUpdater::update(uint64_t timestep)
 
 	    tris.x = tr_idx[0];
 	    tris.y = tr_idx[2];
-	    h_neight_bonds.data[b_idx[0]] = tris;
+	    h_neigh_bonds.data[b_idx[0]] = tris;
 
 	    tris.y = tr_idx[4];
-	    h_neight_bonds.data[b_idx[2]] = tris;
+	    h_neigh_bonds.data[b_idx[2]] = tris;
 
 	    tris.x = tr_idx[1];
 	    tris.y = tr_idx[3];
-	    h_neight_bonds.data[b_idx[1]] = tris;
+	    h_neigh_bonds.data[b_idx[1]] = tris;
 
 	    tris.y = tr_idx[5];
-	    h_neight_bonds.data[b_idx[3]] = tris;
+	    h_neigh_bonds.data[b_idx[3]] = tris;
 
 	    bs.x = i;
 	    bs.y = b_idx[0];
 	    bs.z = b_idx[2];
-	    h_neight_triags.data[tr_idx[0]] = bs;
+	    h_neigh_triags.data[tr_idx[0]] = bs;
 
 	    bs.x = i;
 	    bs.y = b_idx[1];
 	    bs.z = b_idx[3];
-	    h_neight_triags.data[tr_idx[1]] = bs;
+	    h_neigh_triags.data[tr_idx[1]] = bs;
 
-            for (auto& force : forces)
+            for (auto& force : m_forces)
                 {
                 force->postcomputeParameter(idx_a, idx_b, idx_cc, idx_dd, type_id);
                 }
-            m_mesh->getMeshBondData()->meshChanged();
-            m_mesh->getMeshTriangleData()->meshChanged();
+            //m_mesh->getMeshBondData()->meshChanged();
+            //m_mesh->getMeshTriangleData()->meshChanged();
             }
         }
     }
@@ -343,9 +333,9 @@ void export_MeshDynamicBondUpdater(pybind11::module& m)
         "MeshDynamicBondUpdater")
         .def(pybind11::init<std::shared_ptr<SystemDefinition>,
                             std::shared_ptr<Trigger>,
-                            std::shared_ptr<Integrator>,
                             std::shared_ptr<MeshDefinition>,
                             Scalar>())
+        .def_property_readonly("forces", &MeshDynamicBondUpdater::getForces)
         .def_property("kT", &MeshDynamicBondUpdater::getT, &MeshDynamicBondUpdater::setT);
     }
 

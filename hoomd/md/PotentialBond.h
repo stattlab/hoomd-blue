@@ -66,6 +66,12 @@ template<class evaluator, class Bonds> class PotentialBond : public ForceCompute
 
     //! Actually compute the forces
     virtual void computeForces(uint64_t timestep);
+
+    virtual Scalar energyDiff(unsigned int idx_a,
+                              unsigned int idx_b,
+                              unsigned int idx_c,
+                              unsigned int idx_d,
+                              unsigned int type_id);
     };
 
 template<class evaluator, class Bonds>
@@ -312,6 +318,51 @@ void PotentialBond<evaluator, Bonds>::computeForces(uint64_t timestep)
             throw std::runtime_error("Error in bond calculation");
             }
         }
+    }
+
+template<class evaluator, class Bonds>
+Scalar PotentialBond<evaluator, Bonds>::energyDiff(unsigned int idx_a,
+                                                   unsigned int idx_b,
+                                                   unsigned int idx_c,
+                                                   unsigned int idx_d,
+                                                   unsigned int type_id)
+    {
+    ArrayHandle<Scalar4> h_pos(m_pdata->getPositions(), access_location::host, access_mode::read);
+    // access the parameters
+    ArrayHandle<param_type> h_params(m_params, access_location::host, access_mode::read);
+
+    const BoxDim& box = m_pdata->getGlobalBox();
+
+    Scalar3 posa = make_scalar3(h_pos.data[idx_a].x, h_pos.data[idx_a].y, h_pos.data[idx_a].z);
+    Scalar3 posb = make_scalar3(h_pos.data[idx_b].x, h_pos.data[idx_b].y, h_pos.data[idx_b].z);
+    Scalar3 posc = make_scalar3(h_pos.data[idx_c].x, h_pos.data[idx_c].y, h_pos.data[idx_c].z);
+    Scalar3 posd = make_scalar3(h_pos.data[idx_d].x, h_pos.data[idx_d].y, h_pos.data[idx_d].z);
+
+    Scalar3 xab = posb - posa;
+
+    Scalar3 xcd = posd - posc;
+
+    xab = box.minImage(xab);
+    xcd = box.minImage(xcd);
+
+    // calculate r_ab squared
+    Scalar rsqab = dot(xab, xab);
+    Scalar rsqcd = dot(xcd, xcd);
+
+    // compute the force and potential energy
+    Scalar force_divr = Scalar(0.0);
+    Scalar bond_eng1 = Scalar(0.0);
+    Scalar bond_eng2 = Scalar(0.0);
+    evaluator eval1(rsqab, h_params.data[type_id]);
+    evaluator eval2(rsqcd, h_params.data[type_id]);
+
+    eval1.evalForceAndEnergy(force_divr, bond_eng1);
+    bool evaluated = eval2.evalForceAndEnergy(force_divr, bond_eng2);
+
+    if (evaluated)
+        return (bond_eng2 - bond_eng1);
+    else
+        return DBL_MAX;
     }
 
 #ifdef ENABLE_MPI
