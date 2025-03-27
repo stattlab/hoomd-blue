@@ -1,6 +1,7 @@
 # Copyright (c) 2009-2025 The Regents of the University of Michigan.
 # Part of HOOMD-blue, released under the BSD 3-Clause License.
 
+import numpy as np
 import pytest
 
 import hoomd
@@ -17,6 +18,20 @@ def small_snap():
         snap.mpcd.N = 1
         snap.mpcd.types = ["A"]
     return snap
+
+
+@pytest.fixture
+def dimer_rigid_body():
+    return {
+        "constituent_types": ["B", "B"],
+        "positions": [[-1.2, 0, 0], [1.2, 0, 0]],
+        "orientations": [[1, 0, 0, 0], [1, 0, 0, 0]],
+    }
+
+
+@pytest.fixture
+def dimer_properties():
+    return {"inertia": [0.0, 2.88, 2.88], "mass": np.array([2, 1, 1])}
 
 
 def test_cell_list(small_snap, simulation_factory):
@@ -130,3 +145,56 @@ class TestCollisionMethod:
             period=1, embedded_particles=hoomd.filter.All(), **init_args
         )
         sim.run(1)
+
+
+def test_rigid_collide(
+    one_particle_snapshot_factory,
+    simulation_factory,
+    dimer_rigid_body,
+    dimer_properties,
+):
+    snap = one_particle_snapshot_factory(particle_types=["A", "B"])
+    if snap.communicator.rank == 0:
+        snap.particles.moment_inertia[:] = [dimer_properties["inertia"]]
+        snap.particles.mass[:] = [dimer_properties["mass"][0]]
+        snap.particles.velocity[:] = [[0, 0, 1]]
+        # snap.particles.angmom[:] = [[0,0,5,0]]
+        snap.mpcd.N = 2
+        snap.mpcd.types = ["C"]
+        snap.mpcd.position[:] = [[1.1, 0, 0], [-1.1, 0, 0]]
+        snap.mpcd.velocity[:] = [[0.6, 0.7, 0.8], [0.6, -0.7, 0.8]]
+
+    sim = simulation_factory(snap)
+    sim.seed = 5
+
+    rigid = hoomd.md.constrain.Rigid()
+    rigid.body["A"] = dimer_rigid_body
+    rigid.create_bodies(sim.state)
+
+    intermed_snapshot = sim.state.get_snapshot()
+    if intermed_snapshot.communicator.rank == 0:
+        flags = (
+            intermed_snapshot.particles.typeid
+            == intermed_snapshot.particles.types.index("B")
+        )
+        intermed_snapshot.particles.mass[flags] = dimer_properties["mass"][flags]
+    sim.state.set_snapshot(intermed_snapshot)
+
+    cm = hoomd.mpcd.collide.StochasticRotationDynamics(
+        period=1,
+        angle=90,
+        embedded_particles=hoomd.filter.Rigid(flags=("constituent", "free")),
+    )
+    sim.operations.integrator = hoomd.mpcd.Integrator(
+        dt=0.02, collision_method=cm, integrate_rotational_dof=True, rigid=rigid
+    )
+    sim.run(1)
+    new_snapshot = sim.state.get_snapshot()
+    if new_snapshot.communicator.rank == 0:
+        assert np.array_equal(dimer_properties["mass"], new_snapshot.particles.mass)
+        new_velo = new_snapshot.particles.velocity
+        # the central particle speed should change despite not being in the filter
+        assert not np.any(np.isclose(new_velo[0], [0, 0, 1]))
+        # for a spinning dimer, constituent particle velocities could cancel
+        calculated_central_speed = (new_velo[2] - new_velo[1]) / 2 + new_velo[1]
+        assert np.allclose(new_velo[0], calculated_central_speed)
