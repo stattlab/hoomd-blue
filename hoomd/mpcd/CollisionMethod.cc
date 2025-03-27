@@ -141,7 +141,28 @@ void mpcd::CollisionMethod::checkCollisionWarnings(uint64_t timestep)
             }
 
 #ifdef ENABLE_MPI
-// MPI_Reduce invalid_mass using logical or if communicating
+        // MPI_Reduce invalid_mass
+        unsigned int invalid_mass_int = (unsigned int)invalid_mass;
+        unsigned int invalid_mass_reduced;
+        MPI_Reduce(&invalid_mass_int,
+                   &invalid_mass_reduced,
+                   1,
+                   MPI_UNSIGNED,
+                   MPI_LOR,
+                   0,
+                   m_exec_conf->getMPICommunicator());
+        invalid_mass = bool(invalid_mass_reduced);
+        // MPI_Reduce central_interacting
+        unsigned int central_interacting_int = (unsigned int)central_interacting;
+        unsigned int central_interacting_reduced;
+        MPI_Reduce(&central_interacting_int,
+                   &central_interacting_reduced,
+                   1,
+                   MPI_UNSIGNED,
+                   MPI_LOR,
+                   0,
+                   m_exec_conf->getMPICommunicator());
+        central_interacting = bool(central_interacting_reduced);
 #endif // ENABLE_MPI
 
         if (invalid_mass)
