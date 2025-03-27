@@ -119,6 +119,7 @@ void mpcd::CollisionMethod::checkCollisionWarnings(uint64_t timestep)
             {
             // get the index from the embedded group
             const unsigned int particle_index = h_embed_group.data[idx];
+
             // check mass
             const Scalar4 vel_mass = h_vel_embed.data[particle_index];
             const Scalar mass = vel_mass.w;
