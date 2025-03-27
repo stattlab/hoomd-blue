@@ -95,6 +95,7 @@ void mpcd::CollisionMethod::checkCollisionWarnings(uint64_t timestep)
         {
         return;
         }
+
     if (m_embed_group)
         {
         unsigned int N_tot = m_embed_group->getNumMembers();
