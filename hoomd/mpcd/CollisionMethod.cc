@@ -73,10 +73,15 @@ void mpcd::CollisionMethod::collide(uint64_t timestep)
             {
             GPUArray<Scalar3> linmom_accum(num_total, m_exec_conf);
             m_linmom_accum.swap(linmom_accum);
-            GPUArray<Scalar4> angmom_accum(num_total, m_exec_conf);
+            GPUArray<Scalar3> angmom_accum(num_total, m_exec_conf);
             m_angmom_accum.swap(angmom_accum);
             }
-        beginRigidBodyCollision(timestep);
+        else
+            {
+            m_linmom_accum.zeroFill();
+            m_angmom_accum.zeroFill();
+            }
+        storeInitialEmbeddedGroupVelocities(timestep);
         }
 
     // apply collisions
@@ -86,7 +91,7 @@ void mpcd::CollisionMethod::collide(uint64_t timestep)
     if (m_embed_group)
         {
         accumulateRigidBodyMomenta(timestep);
-        finishRigidBodyCollision(timestep);
+        transferRigidBodyCollision(timestep);
         }
     }
 
@@ -142,18 +147,21 @@ void mpcd::CollisionMethod::checkCollisionWarnings(uint64_t timestep)
             }
 
 #ifdef ENABLE_MPI
-        MPI_Allreduce(MPI_IN_PLACE,
-                      &invalid_mass,
-                      1,
-                      MPI_CXX_BOOL,
-                      MPI_LOR,
-                      m_exec_conf->getMPICommunicator());
-        MPI_Allreduce(MPI_IN_PLACE,
-                      &central_interacting,
-                      1,
-                      MPI_CXX_BOOL,
-                      MPI_LOR,
-                      m_exec_conf->getMPICommunicator());
+        if (m_exec_conf->getNRanks() > 1)
+            {
+            MPI_Allreduce(MPI_IN_PLACE,
+                          &invalid_mass,
+                          1,
+                          MPI_CXX_BOOL,
+                          MPI_LOR,
+                          m_exec_conf->getMPICommunicator());
+            MPI_Allreduce(MPI_IN_PLACE,
+                          &central_interacting,
+                          1,
+                          MPI_CXX_BOOL,
+                          MPI_LOR,
+                          m_exec_conf->getMPICommunicator());
+            }
 #endif // ENABLE_MPI
 
         if (invalid_mass)
@@ -173,7 +181,7 @@ void mpcd::CollisionMethod::checkCollisionWarnings(uint64_t timestep)
     m_checked_collision_warnings = true;
     }
 
-void mpcd::CollisionMethod::beginRigidBodyCollision(uint64_t timestep)
+void mpcd::CollisionMethod::storeInitialEmbeddedGroupVelocities(uint64_t timestep)
     {
     unsigned int num_group = m_embed_group->getNumMembers();
     ArrayHandle<Scalar4> h_initial_vel(m_initial_velocity,
@@ -202,7 +210,7 @@ void mpcd::CollisionMethod::accumulateRigidBodyMomenta(uint64_t timestep)
     ArrayHandle<Scalar3> h_linmom_accum(m_linmom_accum,
                                         access_location::host,
                                         access_mode::readwrite);
-    ArrayHandle<Scalar4> h_angmom_accum(m_angmom_accum,
+    ArrayHandle<Scalar3> h_angmom_accum(m_angmom_accum,
                                         access_location::host,
                                         access_mode::readwrite);
     ArrayHandle<unsigned int> h_embed_group(m_embed_group->getIndexArray(),
@@ -211,9 +219,6 @@ void mpcd::CollisionMethod::accumulateRigidBodyMomenta(uint64_t timestep)
     ArrayHandle<Scalar4> h_postype(m_pdata->getPositions(),
                                    access_location::host,
                                    access_mode::read);
-    ArrayHandle<Scalar4> h_orientation(m_pdata->getOrientationArray(),
-                                       access_location::host,
-                                       access_mode::read);
     ArrayHandle<Scalar4> h_velocity(m_pdata->getVelocities(),
                                     access_location::host,
                                     access_mode::read);
@@ -226,13 +231,13 @@ void mpcd::CollisionMethod::accumulateRigidBodyMomenta(uint64_t timestep)
         // get the index from the embedded group
         const unsigned int particle_index = h_embed_group.data[idx];
         // check if particle is in a rigid body
-        unsigned int central_tag = h_body.data[particle_index];
+        const unsigned int central_tag = h_body.data[particle_index];
         if (central_tag >= MIN_FLOPPY)
             {
             continue;
             }
         // if the central particle is not local, cannot read or write to it.
-        unsigned int central_idx = h_rtag.data[central_tag];
+        const unsigned int central_idx = h_rtag.data[central_tag];
         if (central_idx == NOT_LOCAL)
             {
             continue;
@@ -260,43 +265,61 @@ void mpcd::CollisionMethod::accumulateRigidBodyMomenta(uint64_t timestep)
         const vec3<Scalar> angmom_change = cross(displacement, linmom_change);
 
         // accumulate onto central particle
-        h_linmom_accum.data[central_idx] += linmom_change;
-        h_angmom_accum.data[central_idx] += angmom_change;
+        h_linmom_accum.data[central_idx] += vec_to_scalar3(linmom_change);
+        h_angmom_accum.data[central_idx] += vec_to_scalar3(angmom_change);
         }
     }
 
-void mpcd::CollisionMethod::finishRigidBodyCollision(uint64_t timestep)
+void mpcd::CollisionMethod::transferRigidBodyCollision(uint64_t timestep)
     {
     ArrayHandle<Scalar3> h_linmom_accum(m_linmom_accum, access_location::host, access_mode::read);
-    ArrayHandle<Scalar4> h_angmom_accum(m_angmom_accum, access_location::host, access_mode::read);
+    ArrayHandle<Scalar3> h_angmom_accum(m_angmom_accum, access_location::host, access_mode::read);
     ArrayHandle<Scalar4> h_velocity(m_pdata->getVelocities(),
                                     access_location::host,
                                     access_mode::readwrite);
     ArrayHandle<Scalar4> h_angmom(m_pdata->getAngularMomentumArray(),
                                   access_location::host,
                                   access_mode::readwrite);
-
+    ArrayHandle<Scalar4> h_orientation(m_pdata->getOrientationArray(),
+                                       access_location::host,
+                                       access_mode::read);
+    ArrayHandle<unsigned int> h_body(m_pdata->getBodies(),
+                                     access_location::host,
+                                     access_mode::read);
+    ArrayHandle<unsigned int> h_rtag(m_pdata->getRTags(), access_location::host, access_mode::read);
     // add accumulated momentum to the central particle
     unsigned int num_total = m_pdata->getN();
     for (unsigned int idx = 0; idx < num_total; ++idx)
         {
+        // check that the particle is in a rigid body and a central particle
+        const unsigned int central_tag = h_body.data[idx];
+        if (central_tag >= MIN_FLOPPY)
+            {
+            continue;
+            }
+        const unsigned int central_idx = h_rtag.data[central_tag];
+        if (central_idx != idx)
+            {
+            continue;
+            }
         // get accumulated momentum for particle
         vec3<Scalar> linmom_accum(h_linmom_accum.data[idx]);
-        quat<Scalar> angmom_accum(h_angmom_accum.data[idx]);
+        vec3<Scalar> angmom_accum(h_angmom_accum.data[idx]);
 
         // get velocity, mass, and angular momentum
         Scalar4 vel_mass = h_velocity.data[idx];
         quat<Scalar> angmom(h_angmom.data[idx]);
         vec3<Scalar> vel(vel_mass);
         const Scalar mass = vel_mass.w;
-
+        const quat<Scalar> orientation(h_orientation.data[idx]);
         // update velocity and angular momentum
         vec3<Scalar> updated_vel = vel;
         if (mass > 0)
             {
             updated_vel += linmom_accum / mass;
             }
-        quat<Scalar> updated_angmom = angmom + angmom_accum;
+        quat<Scalar> angmom_change = Scalar(2.0) * orientation * quat(0.0, angmom_accum);
+        quat<Scalar> updated_angmom = angmom + angmom_change;
 
         // save update
         h_angmom.data[idx] = quat_to_scalar4(updated_angmom);
