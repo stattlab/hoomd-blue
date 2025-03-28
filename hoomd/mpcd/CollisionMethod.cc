@@ -259,15 +259,9 @@ void mpcd::CollisionMethod::accumulateRigidBodyMomenta(uint64_t timestep)
         const vec3<Scalar> linmom_change = mass_const * (vel_const - initial_vel_const);
         const vec3<Scalar> angmom_change = cross(displacement, linmom_change);
 
-        // get the current accumulated momentum
-        vec3<Scalar> linmom_accum(h_linmom_accum.data[central_idx]);
-        quat<Scalar> angmom_accum(h_angmom_accum.data[central_idx]);
-        linmom_accum += linmom_change;
-        angmom_accum += angmom_change;
-        // update the alternative arrays
-        h_linmom_accum.data[central_idx]
-            = make_scalar3(linmom_accum.x, linmom_accum.y, linmom_accum.z);
-        h_angmom_accum.data[central_idx] = quat_to_scalar4(angmom_accum);
+        // accumulate onto central particle
+        h_linmom_accum.data[central_idx] += linmom_change;
+        h_angmom_accum.data[central_idx] += angmom_change;
         }
     }
 
