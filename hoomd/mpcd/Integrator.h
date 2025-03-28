@@ -18,6 +18,7 @@
 #include "Sorter.h"
 #include "StreamingMethod.h"
 #include "VirtualParticleFiller.h"
+#include "hoomd/md/ForceComposite.h"
 #ifdef ENABLE_MPI
 #include "Communicator.h"
 #endif // ENABLE_MPI
@@ -67,6 +68,16 @@ class PYBIND11_EXPORT Integrator : public hoomd::md::IntegratorTwoStep
         syncCellList();
         }
 
+    //! Set the rigid body definition for the collision method
+    void setRigid(std::shared_ptr<hoomd::md::ForceComposite> new_rigid)
+        {
+        m_rigid_bodies = new_rigid;
+        if (m_collide)
+            {
+            m_collide->setRigid(new_rigid);
+            }
+        }
+
 #ifdef ENABLE_MPI
     //! Set the MPCD communicator to use
     void setMPCDCommunicator(std::shared_ptr<mpcd::Communicator> comm)
@@ -96,6 +107,10 @@ class PYBIND11_EXPORT Integrator : public hoomd::md::IntegratorTwoStep
     void setCollisionMethod(std::shared_ptr<mpcd::CollisionMethod> collide)
         {
         m_collide = collide;
+        if (m_collide)
+            {
+            m_collide->setRigid(m_rigid_bodies);
+            }
         }
 
     //! Get current streaming method

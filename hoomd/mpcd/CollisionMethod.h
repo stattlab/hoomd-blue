@@ -14,6 +14,7 @@
 #endif
 
 #include "CellList.h"
+#include "hoomd/md/ForceComposite.h"
 
 #include "hoomd/Autotuned.h"
 #include "hoomd/ParticleGroup.h"
@@ -95,14 +96,27 @@ class PYBIND11_EXPORT CollisionMethod : public Autotuned
             }
         }
 
+    //! Get the rigid body definitions
+    std::shared_ptr<hoomd::md::ForceComposite> getRigid()
+        {
+        return m_rigid_bodies;
+        }
+
+    //! Set the rigid body definitions
+    void setRigid(std::shared_ptr<hoomd::md::ForceComposite> new_rigid)
+        {
+        m_rigid_bodies = new_rigid;
+        }
+
     protected:
     std::shared_ptr<SystemDefinition> m_sysdef;                //!< HOOMD system definition
     std::shared_ptr<hoomd::ParticleData> m_pdata;              //!< HOOMD particle data
     std::shared_ptr<mpcd::ParticleData> m_mpcd_pdata;          //!< MPCD particle data
     std::shared_ptr<const ExecutionConfiguration> m_exec_conf; //!< Execution configuration
 
-    std::shared_ptr<mpcd::CellList> m_cl;         //!< MPCD cell list
-    std::shared_ptr<ParticleGroup> m_embed_group; //!< Embedded particles
+    std::shared_ptr<mpcd::CellList> m_cl;                      //!< MPCD cell list
+    std::shared_ptr<ParticleGroup> m_embed_group;              //!< Embedded particles
+    std::shared_ptr<hoomd::md::ForceComposite> m_rigid_bodies; //!< definition for rigid bodies
 
     uint64_t m_period;        //!< Number of timesteps between collisions
     uint64_t m_next_timestep; //!< Timestep next collision should be performed
