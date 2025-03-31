@@ -198,6 +198,10 @@ void mpcd::CollisionMethod::storeInitialEmbeddedGroupVelocities(uint64_t timeste
 
 void mpcd::CollisionMethod::accumulateRigidBodyMomenta(uint64_t timestep)
     {
+    // zero accumulators
+    m_linmom_accum.zeroFill();
+    m_angmom_accum.zeroFill();
+
     const unsigned int num_group = m_embed_group->getNumMembers();
     ArrayHandle<unsigned int> h_embed_group(m_embed_group->getIndexArray(),
                                             access_location::host,
