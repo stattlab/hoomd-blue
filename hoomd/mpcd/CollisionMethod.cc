@@ -230,22 +230,23 @@ void mpcd::CollisionMethod::accumulateRigidBodyMomenta(uint64_t timestep)
 
     for (unsigned int idx = 0; idx < num_group; ++idx)
         {
-        // get the index from the embedded group
+        // get the index from the embedded group and check if in a rigid body
         const unsigned int particle_index = h_embed_group.data[idx];
-        // check if particle is in a rigid body
         const unsigned int central_tag = h_body.data[particle_index];
         if (central_tag >= MIN_FLOPPY)
             {
             continue;
             }
-        // if the central particle is not local, cannot read or write to it.
         const unsigned int central_idx = h_rtag.data[central_tag];
+        // if the central particle is not local, cannot read or write to it.
         assert(central_idx != NOT_LOCAL);
+
         // collision on central particle itself already taken care of by collision rule
         if (particle_index == central_idx)
             {
             continue;
             }
+
         // get velocities and masses
         const Scalar4 vel_mass_const = h_velocity.data[particle_index];
         const vec3<Scalar> vel_const(vel_mass_const);
