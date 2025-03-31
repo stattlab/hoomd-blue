@@ -146,67 +146,71 @@ class TestCollisionMethod:
         )
         sim.run(1)
 
+    def test_rigid_collide_linear(
+        self,
+        one_particle_snapshot_factory,
+        simulation_factory,
+        dimer_rigid_body,
+        dimer_properties,
+        cls,
+        init_args,
+    ):
+        snap = one_particle_snapshot_factory(particle_types=["A", "B"])
+        if snap.communicator.rank == 0:
+            snap.particles.moment_inertia[:] = [dimer_properties["inertia"]]
+            snap.particles.mass[:] = [dimer_properties["mass"][0]]
+            snap.particles.velocity[:] = [[0, 0, 1]]
+            snap.mpcd.N = 2
+            snap.mpcd.types = ["C"]
+            snap.mpcd.position[:] = [[1.2, 0, 0], [-1.2, 0, 0]]
+            snap.mpcd.velocity[:] = [[0.6, 0.7, 0.8], [0.6, -0.7, 0.8]]
 
-def test_rigid_collide(
-    one_particle_snapshot_factory,
-    simulation_factory,
-    dimer_rigid_body,
-    dimer_properties,
-):
-    snap = one_particle_snapshot_factory(particle_types=["A", "B"])
-    if snap.communicator.rank == 0:
-        snap.particles.moment_inertia[:] = [dimer_properties["inertia"]]
-        snap.particles.mass[:] = [dimer_properties["mass"][0]]
-        snap.particles.velocity[:] = [[0, 0, 1]]
-        # snap.particles.angmom[:] = [[0,0,5,0]]
-        snap.mpcd.N = 2
-        snap.mpcd.types = ["C"]
-        snap.mpcd.position[:] = [[1.2, 0, 0], [-1.2, 0, 0]]
-        snap.mpcd.velocity[:] = [[0.6, 0.7, 0.8], [0.6, -0.7, 0.8]]
+        sim = simulation_factory(snap)
+        sim.seed = 5
 
-    sim = simulation_factory(snap)
-    sim.seed = 5
+        rigid = hoomd.md.constrain.Rigid()
+        rigid.body["A"] = dimer_rigid_body
+        rigid.create_bodies(sim.state)
 
-    rigid = hoomd.md.constrain.Rigid()
-    rigid.body["A"] = dimer_rigid_body
-    rigid.create_bodies(sim.state)
+        intermed_snapshot = sim.state.get_snapshot()
+        if intermed_snapshot.communicator.rank == 0:
+            flags = (
+                intermed_snapshot.particles.typeid
+                == intermed_snapshot.particles.types.index("B")
+            )
+            intermed_snapshot.particles.mass[flags] = dimer_properties["mass"][flags]
+        sim.state.set_snapshot(intermed_snapshot)
 
-    intermed_snapshot = sim.state.get_snapshot()
-    if intermed_snapshot.communicator.rank == 0:
-        flags = (
-            intermed_snapshot.particles.typeid
-            == intermed_snapshot.particles.types.index("B")
+        sim.operations.integrator = hoomd.mpcd.Integrator(
+            dt=0, integrate_rotational_dof=True, rigid=rigid
         )
-        intermed_snapshot.particles.mass[flags] = dimer_properties["mass"][flags]
-    sim.state.set_snapshot(intermed_snapshot)
-
-    cm = hoomd.mpcd.collide.StochasticRotationDynamics(
-        period=1,
-        angle=90,
-        embedded_particles=hoomd.filter.Rigid(flags=("constituent",)),
-    )
-    sim.operations.integrator = hoomd.mpcd.Integrator(
-        dt=0, collision_method=cm, integrate_rotational_dof=True, rigid=rigid
-    )
-    sim.run(1)
-    new_snapshot = sim.state.get_snapshot()
-    if new_snapshot.communicator.rank == 0:
-        assert np.array_equal(dimer_properties["mass"], new_snapshot.particles.mass)
-        new_velo = new_snapshot.particles.velocity
-        # the central particle speed should change despite not being in the filter
-        assert not np.any(np.isclose(new_velo[0], [0, 0, 1]))
-
-        # in a spinning dimer, constituent velocities should average to central velocity
-        calculated_central_speed = (new_velo[2] - new_velo[1]) / 2 + new_velo[1]
-        assert np.allclose(new_velo[0], calculated_central_speed)
-
-        # ensure conservation of linear momentum
-        initial_momentum = np.sum(
-            [[0.6, 0.7, 0.8], [0.6, -0.7, 0.8], [0, 0, 2]], axis=0
+        if "kT" not in init_args:
+            init_args["kT"] = 1.0
+        sim.operations.integrator.collision_method = cls(
+            period=1,
+            embedded_particles=hoomd.filter.Rigid(flags=("constituent",)),
+            **init_args,
         )
-        final_mpcd_momentum = np.sum(
-            new_snapshot.mpcd.velocity * new_snapshot.mpcd.mass, axis=0
-        )
-        final_md_momentum = new_velo[0] * dimer_properties["mass"][0]
-        final_momentum = final_md_momentum + final_mpcd_momentum
-        assert np.allclose(initial_momentum, final_momentum)
+
+        sim.run(1)
+        new_snapshot = sim.state.get_snapshot()
+        if new_snapshot.communicator.rank == 0:
+            assert np.array_equal(dimer_properties["mass"], new_snapshot.particles.mass)
+            new_velo = new_snapshot.particles.velocity
+            # the central particle speed should change despite not being in the filter
+            assert not np.any(np.isclose(new_velo[0], [0, 0, 1]))
+
+            # in spinning dimer, constituent velocities average to central velocity
+            calculated_central_speed = (new_velo[2] - new_velo[1]) / 2 + new_velo[1]
+            assert np.allclose(new_velo[0], calculated_central_speed)
+
+            # ensure conservation of linear momentum
+            initial_momentum = np.sum(
+                [[0.6, 0.7, 0.8], [0.6, -0.7, 0.8], [0, 0, 2]], axis=0
+            )
+            final_mpcd_momentum = np.sum(
+                new_snapshot.mpcd.velocity * new_snapshot.mpcd.mass, axis=0
+            )
+            final_md_momentum = new_velo[0] * dimer_properties["mass"][0]
+            final_momentum = final_md_momentum + final_mpcd_momentum
+            assert np.allclose(initial_momentum, final_momentum)
