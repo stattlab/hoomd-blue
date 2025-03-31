@@ -303,9 +303,10 @@ void mpcd::CollisionMethod::transferRigidBodyCollision(uint64_t timestep)
             {
             continue;
             }
+
         // get accumulated momentum for particle
-        vec3<Scalar> linmom_accum(h_linmom_accum.data[idx]);
-        vec3<Scalar> angmom_accum(h_angmom_accum.data[idx]);
+        const Scalar3 linmom_accum(h_linmom_accum.data[idx]);
+        const vec3<Scalar> angmom_accum(h_angmom_accum.data[idx]);
 
         // compute and store new velocity
         Scalar4 vel_mass = h_velocity.data[idx];
