@@ -159,11 +159,15 @@ void MeshDynamicBondUpdater::update(uint64_t timestep)
         //for (auto& force : m_forces)
         for (auto& force : forces)
 	    {
+	    std::cout << tag_a << " " << tag_b << " " << tag_c << " " << tag_d << ": "<< energyDifference << std::endl;
             energyDifference += force->energyDiff(idx_a, idx_b, idx_cc, idx_dd, type_id);
+	    std::cout << tag_a << " " << tag_b << " " << tag_c << " " << tag_d << ": "<< energyDifference << std::endl;
 
 	    if(force->checkSurrounding())
 		    have_to_check_surrounding = true;
 	    }
+
+
 
         // Initialize the RNG
         RandomGenerator rng(hoomd::Seed(RNGIdentifier::MeshDynamicBondUpdater, timestep, seed),
@@ -174,6 +178,10 @@ void MeshDynamicBondUpdater::update(uint64_t timestep)
 
 	Scalar rand_number = uniform(rng);
 	Scalar part_func = exp(-m_inv_T * energyDifference);
+
+	std::cout << part_func << " > " << rand_number << std::endl;
+
+	exit(0);
 
 	std::vector<unsigned int> tr_idx(6);
 	std::vector<unsigned int> b_idx(4);
@@ -306,8 +314,8 @@ void MeshDynamicBondUpdater::update(uint64_t timestep)
                 {
                 force->postcomputeParameter(idx_a, idx_b, idx_cc, idx_dd, type_id);
                 }
-            m_mesh->getMeshBondData()->notifyGroupReorder();
-            m_mesh->getMeshTriangleData()->notifyGroupReorder();
+            m_mesh->getMeshBondData()->groupReorder();
+            m_mesh->getMeshTriangleData()->groupReorder();
             }
         }
     }

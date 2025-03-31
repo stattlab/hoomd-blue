@@ -343,8 +343,7 @@ unsigned int MeshGroupData<group_size, Group, name, snap>::addBondedGroup(Group 
     this->m_nglobal++;
 
     // notify observers
-    this->m_group_num_change_signal.emit();
-    this->notifyGroupReorder();
+    this->groupReorder();
 
     return tag;
     }
@@ -501,6 +500,9 @@ MeshGroupData<group_size, Group, name, snap>::takeSnapshot(snap& snapshot) const
 
     return index;
     }
+
+
+
 
 namespace detail
     {
