@@ -23,7 +23,8 @@ mpcd::CollisionMethod::CollisionMethod(std::shared_ptr<SystemDefinition> sysdef,
                                        int phase)
     : m_sysdef(sysdef), m_pdata(m_sysdef->getParticleData()),
       m_mpcd_pdata(sysdef->getMPCDParticleData()), m_exec_conf(m_pdata->getExecConf()),
-      m_period(period), m_checked_collision_warnings(false), m_initial_velocity(m_exec_conf)
+      m_period(period), m_checked_collision_warnings(false), m_initial_velocity(m_exec_conf),
+      m_linmom_accum(m_exec_conf), m_angmom_accum(m_exec_conf)
     {
     // setup next timestep for collision
     m_next_timestep = cur_timestep;
