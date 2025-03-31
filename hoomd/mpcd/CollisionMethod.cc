@@ -85,7 +85,7 @@ void mpcd::CollisionMethod::collide(uint64_t timestep)
     rule(timestep);
 
     // apply collisions to rigid bodies
-    if (m_rigid_bodies)
+    if (rigid_body_collision)
         {
         accumulateRigidBodyMomenta(timestep);
         transferRigidBodyMomenta(timestep);
