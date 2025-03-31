@@ -307,19 +307,20 @@ void mpcd::CollisionMethod::transferRigidBodyCollision(uint64_t timestep)
         vec3<Scalar> linmom_accum(h_linmom_accum.data[idx]);
         vec3<Scalar> angmom_accum(h_angmom_accum.data[idx]);
 
-        // get velocity, mass, and angular momentum
+        // compute and store new velocity
         Scalar4 vel_mass = h_velocity.data[idx];
-        quat<Scalar> angmom(h_angmom.data[idx]);
-        vec3<Scalar> vel(vel_mass);
         const Scalar mass = vel_mass.w;
-        const quat<Scalar> orientation(h_orientation.data[idx]);
-
-        // update velocity
-        vec3<Scalar> updated_vel = vel;
         if (mass > 0)
             {
-            updated_vel += linmom_accum / mass;
+            vel_mass.x += linmom_accum.x / mass;
+            vel_mass.y += linmom_accum.y / mass;
+            vel_mass.z += linmom_accum.z / mass;
+            h_velocity.data[idx] = vel_mass;
             }
+
+        // compute new angular momentum
+        quat<Scalar> angmom(h_angmom.data[idx]);
+        const quat<Scalar> orientation(h_orientation.data[idx]);
 
         // convert angular momentum to quaternion and update
         quat<Scalar> angmom_change = Scalar(2.0) * orientation * quat(0.0, angmom_accum);
