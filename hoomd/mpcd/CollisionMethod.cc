@@ -183,7 +183,7 @@ void mpcd::CollisionMethod::checkCollisionWarnings(uint64_t timestep)
 
 void mpcd::CollisionMethod::storeInitialEmbeddedGroupVelocities(uint64_t timestep)
     {
-    unsigned int num_group = m_embed_group->getNumMembers();
+    const unsigned int num_group = m_embed_group->getNumMembers();
     ArrayHandle<Scalar4> h_initial_vel(m_initial_velocity,
                                        access_location::host,
                                        access_mode::overwrite);
