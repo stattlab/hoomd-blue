@@ -34,6 +34,51 @@ def dimer_properties():
     return {"inertia": [0.0, 2.88, 2.88], "mass": np.array([2, 1, 1])}
 
 
+def generate_rigid_body_simulation(
+    initial_snap,
+    simulation_factory,
+    rigid_def,
+    rigid_properties,
+    rigid_velo,
+    rigid_angmom,
+    mpcd_velo,
+):
+    """Generates a simulation with mpcd particles and 1 rigid body"""
+    if initial_snap.communicator.rank == 0:
+        initial_snap.particles.moment_inertia[:] = [rigid_properties["inertia"]]
+        initial_snap.particles.mass[:] = [rigid_properties["mass"][0]]
+        initial_snap.particles.velocity[:] = [rigid_velo]
+        initial_snap.particles.angmom[:] = [rigid_angmom]
+
+    sim = simulation_factory(initial_snap)
+    sim.seed = 5
+
+    rigid = hoomd.md.constrain.Rigid()
+    rigid.body["A"] = rigid_def
+    rigid.create_bodies(sim.state)
+
+    intermed_snap = sim.state.get_snapshot()
+    if intermed_snap.communicator.rank == 0:
+        # add mass of constituents
+        flags = intermed_snap.particles.typeid == intermed_snap.particles.types.index(
+            "B"
+        )
+        intermed_snap.particles.mass[flags] = rigid_properties["mass"][flags]
+        intermed_snap.wrap()
+
+        # place the mpcd particles on top of constituents
+        intermed_snap.mpcd.N = len(rigid_def["constituent_types"])
+        intermed_snap.mpcd.types = ["C"]
+        intermed_snap.mpcd.position[:] = intermed_snap.particles.position[flags]
+        intermed_snap.mpcd.velocity[:] = mpcd_velo
+    sim.state.set_snapshot(intermed_snap)
+
+    sim.operations.integrator = hoomd.mpcd.Integrator(
+        dt=0, integrate_rotational_dof=True, rigid=rigid
+    )
+    return sim
+
+
 def test_cell_list(small_snap, simulation_factory):
     if small_snap.communicator.rank == 0:
         small_snap.configuration.box = [20, 30, 40, 0, 0, 0]
@@ -146,6 +191,8 @@ class TestCollisionMethod:
         )
         sim.run(1)
 
+    @pytest.mark.parametrize("velo", [[0, 0, 0], [1, 2, 3]], ids=["None", "All"])
+    @pytest.mark.parametrize("position", [[0, 0, 0], [9, 9, 9]], ids=["center", "edge"])
     def test_rigid_collide_linear(
         self,
         one_particle_snapshot_factory,
@@ -154,116 +201,28 @@ class TestCollisionMethod:
         dimer_properties,
         cls,
         init_args,
+        velo,
+        position,
     ):
-        snap = one_particle_snapshot_factory(particle_types=["A", "B"])
-        if snap.communicator.rank == 0:
-            snap.particles.moment_inertia[:] = [dimer_properties["inertia"]]
-            snap.particles.mass[:] = [dimer_properties["mass"][0]]
-            snap.particles.velocity[:] = [[0, 0, 1]]
-            snap.mpcd.N = 2
-            snap.mpcd.types = ["C"]
-            snap.mpcd.position[:] = [[1.2, 0, 0], [-1.2, 0, 0]]
-            snap.mpcd.velocity[:] = [[0.6, 0.7, 0.8], [0.6, -0.7, 0.8]]
-
-        sim = simulation_factory(snap)
-        sim.seed = 5
-
-        rigid = hoomd.md.constrain.Rigid()
-        rigid.body["A"] = dimer_rigid_body
-        rigid.create_bodies(sim.state)
-
-        intermed_snap = sim.state.get_snapshot()
-        if intermed_snap.communicator.rank == 0:
-            flags = (
-                intermed_snap.particles.typeid
-                == intermed_snap.particles.types.index("B")
-            )
-            intermed_snap.particles.mass[flags] = dimer_properties["mass"][flags]
-        sim.state.set_snapshot(intermed_snap)
-
-        sim.operations.integrator = hoomd.mpcd.Integrator(
-            dt=0, integrate_rotational_dof=True, rigid=rigid
-        )
         if "kT" not in init_args:
             init_args["kT"] = 1.0
-        sim.operations.integrator.collision_method = cls(
-            period=1,
-            embedded_particles=hoomd.filter.Rigid(flags=("constituent",)),
-            **init_args,
-        )
+        mpcd_N = len(dimer_rigid_body["constituent_types"])
+        rng = np.random.default_rng(seed=42)
+        mpcd_velocity = rng.normal(0.0, np.sqrt(init_args["kT"]), (mpcd_N, 3))
+        mpcd_velocity -= np.mean(mpcd_velocity, axis=0)
 
-        sim.run(1)
-        new_snap = sim.state.get_snapshot()
-        if new_snap.communicator.rank == 0:
-            assert np.array_equal(dimer_properties["mass"], new_snap.particles.mass)
-            new_velo = new_snap.particles.velocity
-            # the central particle speed should change despite not being in the filter
-            assert not np.any(np.isclose(new_velo[0], [0, 0, 1]))
-
-            # in spinning dimer, constituent velocities average to central velocity
-            calculated_central_speed = (new_velo[2] - new_velo[1]) / 2 + new_velo[1]
-            assert np.allclose(new_velo[0], calculated_central_speed)
-
-            # ensure conservation of linear momentum
-            initial_momentum = np.sum(
-                [[0.6, 0.7, 0.8], [0.6, -0.7, 0.8], [0, 0, 2]], axis=0
-            )
-            final_mpcd_momentum = np.sum(
-                new_snap.mpcd.velocity * new_snap.mpcd.mass, axis=0
-            )
-            final_md_momentum = new_velo[0] * dimer_properties["mass"][0]
-            final_momentum = final_md_momentum + final_mpcd_momentum
-            assert np.allclose(initial_momentum, final_momentum)
-
-    def test_rigid_collide_linear_periodic(
-        self,
-        one_particle_snapshot_factory,
-        simulation_factory,
-        dimer_rigid_body,
-        dimer_properties,
-        cls,
-        init_args,
-    ):
+        # create simulation
         snap = one_particle_snapshot_factory(
-            particle_types=["A", "B"], position=(9, 9, 9)
+            particle_types=["A", "B"], position=position
         )
-        if snap.communicator.rank == 0:
-            snap.particles.moment_inertia[:] = [dimer_properties["inertia"]]
-            snap.particles.mass[:] = [dimer_properties["mass"][0]]
-            snap.particles.velocity[:] = [[0, 0, 1]]
-
-        sim = simulation_factory(snap)
-        sim.seed = 5
-
-        rigid = hoomd.md.constrain.Rigid()
-        rigid.body["A"] = dimer_rigid_body
-        rigid.create_bodies(sim.state)
-
-        if "kT" not in init_args:
-            init_args["kT"] = 1.0
-
-        intermed_snap = sim.state.get_snapshot()
-        if intermed_snap.communicator.rank == 0:
-            flags = (
-                intermed_snap.particles.typeid
-                == intermed_snap.particles.types.index("B")
-            )
-            intermed_snap.particles.mass[flags] = dimer_properties["mass"][flags]
-            intermed_snap.wrap()
-
-            intermed_snap.mpcd.N = len(dimer_rigid_body["constituent_types"])
-            intermed_snap.mpcd.types = ["C"]
-            intermed_snap.mpcd.position[:] = intermed_snap.particles.position[flags]
-            rng = np.random.default_rng(seed=42)
-            mpcd_velocity = rng.normal(
-                0.0, np.sqrt(init_args["kT"]), (intermed_snap.mpcd.N, 3)
-            )
-            mpcd_velocity -= np.mean(mpcd_velocity, axis=0)
-            intermed_snap.mpcd.velocity[:] = mpcd_velocity
-        sim.state.set_snapshot(intermed_snap)
-
-        sim.operations.integrator = hoomd.mpcd.Integrator(
-            dt=0, integrate_rotational_dof=True, rigid=rigid
+        sim = generate_rigid_body_simulation(
+            snap,
+            simulation_factory,
+            dimer_rigid_body,
+            dimer_properties,
+            velo,
+            [0, 0, 0, 0],
+            mpcd_velocity,
         )
 
         sim.operations.integrator.collision_method = cls(
@@ -272,6 +231,7 @@ class TestCollisionMethod:
             **init_args,
         )
 
+        # run simulation
         sim.run(1)
         new_snap = sim.state.get_snapshot()
         if new_snap.communicator.rank == 0:
@@ -286,7 +246,7 @@ class TestCollisionMethod:
 
             # ensure conservation of linear momentum
             initial_mpcd_momentum = np.sum(mpcd_velocity, axis=0)
-            initial_md_momentum = np.array([0, 0, 1]) * dimer_properties["mass"][0]
+            initial_md_momentum = np.array(velo) * dimer_properties["mass"][0]
             initial_momentum = initial_md_momentum + initial_mpcd_momentum
 
             final_mpcd_momentum = np.sum(
