@@ -359,7 +359,6 @@ void mpcd::CollisionMethod::transferRigidBodyMomenta(uint64_t timestep)
 
         // save update
         h_angmom.data[idx] = quat_to_scalar4(updated_angmom);
-        h_velocity.data[idx] = make_scalar4(vel_mass.x, vel_mass.y, vel_mass.z, mass);
         }
     }
 /*!
