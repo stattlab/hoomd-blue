@@ -20,65 +20,6 @@ def small_snap():
     return snap
 
 
-@pytest.fixture
-def dimer_rigid_body():
-    return {
-        "constituent_types": ["B", "B"],
-        "positions": [[-1.2, 0, 0], [1.2, 0, 0]],
-        "orientations": [[1, 0, 0, 0], [1, 0, 0, 0]],
-    }
-
-
-@pytest.fixture
-def dimer_properties():
-    return {"inertia": [0.0, 2.88, 2.88], "mass": np.array([2, 1, 1])}
-
-
-def generate_rigid_body_simulation(
-    initial_snap,
-    simulation_factory,
-    rigid_def,
-    rigid_properties,
-    rigid_velo,
-    rigid_angmom,
-    mpcd_velo,
-):
-    """Generates a simulation with mpcd particles and 1 rigid body"""
-    if initial_snap.communicator.rank == 0:
-        initial_snap.particles.moment_inertia[:] = [rigid_properties["inertia"]]
-        initial_snap.particles.mass[:] = [rigid_properties["mass"][0]]
-        initial_snap.particles.velocity[:] = [rigid_velo]
-        initial_snap.particles.angmom[:] = [rigid_angmom]
-
-    sim = simulation_factory(initial_snap)
-    sim.seed = 5
-
-    rigid = hoomd.md.constrain.Rigid()
-    rigid.body["A"] = rigid_def
-    rigid.create_bodies(sim.state)
-
-    intermed_snap = sim.state.get_snapshot()
-    if intermed_snap.communicator.rank == 0:
-        # add mass of constituents
-        flags = intermed_snap.particles.typeid == intermed_snap.particles.types.index(
-            "B"
-        )
-        intermed_snap.particles.mass[flags] = rigid_properties["mass"][flags]
-        intermed_snap.wrap()
-
-        # place the mpcd particles on top of constituents
-        intermed_snap.mpcd.N = len(rigid_def["constituent_types"])
-        intermed_snap.mpcd.types = ["C"]
-        intermed_snap.mpcd.position[:] = intermed_snap.particles.position[flags]
-        intermed_snap.mpcd.velocity[:] = mpcd_velo
-    sim.state.set_snapshot(intermed_snap)
-
-    sim.operations.integrator = hoomd.mpcd.Integrator(
-        dt=0, integrate_rotational_dof=True, rigid=rigid
-    )
-    return sim
-
-
 def test_cell_list(small_snap, simulation_factory):
     if small_snap.communicator.rank == 0:
         small_snap.configuration.box = [20, 30, 40, 0, 0, 0]
@@ -191,38 +132,80 @@ class TestCollisionMethod:
         )
         sim.run(1)
 
-    @pytest.mark.parametrize("velo", [[0, 0, 0], [1, 2, 3]], ids=["None", "All"])
-    @pytest.mark.parametrize("position", [[0, 0, 0], [9, 9, 9]], ids=["center", "edge"])
+    @pytest.mark.parametrize("rigid_velo", [[0, 0, 0], [1, 2, 3]], ids=["None", "All"])
+    @pytest.mark.parametrize("rigid_angmom", [[0, 0, 0, 0]], ids=["None"])
+    @pytest.mark.parametrize(
+        "rigid_pos", [[0, 0, 0], [9, 9, 9]], ids=["center", "edge"]
+    )
+    @pytest.mark.parametrize(
+        "rigid_def,rigid_properties",
+        [
+            (
+                {
+                    "constituent_types": ["B", "B"],
+                    "positions": [[-1.2, 0, 0], [1.2, 0, 0]],
+                    "orientations": [[1, 0, 0, 0], [1, 0, 0, 0]],
+                },
+                {"inertia": [0.0, 2.88, 2.88], "mass": np.array([2, 1, 1])},
+            )
+        ],
+        ids=["dimer"],
+    )
     def test_rigid_collide_linear(
         self,
         one_particle_snapshot_factory,
         simulation_factory,
-        dimer_rigid_body,
-        dimer_properties,
         cls,
         init_args,
-        velo,
-        position,
+        rigid_velo,
+        rigid_angmom,
+        rigid_pos,
+        rigid_def,
+        rigid_properties,
     ):
         if "kT" not in init_args:
             init_args["kT"] = 1.0
-        mpcd_N = len(dimer_rigid_body["constituent_types"])
+        mpcd_N = len(rigid_def["constituent_types"])
         rng = np.random.default_rng(seed=42)
-        mpcd_velocity = rng.normal(0.0, np.sqrt(init_args["kT"]), (mpcd_N, 3))
-        mpcd_velocity -= np.mean(mpcd_velocity, axis=0)
+        mpcd_velo = rng.normal(0.0, np.sqrt(init_args["kT"]), (mpcd_N, 3))
+        mpcd_velo -= np.mean(mpcd_velo, axis=0)
 
         # create simulation
-        snap = one_particle_snapshot_factory(
-            particle_types=["A", "B"], position=position
+        initial_snap = one_particle_snapshot_factory(
+            particle_types=["A", "B"], position=rigid_pos
         )
-        sim = generate_rigid_body_simulation(
-            snap,
-            simulation_factory,
-            dimer_rigid_body,
-            dimer_properties,
-            velo,
-            [0, 0, 0, 0],
-            mpcd_velocity,
+        if initial_snap.communicator.rank == 0:
+            initial_snap.particles.moment_inertia[:] = [rigid_properties["inertia"]]
+            initial_snap.particles.mass[:] = [rigid_properties["mass"][0]]
+            initial_snap.particles.velocity[:] = [rigid_velo]
+            initial_snap.particles.angmom[:] = [rigid_angmom]
+
+        sim = simulation_factory(initial_snap)
+        sim.seed = 5
+
+        rigid = hoomd.md.constrain.Rigid()
+        rigid.body["A"] = rigid_def
+        rigid.create_bodies(sim.state)
+
+        intermed_snap = sim.state.get_snapshot()
+        if intermed_snap.communicator.rank == 0:
+            # add mass of constituents
+            flags = (
+                intermed_snap.particles.typeid
+                == intermed_snap.particles.types.index("B")
+            )
+            intermed_snap.particles.mass[flags] = rigid_properties["mass"][flags]
+            intermed_snap.wrap()
+
+            # place the mpcd particles on top of constituents
+            intermed_snap.mpcd.N = mpcd_N
+            intermed_snap.mpcd.types = ["C"]
+            intermed_snap.mpcd.position[:] = intermed_snap.particles.position[flags]
+            intermed_snap.mpcd.velocity[:] = mpcd_velo
+        sim.state.set_snapshot(intermed_snap)
+
+        sim.operations.integrator = hoomd.mpcd.Integrator(
+            dt=0, integrate_rotational_dof=True, rigid=rigid
         )
 
         sim.operations.integrator.collision_method = cls(
@@ -235,23 +218,23 @@ class TestCollisionMethod:
         sim.run(1)
         new_snap = sim.state.get_snapshot()
         if new_snap.communicator.rank == 0:
-            assert np.array_equal(dimer_properties["mass"], new_snap.particles.mass)
+            assert np.array_equal(rigid_properties["mass"], new_snap.particles.mass)
             new_velo = new_snap.particles.velocity
             # the central particle speed should change despite not being in the filter
-            assert not np.any(np.isclose(new_velo[0], [0, 0, 1]))
+            assert not np.any(np.isclose(new_velo[0], rigid_velo))
 
             # in spinning dimer, constituent velocities average to central velocity
             calculated_central_speed = (new_velo[2] - new_velo[1]) / 2 + new_velo[1]
             assert np.allclose(new_velo[0], calculated_central_speed)
 
             # ensure conservation of linear momentum
-            initial_mpcd_momentum = np.sum(mpcd_velocity, axis=0)
-            initial_md_momentum = np.array(velo) * dimer_properties["mass"][0]
+            initial_mpcd_momentum = np.sum(mpcd_velo, axis=0)
+            initial_md_momentum = np.array(rigid_velo) * rigid_properties["mass"][0]
             initial_momentum = initial_md_momentum + initial_mpcd_momentum
 
             final_mpcd_momentum = np.sum(
                 new_snap.mpcd.velocity * new_snap.mpcd.mass, axis=0
             )
-            final_md_momentum = new_velo[0] * dimer_properties["mass"][0]
+            final_md_momentum = new_velo[0] * rigid_properties["mass"][0]
             final_momentum = final_md_momentum + final_mpcd_momentum
             assert np.allclose(initial_momentum, final_momentum)
