@@ -223,8 +223,8 @@ class TestCollisionMethod:
             # the central particle speed should change despite not being in the filter
             assert not np.any(np.isclose(new_velo[0], rigid_velo))
 
-            # in spinning dimer, constituent velocities average to central velocity
-            calculated_central_speed = (new_velo[2] - new_velo[1]) / 2 + new_velo[1]
+            # constituent velocities average to central velocity
+            calculated_central_speed = np.mean(new_velo, axis=0)
             assert np.allclose(new_velo[0], calculated_central_speed)
 
             # ensure conservation of linear momentum
