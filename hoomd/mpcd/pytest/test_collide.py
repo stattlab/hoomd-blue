@@ -132,10 +132,12 @@ class TestCollisionMethod:
         )
         sim.run(1)
 
-    @pytest.mark.parametrize("rigid_velo", [[0, 0, 0], [1, 2, 3]], ids=["None", "All"])
-    @pytest.mark.parametrize("rigid_angmom", [[0, 0, 0, 0]], ids=["None"])
     @pytest.mark.parametrize(
-        "rigid_pos", [[0, 0, 0], [9, 9, 9]], ids=["center", "edge"]
+        "rigid_velo", [[0, 0, 0], [1, 2, 3]], ids=["Stationary", "Moving"]
+    )
+    @pytest.mark.parametrize("rigid_angmom", [[0, 0, 0, 0]], ids=["Nonrotating"])
+    @pytest.mark.parametrize(
+        "rigid_pos", [[0, 0, 0], [5, 5, 5]], ids=["center", "edge"]
     )
     @pytest.mark.parametrize(
         "rigid_def,rigid_properties",
@@ -143,40 +145,46 @@ class TestCollisionMethod:
             (
                 {
                     "constituent_types": ["B", "B"],
-                    "positions": [[-1.2, 0, 0], [1.2, 0, 0]],
+                    "positions": [[-2.4, 0, 0], [2.4, 0, 0]],
                     "orientations": [[1, 0, 0, 0], [1, 0, 0, 0]],
                 },
-                {"inertia": [0.0, 2.88, 2.88], "mass": np.array([2, 1, 1])},
+                {"inertia": [0.0, 11.52, 11.52], "mass": np.array([2, 1, 1])},
             ),
             (
                 {
                     "constituent_types": ["B", "B", "B", "B"],
-                    "positions": [
-                        [1, 0, -1 / (2 ** (1.0 / 2.0))],
-                        [-1, 0, -1 / (2 ** (1.0 / 2.0))],
-                        [0, -1, 1 / (2 ** (1.0 / 2.0))],
-                        [0, 1, 1 / (2 ** (1.0 / 2.0))],
-                    ],
+                    "positions": np.array(
+                        [
+                            [1, 0, -1 / (2 ** (1.0 / 2.0))],
+                            [-1, 0, -1 / (2 ** (1.0 / 2.0))],
+                            [0, -1, 1 / (2 ** (1.0 / 2.0))],
+                            [0, 1, 1 / (2 ** (1.0 / 2.0))],
+                        ]
+                    )
+                    * 2,
                     "orientations": [(1.0, 0.0, 0.0, 0.0)] * 4,
                 },
                 {
                     "inertia": [1.0, 1.0, 1.0],
-                    "mass": np.array([1, 1 / 4, 1 / 4, 1 / 4, 1 / 4]),
+                    "mass": np.array([1 / 4, 1 / 16, 1 / 16, 1 / 16, 1 / 16]),
                 },
             ),
             (
                 {
                     "constituent_types": ["B", "B", "B", "B"],
-                    "positions": [
-                        [1, 0, -1 / (2 ** (1.0 / 2.0))],
-                        [-1, 0, -1 / (2 ** (1.0 / 2.0))],
-                        [0, -1, 1 / (2 ** (1.0 / 2.0))],
-                        [0, 1, 1 / (2 ** (1.0 / 2.0))],
-                    ],
+                    "positions": np.array(
+                        [
+                            [1, 0, -1 / (2 ** (1.0 / 2.0))],
+                            [-1, 0, -1 / (2 ** (1.0 / 2.0))],
+                            [0, -1, 1 / (2 ** (1.0 / 2.0))],
+                            [0, 1, 1 / (2 ** (1.0 / 2.0))],
+                        ]
+                    )
+                    * 2,
                     "orientations": [(1.0, 0.0, 0.0, 0.0)] * 4,
                 },
                 {
-                    "inertia": [1.75, 1.25, 1.5],
+                    "inertia": [7.0, 5.0, 6.0],
                     "mass": np.array([1.5, 1 / 4, 1 / 4, 1 / 2, 1 / 2]),
                 },
             ),
@@ -204,11 +212,12 @@ class TestCollisionMethod:
 
         # create simulation
         initial_snap = one_particle_snapshot_factory(
-            particle_types=["A", "B"], position=rigid_pos
+            particle_types=["A", "B"], position=rigid_pos, L=11
         )
+        total_mass = rigid_properties["mass"][0]
         if initial_snap.communicator.rank == 0:
             initial_snap.particles.moment_inertia[:] = [rigid_properties["inertia"]]
-            initial_snap.particles.mass[:] = [rigid_properties["mass"][0]]
+            initial_snap.particles.mass[:] = [total_mass]
             initial_snap.particles.velocity[:] = [rigid_velo]
             initial_snap.particles.angmom[:] = [rigid_angmom]
 
@@ -251,10 +260,10 @@ class TestCollisionMethod:
         new_snap = sim.state.get_snapshot()
         if new_snap.communicator.rank == 0:
             assert np.array_equal(rigid_properties["mass"], new_snap.particles.mass)
-            new_velo_central = new_snap.particles.velocity[
-                (new_snap.particles.typeid == new_snap.particles.types.index("A"))
-            ]
-            total_mass = rigid_properties["mass"][0]
+            central_flag = new_snap.particles.typeid == new_snap.particles.types.index(
+                "A"
+            )
+            new_velo_central = new_snap.particles.velocity[central_flag]
 
             # solve for expected central particle velocity based on linear momentum
             initial_mpcd_momentum = np.sum(mpcd_velo, axis=0)
@@ -267,3 +276,18 @@ class TestCollisionMethod:
             final_md_linmom = initial_momentum - final_mpcd_momentum
             final_md_velocity = final_md_linmom / total_mass
             assert np.allclose(final_md_velocity, new_velo_central)
+
+            # solve for expected angular momentum change based on solvent
+            # multiply expected change by 2 to get quaternion
+            change_mpcd_momentum = (
+                new_snap.mpcd.velocity - mpcd_velo
+            ) * new_snap.mpcd.mass
+            expected_change_md_angmom = np.zeros(4)
+            expected_change_md_angmom[1:] = (
+                np.sum(
+                    np.cross(rigid_def["positions"], -1 * change_mpcd_momentum), axis=0
+                )
+                * 2
+            )
+            change_md_angmom = new_snap.particles.angmom[0] - rigid_angmom
+            assert np.allclose(expected_change_md_angmom, change_md_angmom)
