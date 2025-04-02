@@ -129,7 +129,19 @@ class PYBIND11_EXPORT CollisionMethod : public Autotuned
 
     //! Check if a collision should occur and advance the timestep counter
     virtual bool shouldCollide(uint64_t timestep);
+#ifdef ENABLE_HIP
+    //! Begin process of applying collisions to rigid bodies (GPU version)
+    virtual void storeInitialEmbeddedGroupVelocitiesGPU(uint64_t timestep);
 
+    //! Accumulate momenta changes of constituent particles of rigid bodies (GPU version)
+    virtual void accumulateRigidBodyMomentaGPU(uint64_t timestep);
+
+    //! Finish process of applying collisions to rigid bodies (GPU version)
+    virtual void transferRigidBodyMomentaGPU(uint64_t timestep);
+
+    //! Check for issues related to applying collision to rigid bodies (GPU version)
+    virtual void checkCollisionWarningsGPU(uint64_t timestep);
+#endif // ENABLE_HIP
     //! Begin process of applying collisions to rigid bodies
     virtual void storeInitialEmbeddedGroupVelocities(uint64_t timestep);
 

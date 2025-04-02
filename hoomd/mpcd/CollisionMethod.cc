@@ -49,8 +49,17 @@ void mpcd::CollisionMethod::collide(uint64_t timestep)
     // sync the embedded group
     m_cl->setEmbeddedGroup(m_embed_group);
 
-    // check for collision warnings
-    checkCollisionWarnings(timestep);
+// check for collision warnings
+#ifdef ENABLE_HIP
+    if (m_exec_conf->isCUDAEnabled())
+        {
+        checkCollisionWarningsGPU(timestep);
+        }
+    else
+#endif
+        {
+        checkCollisionWarnings(timestep);
+        }
 
     // set random grid shift
     m_cl->drawGridShift(timestep);
@@ -78,7 +87,16 @@ void mpcd::CollisionMethod::collide(uint64_t timestep)
             GPUArray<Scalar3> angmom_accum(num_total, m_exec_conf);
             m_angmom_accum.swap(angmom_accum);
             }
-        storeInitialEmbeddedGroupVelocities(timestep);
+#ifdef ENABLE_HIP
+        if (m_exec_conf->isCUDAEnabled())
+            {
+            storeInitialEmbeddedGroupVelocitiesGPU(timestep);
+            }
+        else
+#endif
+            {
+            storeInitialEmbeddedGroupVelocities(timestep);
+            }
         }
 
     // apply collisions
@@ -87,9 +105,20 @@ void mpcd::CollisionMethod::collide(uint64_t timestep)
     // apply collisions to rigid bodies
     if (rigid_body_collision)
         {
-        accumulateRigidBodyMomenta(timestep);
-        transferRigidBodyMomenta(timestep);
-        m_rigid_bodies->updateCompositeParticles(timestep);
+#ifdef ENABLE_HIP
+        if (m_exec_conf->isCUDAEnabled())
+            {
+            accumulateRigidBodyMomentaGPU(timestep);
+            transferRigidBodyMomentaGPU(timestep);
+            m_rigid_bodies->updateCompositeParticles(timestep);
+            }
+        else
+#endif
+            {
+            accumulateRigidBodyMomenta(timestep);
+            transferRigidBodyMomenta(timestep);
+            m_rigid_bodies->updateCompositeParticles(timestep);
+            }
         }
     }
 
@@ -362,6 +391,20 @@ void mpcd::CollisionMethod::transferRigidBodyMomenta(uint64_t timestep)
         h_angmom.data[idx] = quat_to_scalar4(angmom);
         }
     }
+
+#ifdef ENABLE_HIP
+//! Begin process of applying collisions to rigid bodies (GPU version)
+void mpcd::CollisionMethod::storeInitialEmbeddedGroupVelocitiesGPU(uint64_t timestep) { }
+
+//! Accumulate momenta changes of constituent particles of rigid bodies (GPU version)
+void mpcd::CollisionMethod::accumulateRigidBodyMomentaGPU(uint64_t timestep) { }
+
+//! Finish process of applying collisions to rigid bodies (GPU version)
+void mpcd::CollisionMethod::transferRigidBodyMomentaGPU(uint64_t timestep) { }
+
+//! Check for issues related to applying collision to rigid bodies (GPU version)
+void mpcd::CollisionMethod::checkCollisionWarningsGPU(uint64_t timestep) { }
+#endif // ENABLE_HIP
 /*!
  * \param timestep Current timestep
  * \returns True when \a timestep is a \a m_period multiple of the the next timestep the collision
