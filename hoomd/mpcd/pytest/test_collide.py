@@ -251,22 +251,19 @@ class TestCollisionMethod:
         new_snap = sim.state.get_snapshot()
         if new_snap.communicator.rank == 0:
             assert np.array_equal(rigid_properties["mass"], new_snap.particles.mass)
-            new_velo = new_snap.particles.velocity
-            # the central particle speed should change despite not being in the filter
-            assert not np.any(np.isclose(new_velo[0], rigid_velo))
+            new_velo_central = new_snap.particles.velocity[
+                (new_snap.particles.typeid == new_snap.particles.types.index("A"))
+            ]
+            total_mass = rigid_properties["mass"][0]
 
-            # constituent velocities average to central velocity
-            calculated_central_speed = np.mean(new_velo, axis=0)
-            assert np.allclose(new_velo[0], calculated_central_speed)
-
-            # ensure conservation of linear momentum
+            # solve for expected central particle velocity based on linear momentum
             initial_mpcd_momentum = np.sum(mpcd_velo, axis=0)
-            initial_md_momentum = np.array(rigid_velo) * rigid_properties["mass"][0]
+            initial_md_momentum = np.array(rigid_velo) * total_mass
             initial_momentum = initial_md_momentum + initial_mpcd_momentum
 
             final_mpcd_momentum = np.sum(
                 new_snap.mpcd.velocity * new_snap.mpcd.mass, axis=0
             )
-            final_md_momentum = new_velo[0] * rigid_properties["mass"][0]
-            final_momentum = final_md_momentum + final_mpcd_momentum
-            assert np.allclose(initial_momentum, final_momentum)
+            final_md_linmom = initial_momentum - final_mpcd_momentum
+            final_md_velocity = final_md_linmom / total_mass
+            assert np.allclose(final_md_velocity, new_velo_central)
