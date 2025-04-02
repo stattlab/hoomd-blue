@@ -89,6 +89,7 @@ void mpcd::CollisionMethod::collide(uint64_t timestep)
         {
         accumulateRigidBodyMomenta(timestep);
         transferRigidBodyMomenta(timestep);
+        m_rigid_bodies->updateCompositeParticles(timestep);
         }
     }
 
