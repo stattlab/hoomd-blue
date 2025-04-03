@@ -23,10 +23,10 @@ __global__ void gpu_check_collision_warnings(Scalar4 d_initial_velo,
     {
     }
 
-__global__ void gpu_store_initial_embedded_group_velocities(Scalar4 d_initial_velo,
+__global__ void store_initial_embedded_group_velocities(Scalar4 d_initial_velo,
                                                             const Scalar4* d_vel_embed,
                                                             const unsigned int* d_embed_group,
-                                                            const uint64_t timestep)
+                                                            const unsigned int N)
     {
     }
 
