@@ -110,15 +110,14 @@ void mpcd::CollisionMethod::collide(uint64_t timestep)
             {
             accumulateRigidBodyMomentaGPU(timestep);
             transferRigidBodyMomentaGPU(timestep);
-            m_rigid_bodies->updateCompositeParticles(timestep);
             }
         else
 #endif
             {
             accumulateRigidBodyMomenta(timestep);
             transferRigidBodyMomenta(timestep);
-            m_rigid_bodies->updateCompositeParticles(timestep);
             }
+            m_rigid_bodies->updateCompositeParticles(timestep);
         }
     }
 
