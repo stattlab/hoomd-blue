@@ -460,7 +460,7 @@ void mpcd::CollisionMethod::accumulateRigidBodyMomentaGPU(uint64_t timestep)
     ArrayHandle<Scalar3> d_angmom_accum(m_angmom_accum,
                                         access_location::device,
                                         access_mode::readwrite);
-    m_store_tuner->begin();
+    m_accumulate_tuner->begin();
     mpcd::gpu::accumulate_rigid_body_momenta(d_linmom_accum.data,
                                              d_angmom_accum.data,
                                              d_initial_vel.data,
@@ -472,14 +472,53 @@ void mpcd::CollisionMethod::accumulateRigidBodyMomentaGPU(uint64_t timestep)
                                              d_rtag.data,
                                              global_box,
                                              num_group,
-                                             m_store_tuner->getParam()[0]);
+                                             m_accumulate_tuner->getParam()[0]);
     if (m_exec_conf->isCUDAErrorCheckingEnabled())
         CHECK_CUDA_ERROR();
-    m_store_tuner->end();
+    m_accumulate_tuner->end();
     }
 
 //! Finish process of applying collisions to rigid bodies (GPU version)
-void mpcd::CollisionMethod::transferRigidBodyMomentaGPU(uint64_t timestep) { }
+void mpcd::CollisionMethod::transferRigidBodyMomentaGPU(uint64_t timestep)
+    {
+    unsigned int num_total = m_pdata->getN();
+    ArrayHandle<Scalar3> d_linmom_accum(m_linmom_accum, access_location::device, access_mode::read);
+    ArrayHandle<Scalar3> d_angmom_accum(m_angmom_accum, access_location::device, access_mode::read);
+
+    ArrayHandle<Scalar4> d_velocity(m_pdata->getVelocities(),
+                                    access_location::device,
+                                    access_mode::readwrite);
+    ArrayHandle<Scalar4> d_angmom(m_pdata->getAngularMomentumArray(),
+                                  access_location::device,
+                                  access_mode::readwrite);
+    ArrayHandle<Scalar4> d_orientation(m_pdata->getOrientationArray(),
+                                       access_location::device,
+                                       access_mode::read);
+    ArrayHandle<Scalar3> d_inertia(m_pdata->getMomentsOfInertiaArray(),
+                                   access_location::device,
+                                   access_mode::read);
+    ArrayHandle<unsigned int> d_body(m_pdata->getBodies(),
+                                     access_location::device,
+                                     access_mode::read);
+    ArrayHandle<unsigned int> d_rtag(m_pdata->getRTags(),
+                                     access_location::device,
+                                     access_mode::read);
+
+    m_transfer_tuner->begin();
+    mpcd::gpu::transfer_rigid_body_momenta(d_linmom_accum.data,
+                                           d_angmom_accum.data,
+                                           d_velocity.data,
+                                           d_orientation.data,
+                                           d_angmom.data,
+                                           d_inertia.data,
+                                           d_body.data,
+                                           d_rtag.data,
+                                           num_total,
+                                           m_transfer_tuner->getParam()[0]);
+    if (m_exec_conf->isCUDAErrorCheckingEnabled())
+        CHECK_CUDA_ERROR();
+    m_transfer_tuner->end();
+    }
 
 #endif // ENABLE_HIP
 /*!
