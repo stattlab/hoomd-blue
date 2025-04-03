@@ -17,20 +17,20 @@ namespace gpu
 namespace kernel
     {
 
-__global__ void store_initial_embedded_group_velocities(Scalar4 d_initial_velo,
+__global__ void store_initial_embedded_group_velocities(Scalar4* d_initial_velo,
                                                         const Scalar4* d_vel_embed,
                                                         const unsigned int* d_embed_group,
-                                                        const unsigned int N)
+                                                        const unsigned int num_group)
     {
     // one thread per particle
     unsigned int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (idx >= N_tot)
+    if (idx >= num_group)
         return;
     }
 
-__global__ void accumulate_rigid_body_momenta(Scalar3 d_linmom_accum,
-                                              Scalar3 d_angmom_accum,
-                                              const Scalar4 d_initial_velo,
+__global__ void accumulate_rigid_body_momenta(Scalar3* d_linmom_accum,
+                                              Scalar3* d_angmom_accum,
+                                              const Scalar4* d_initial_velo,
                                               const unsigned int* d_embed_group,
                                               const Scalar4* d_postype,
                                               const Scalar4* d_velocity,
@@ -38,27 +38,27 @@ __global__ void accumulate_rigid_body_momenta(Scalar3 d_linmom_accum,
                                               const unsigned int* d_body,
                                               const unsigned int* d_rtag,
                                               const BoxDim global_box,
-                                              const uint64_t timestep)
+                                              const unsigned int num_group)
     {
     // one thread per particle
     unsigned int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (idx >= N_tot)
+    if (idx >= num_group)
         return;
     }
 
-__global__ void transfer_rigid_body_momenta(Scalar3 d_linmom_accum,
-                                            Scalar3 d_angmom_accum,
+__global__ void transfer_rigid_body_momenta(Scalar3* d_linmom_accum,
+                                            Scalar3* d_angmom_accum,
                                             Scalar4* d_velocity,
                                             const Scalar4* d_orientation,
                                             Scalar4* d_angmom,
                                             const Scalar3* d_inertia,
                                             const unsigned int* d_body,
                                             const unsigned int* d_rtag,
-                                            const uint64_t timestep)
+                                            const unsigned int num_total)
     {
     // one thread per particle
     unsigned int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (idx >= N_tot)
+    if (idx >= num_total)
         return;
     }
 
