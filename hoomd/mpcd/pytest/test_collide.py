@@ -248,7 +248,7 @@ class TestCollisionMethod:
         sim.operations.integrator = hoomd.mpcd.Integrator(
             dt=0, integrate_rotational_dof=True, rigid=rigid
         )
-
+        sim.operations.integrator.cell_list.shift = False
         sim.operations.integrator.collision_method = cls(
             period=1,
             embedded_particles=hoomd.filter.Rigid(flags=("constituent",)),
