@@ -107,7 +107,7 @@ __global__ void transfer_rigid_body_momenta(Scalar3* d_linmom_accum,
                                             const unsigned int num_total)
     {
     // one thread per particle
-    unsigned int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    const unsigned int idx = blockIdx.x * blockDim.x + threadIdx.x;
     if (idx >= num_total)
         {
         return;
