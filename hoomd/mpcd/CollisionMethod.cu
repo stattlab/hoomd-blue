@@ -29,7 +29,7 @@ __global__ void store_initial_embedded_group_velocities(Scalar4* d_initial_vel,
         return;
 
     // store the initial velocity
-    unsigned int particle_idx = d_embed_group[idx];
+    const unsigned int particle_idx = d_embed_group[idx];
     d_initial_vel[idx] = d_velocity[particle_idx];
     }
 
