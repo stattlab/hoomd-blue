@@ -520,8 +520,8 @@ void mpcd::CollisionMethod::transferRigidBodyMomentaGPU(uint64_t timestep)
         CHECK_CUDA_ERROR();
     m_transfer_tuner->end();
     }
-
 #endif // ENABLE_HIP
+
 /*!
  * \param timestep Current timestep
  * \returns True when \a timestep is a \a m_period multiple of the the next timestep the collision
