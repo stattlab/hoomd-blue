@@ -95,6 +95,7 @@ void mpcd::CollisionMethod::collide(uint64_t timestep)
             GPUArray<Scalar3> angmom_accum(num_total, m_exec_conf);
             m_angmom_accum.swap(angmom_accum);
             }
+
 #ifdef ENABLE_HIP
         if (m_exec_conf->isCUDAEnabled())
             {
