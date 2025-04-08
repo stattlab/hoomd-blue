@@ -30,7 +30,6 @@ ComputeThermoSLLODGPU::ComputeThermoSLLODGPU(std::shared_ptr<SystemDefinition> s
     : ComputeThermoSLLOD(sysdef, group, shear_rate),  m_scratch(m_exec_conf), m_scratch_pressure_tensor(m_exec_conf),
     m_scratch_rot(m_exec_conf)
     {
-    std::cout<< "in ComputeThermoSLLODGPU  GPU"<< std::endl;
 
     if (!m_exec_conf->isCUDAEnabled())
         {
@@ -48,15 +47,15 @@ ComputeThermoSLLODGPU::~ComputeThermoSLLODGPU() { }
 
 void ComputeThermoSLLODGPU::removeFlowField()
 {
-    std::cout<< "in ComputeThermoSLLODGPU::removeFlowField GPU"<< std::endl;
     // just drop out if the group is an empty group
     if (m_group->getNumMembersGlobal() == 0)
         return;
 
     unsigned int group_size = m_group->getNumMembers();
 
-    assert(m_pdata);
     {
+    assert(m_pdata);
+
     ArrayHandle<Scalar4> d_vel(m_pdata->getVelocities(), access_location::device, access_mode::readwrite);
     ArrayHandle<Scalar4> d_pos(m_pdata->getPositions(), access_location::device, access_mode::read);
     ArrayHandle< unsigned int > d_index_array(m_group->getIndexArray(), access_location::device, access_mode::read);
@@ -78,15 +77,15 @@ void ComputeThermoSLLODGPU::removeFlowField()
 
 void ComputeThermoSLLODGPU::addFlowField()
 {
-    std::cout<< "in ComputeThermoSLLODGPU::addFlowField GPU"<< std::endl;
     // just drop out if the group is an empty group
     if (m_group->getNumMembersGlobal() == 0)
         return;
 
     unsigned int group_size = m_group->getNumMembers();
 
-    assert(m_pdata);
     {
+    assert(m_pdata);
+
     ArrayHandle<Scalar4> d_vel(m_pdata->getVelocities(), access_location::device, access_mode::readwrite);
     ArrayHandle<Scalar4> d_pos(m_pdata->getPositions(), access_location::device, access_mode::read);
     ArrayHandle< unsigned int > d_index_array(m_group->getIndexArray(), access_location::device, access_mode::read);
@@ -109,7 +108,6 @@ void ComputeThermoSLLODGPU::addFlowField()
  */
 void ComputeThermoSLLODGPU::computeProperties()
     {
-    std::cout<< "in ComputeThermoSLLODGPU::computeProperties GPU"<< std::endl;
     // just drop out if the group is an empty group
     if (m_group->getNumMembersGlobal() == 0)
         return;
@@ -117,29 +115,23 @@ void ComputeThermoSLLODGPU::computeProperties()
     unsigned int group_size = m_group->getNumMembers();
 
     //before doing any calculations of thermodynamic quantities, remove imposed flow
-    std::cout<< "in ComputeThermoSLLODGPU::computeProperties GPU before remove flow field"<< std::endl;
     removeFlowField();
 
-    assert(m_pdata);
     {
+    assert(m_pdata);
+
     // number of blocks in reduction (round up)
     unsigned int num_blocks = m_group->getNumMembers() / m_block_size + 1;
 
     // resize work space
-    std::cout<< "in ComputeThermoSLLODGPU::computeProperties GPU before resize work space"<< std::endl;
-
     size_t old_size = m_scratch.size();
-    std::cout<< "in ComputeThermoSLLODGPU::computeProperties GPU scratch size "<< old_size << " " << num_blocks << std::endl;
 
     m_scratch.resize(num_blocks);
     m_scratch_pressure_tensor.resize(num_blocks * 6);
     m_scratch_rot.resize(num_blocks);
 
-    std::cout<< "in ComputeThermoSLLODGPU::computeProperties GPU after resizes "<< std::endl;
-
     if (m_scratch.size() != old_size)
         {
-        std::cout<< "in ComputeThermoSLLODGPU::computeProperties GPU before reset to zero "<< std::endl;
         // reset to zero
         ArrayHandle<Scalar4> d_scratch(m_scratch, access_location::device, access_mode::overwrite);
         ArrayHandle<Scalar> d_scratch_pressure_tensor(m_scratch_pressure_tensor,
@@ -148,16 +140,13 @@ void ComputeThermoSLLODGPU::computeProperties()
         ArrayHandle<Scalar> d_scratch_rot(m_scratch_rot,
                                           access_location::device,
                                           access_mode::overwrite);
-        std::cout<< "in ComputeThermoSLLODGPU::computeProperties GPU after reset to zero "<< std::endl;
         hipMemset(d_scratch.data, 0, sizeof(Scalar4) * m_scratch.size());
         hipMemset(d_scratch_pressure_tensor.data,
                   0,
                   sizeof(Scalar) * m_scratch_pressure_tensor.size());
         hipMemset(d_scratch_rot.data, 0, sizeof(Scalar) * m_scratch_rot.size());
-        std::cout<< "in ComputeThermoSLLODGPU::computeProperties GPU after hipMemset "<< std::endl;
         }
 
-        std::cout<< "in ComputeThermoSLLODGPU::computeProperties GPU before acess particle data "<< std::endl;
     // access the particle data
     ArrayHandle<Scalar4> d_vel(m_pdata->getVelocities(),
                                access_location::device,
@@ -226,8 +215,6 @@ void ComputeThermoSLLODGPU::computeProperties()
         args.external_virial_zz = m_pdata->getExternalVirial(5);
         args.external_energy = m_pdata->getExternalEnergy();
 
-        std::cout<< "in ComputeThermoSLLODGPU::computeProperties GPU before gpu_compute_thermo_partial"<< std::endl;
-
         // perform the computation on the GPU(s)
         // inherited from ComputeThermoGPU without any changes needed
         gpu_compute_thermo_partial(d_properties.data,
@@ -243,8 +230,6 @@ void ComputeThermoSLLODGPU::computeProperties()
 
         if (m_exec_conf->isCUDAErrorCheckingEnabled())
             CHECK_CUDA_ERROR();
-
-        std::cout<< "in ComputeThermoSLLODGPU::computeProperties GPU before gpu_compute_thermo_final"<< std::endl;
 
         // perform the computation on GPU 0
         // inherited from ComputeThermoGPU without any changes needed
@@ -269,7 +254,6 @@ void ComputeThermoSLLODGPU::computeProperties()
 #endif // ENABLE_MPI
 
     }
-    std::cout<< "in ComputeThermoSLLODGPU::computeProperties GPU before add flow field"<< std::endl;
     // add flow field back at the end of calculations
     addFlowField();
 

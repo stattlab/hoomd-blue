@@ -6,8 +6,6 @@
 
 bool hoomd::md::TwoStepConstantVolumeSLLOD::deformGlobalBox()
 {
- std::cout<< "in TwoStepConstantVolumeSLLOD::deformGlobalBox CPU"<< std::endl;
-
   // box deformation: update tilt factor of global box
   BoxDim global_box = m_pdata->getGlobalBox();
 
@@ -17,21 +15,19 @@ bool hoomd::md::TwoStepConstantVolumeSLLOD::deformGlobalBox()
 
   xy += m_shear_rate * m_deltaT;
   bool flipped = false;
-  std::cout<< "after get box info"<< std::endl;
+
   if (xy > 0.5){
       xy = -0.5;
       flipped = true;
   }
   global_box.setTiltFactors(xy, xz, yz);
   m_pdata->setGlobalBox(global_box);
-  std::cout<< "after set box"<< std::endl;
+
   return flipped;
 }
 
 void hoomd::md::TwoStepConstantVolumeSLLOD::integrateStepOne(uint64_t timestep)
     {
-    std::cout<< "in TwoStepConstantVolumeSLLOD::integrateStepOne CPU"<< std::endl;
-
 
     if (m_group->getNumMembersGlobal() == 0)
         {
@@ -278,8 +274,6 @@ void hoomd::md::TwoStepConstantVolumeSLLOD::integrateStepOne(uint64_t timestep)
 
 void hoomd::md::TwoStepConstantVolumeSLLOD::integrateStepTwo(uint64_t timestep)
     {
-
-    std::cout<< "in TwoStepConstantVolumeSLLOD::integrateStepTwo CPU"<< std::endl;
 
     unsigned int group_size = m_group->getNumMembers();
 
