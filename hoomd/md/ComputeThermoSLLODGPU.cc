@@ -27,7 +27,8 @@ namespace md
 ComputeThermoSLLODGPU::ComputeThermoSLLODGPU(std::shared_ptr<SystemDefinition> sysdef,
                                    std::shared_ptr<ParticleGroup> group,
                                    Scalar shear_rate)
-    : ComputeThermoSLLOD(sysdef, group, shear_rate)
+    : ComputeThermoSLLOD(sysdef, group, shear_rate),  m_scratch(m_exec_conf), m_scratch_pressure_tensor(m_exec_conf),
+    m_scratch_rot(m_exec_conf)
     {
     std::cout<< "in ComputeThermoSLLODGPU  GPU"<< std::endl;
 
