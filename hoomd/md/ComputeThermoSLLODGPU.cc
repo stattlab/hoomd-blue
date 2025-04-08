@@ -121,7 +121,7 @@ void ComputeThermoSLLODGPU::computeProperties()
     removeFlowField();
 
     assert(m_pdata);
-
+    {
     // number of blocks in reduction (round up)
     unsigned int num_blocks = m_group->getNumMembers() / m_block_size + 1;
 
@@ -267,8 +267,9 @@ void ComputeThermoSLLODGPU::computeProperties()
     // in MPI, reduce extensive quantities only when they're needed
     m_properties_reduced = !m_pdata->getDomainDecomposition();
 #endif // ENABLE_MPI
-    std::cout<< "in ComputeThermoSLLODGPU::computeProperties GPU before add flow field"<< std::endl;
 
+    }
+    std::cout<< "in ComputeThermoSLLODGPU::computeProperties GPU before add flow field"<< std::endl;
     // add flow field back at the end of calculations
     addFlowField();
 

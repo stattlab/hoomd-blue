@@ -29,8 +29,8 @@ class PYBIND11_EXPORT ComputeThermoSLLODGPU : public ComputeThermoSLLOD
     public:
     //! Constructs the compute
     ComputeThermoSLLODGPU(std::shared_ptr<SystemDefinition> sysdef,
-                     std::shared_ptr<ParticleGroup> group,
-		     Scalar shear_rate);
+                          std::shared_ptr<ParticleGroup> group,
+		                  Scalar shear_rate);
     virtual ~ComputeThermoSLLODGPU();
 
     protected:

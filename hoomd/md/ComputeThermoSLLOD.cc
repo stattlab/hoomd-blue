@@ -29,13 +29,13 @@ ComputeThermoSLLOD::ComputeThermoSLLOD(std::shared_ptr<SystemDefinition> sysdef,
     : ComputeThermo(sysdef,group), m_shear_rate(shear_rate)
     {
     m_exec_conf->msg->notice(5) << "Constructing ComputeThermoSLLOD" << endl;
-    std::cout<< "in ComputeThermoSLLOD CPU"<< std::endl;
+    std::cout<< "in ComputeThermoSLLOD::constructing CPU"<< std::endl;
     }
 
 ComputeThermoSLLOD::~ComputeThermoSLLOD()
     {
     m_exec_conf->msg->notice(5) << "Destroying ComputeThermoSLLOD" << endl;
-    std::cout<< "in ComputeThermoSLLOD destroy CPU"<< std::endl;
+    std::cout<< "in ComputeThermoSLLOD::destroy CPU"<< std::endl;
     }
 
 
