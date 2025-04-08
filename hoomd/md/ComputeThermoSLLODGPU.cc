@@ -30,6 +30,7 @@ ComputeThermoSLLODGPU::ComputeThermoSLLODGPU(std::shared_ptr<SystemDefinition> s
     : ComputeThermoSLLOD(sysdef, group, shear_rate)
     {
     std::cout<< "in ComputeThermoSLLODGPU  GPU"<< std::endl;
+
     if (!m_exec_conf->isCUDAEnabled())
         {
         m_exec_conf->msg->error()
@@ -127,13 +128,17 @@ void ComputeThermoSLLODGPU::computeProperties()
     std::cout<< "in ComputeThermoSLLODGPU::computeProperties GPU before resize work space"<< std::endl;
 
     size_t old_size = m_scratch.size();
+    std::cout<< "in ComputeThermoSLLODGPU::computeProperties GPU scratch size "<< old_size << " " << num_blocks << std::endl;
 
     m_scratch.resize(num_blocks);
     m_scratch_pressure_tensor.resize(num_blocks * 6);
     m_scratch_rot.resize(num_blocks);
 
+    std::cout<< "in ComputeThermoSLLODGPU::computeProperties GPU after resizes "<< std::endl;
+
     if (m_scratch.size() != old_size)
         {
+        std::cout<< "in ComputeThermoSLLODGPU::computeProperties GPU before reset to zero "<< std::endl;
         // reset to zero
         ArrayHandle<Scalar4> d_scratch(m_scratch, access_location::device, access_mode::overwrite);
         ArrayHandle<Scalar> d_scratch_pressure_tensor(m_scratch_pressure_tensor,
@@ -142,14 +147,16 @@ void ComputeThermoSLLODGPU::computeProperties()
         ArrayHandle<Scalar> d_scratch_rot(m_scratch_rot,
                                           access_location::device,
                                           access_mode::overwrite);
-
+        std::cout<< "in ComputeThermoSLLODGPU::computeProperties GPU after reset to zero "<< std::endl;
         hipMemset(d_scratch.data, 0, sizeof(Scalar4) * m_scratch.size());
         hipMemset(d_scratch_pressure_tensor.data,
                   0,
                   sizeof(Scalar) * m_scratch_pressure_tensor.size());
         hipMemset(d_scratch_rot.data, 0, sizeof(Scalar) * m_scratch_rot.size());
+        std::cout<< "in ComputeThermoSLLODGPU::computeProperties GPU after hipMemset "<< std::endl;
         }
 
+        std::cout<< "in ComputeThermoSLLODGPU::computeProperties GPU before acess particle data "<< std::endl;
     // access the particle data
     ArrayHandle<Scalar4> d_vel(m_pdata->getVelocities(),
                                access_location::device,
