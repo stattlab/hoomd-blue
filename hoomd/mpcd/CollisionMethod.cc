@@ -404,7 +404,6 @@ void mpcd::CollisionMethod::transferRigidBodyMomenta(uint64_t timestep)
 //! Begin process of applying collisions to rigid bodies (GPU version)
 void mpcd::CollisionMethod::storeInitialEmbeddedGroupVelocitiesGPU(uint64_t timestep)
     {
-    const unsigned int num_group = m_embed_group->getNumMembers();
     ArrayHandle<Scalar4> d_initial_vel(m_initial_velocity,
                                        access_location::device,
                                        access_mode::overwrite);
@@ -418,7 +417,7 @@ void mpcd::CollisionMethod::storeInitialEmbeddedGroupVelocitiesGPU(uint64_t time
     mpcd::gpu::store_initial_embedded_group_velocities(d_initial_vel.data,
                                                        d_velocity.data,
                                                        d_embed_group.data,
-                                                       num_group,
+                                                       m_embed_group->getNumMembers(),
                                                        m_store_tuner->getParam()[0]);
     if (m_exec_conf->isCUDAErrorCheckingEnabled())
         CHECK_CUDA_ERROR();
@@ -432,7 +431,6 @@ void mpcd::CollisionMethod::accumulateRigidBodyMomentaGPU(uint64_t timestep)
     m_linmom_accum.zeroFill();
     m_angmom_accum.zeroFill();
 
-    const unsigned int num_group = m_embed_group->getNumMembers();
     ArrayHandle<unsigned int> d_embed_group(m_embed_group->getIndexArray(),
                                             access_location::device,
                                             access_mode::read);
@@ -472,7 +470,7 @@ void mpcd::CollisionMethod::accumulateRigidBodyMomentaGPU(uint64_t timestep)
                                              d_body.data,
                                              d_rtag.data,
                                              global_box,
-                                             num_group,
+                                             m_embed_group->getNumMembers(),
                                              m_accumulate_tuner->getParam()[0]);
     if (m_exec_conf->isCUDAErrorCheckingEnabled())
         CHECK_CUDA_ERROR();
@@ -482,7 +480,6 @@ void mpcd::CollisionMethod::accumulateRigidBodyMomentaGPU(uint64_t timestep)
 //! Finish process of applying collisions to rigid bodies (GPU version)
 void mpcd::CollisionMethod::transferRigidBodyMomentaGPU(uint64_t timestep)
     {
-    unsigned int num_total = m_pdata->getN();
     ArrayHandle<Scalar3> d_linmom_accum(m_linmom_accum, access_location::device, access_mode::read);
     ArrayHandle<Scalar3> d_angmom_accum(m_angmom_accum, access_location::device, access_mode::read);
 
@@ -514,7 +511,7 @@ void mpcd::CollisionMethod::transferRigidBodyMomentaGPU(uint64_t timestep)
                                            d_inertia.data,
                                            d_body.data,
                                            d_rtag.data,
-                                           num_total,
+                                           m_pdata->getN(),
                                            m_transfer_tuner->getParam()[0]);
     if (m_exec_conf->isCUDAErrorCheckingEnabled())
         CHECK_CUDA_ERROR();
