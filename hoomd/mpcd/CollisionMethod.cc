@@ -118,13 +118,37 @@ void mpcd::CollisionMethod::collide(uint64_t timestep)
         if (m_exec_conf->isCUDAEnabled())
             {
             accumulateRigidBodyMomentaGPU(timestep);
+#ifdef ENABLE_MPI
+            if (m_sysdef->isDomainDecomposed())
+                {
+                communicateMomentaAccumulationGPU();
+                }
+#endif
             transferRigidBodyMomentaGPU(timestep);
+#ifdef ENABLE_MPI
+            if (m_sysdef->isDomainDecomposed())
+                {
+                communicateRigidBodyTransferGPU();
+                }
+#endif
             }
         else
 #endif
             {
             accumulateRigidBodyMomenta(timestep);
+#ifdef ENABLE_MPI
+            if (m_sysdef->isDomainDecomposed())
+                {
+                communicateMomentaAccumulation();
+                }
+#endif
             transferRigidBodyMomenta(timestep);
+#ifdef ENABLE_MPI
+            if (m_sysdef->isDomainDecomposed())
+                {
+                communicateRigidBodyTransfer();
+                }
+#endif
             }
         m_rigid_bodies->updateCompositeParticles(timestep);
         }
@@ -399,7 +423,13 @@ void mpcd::CollisionMethod::transferRigidBodyMomenta(uint64_t timestep)
         h_angmom.data[idx] = quat_to_scalar4(angmom);
         }
     }
+#ifdef ENABLE_MPI
+//! Communicate momenta accumulation to other ranks
+void mpcd::CollisionMethod::communicateMomentaAccumulation() { }
 
+//! Communicate new momenta of rigid body central particle
+void mpcd::CollisionMethod::communicateRigidBodyTransfer() { }
+#endif
 #ifdef ENABLE_HIP
 //! Begin process of applying collisions to rigid bodies (GPU version)
 void mpcd::CollisionMethod::storeInitialEmbeddedGroupVelocitiesGPU(uint64_t timestep)
@@ -517,6 +547,14 @@ void mpcd::CollisionMethod::transferRigidBodyMomentaGPU(uint64_t timestep)
         CHECK_CUDA_ERROR();
     m_transfer_tuner->end();
     }
+
+#ifdef ENABLE_MPI
+//! Communicate momenta accumulation to other ranks
+void mpcd::CollisionMethod::communicateMomentaAccumulationGPU() { }
+
+//! Communicate new momenta of rigid body central particle
+void mpcd::CollisionMethod::communicateRigidBodyTransferGPU() { }
+#endif
 #endif // ENABLE_HIP
 
 /*!

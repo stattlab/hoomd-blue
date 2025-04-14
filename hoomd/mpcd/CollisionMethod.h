@@ -146,6 +146,13 @@ class PYBIND11_EXPORT CollisionMethod : public Autotuned
     //! Finish process of applying collisions to rigid bodies
     void transferRigidBodyMomenta(uint64_t timestep);
 
+#ifdef ENABLE_MPI
+    //! Communicate momenta accumulation to other ranks
+    void communicateMomentaAccumulation();
+
+    //! Communicate new momenta of rigid body central particle
+    void communicateRigidBodyTransfer();
+#endif
 #ifdef ENABLE_HIP
     //! Begin process of applying collisions to rigid bodies (GPU version)
     void storeInitialEmbeddedGroupVelocitiesGPU(uint64_t timestep);
@@ -155,6 +162,14 @@ class PYBIND11_EXPORT CollisionMethod : public Autotuned
 
     //! Finish process of applying collisions to rigid bodies (GPU version)
     void transferRigidBodyMomentaGPU(uint64_t timestep);
+
+#ifdef ENABLE_MPI
+    //! Communicate momenta accumulation to other ranks
+    void communicateMomentaAccumulationGPU();
+
+    //! Communicate new momenta of rigid body central particle
+    void communicateRigidBodyTransferGPU();
+#endif
 
     std::shared_ptr<Autotuner<1>> m_store_tuner;      //!< Tuner for storing velocities
     std::shared_ptr<Autotuner<1>> m_accumulate_tuner; //!< Tuner for accumulating momenta
