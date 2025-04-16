@@ -58,6 +58,23 @@ void MeshDynamicBondUpdater::update(uint64_t timestep)
         force->precomputeParameter();
         }
 
+    const Index2D& table_indexer = m_mesh->getMeshBondData()->getGPUTableIndexer();
+
+    ArrayHandle<typename MeshBond::members_t> h_meshbondlist(m_mesh->getMeshBondData()->getGPUTable(),
+                                                                 access_location::host,
+                                                                 access_mode::read);
+
+    ArrayHandle<unsigned int> h_n_meshbond(
+        m_mesh->getMeshBondData()->getNGroupsArray(),
+        access_location::host,
+        access_mode::read);
+
+    ArrayHandle<unsigned int> h_meshbond_pos_list(
+        m_mesh->getMeshBondData()->getGPUPosTable(),
+        access_location::host,
+        access_mode::read);
+
+
     ArrayHandle<typename MeshBond::members_t> h_bonds(m_mesh->getMeshBondData()->getMembersArray(),
                                                       access_location::host,
                                                       access_mode::readwrite);
@@ -84,7 +101,8 @@ void MeshDynamicBondUpdater::update(uint64_t timestep)
     // for each of the angles
     const unsigned int size = (unsigned int)m_mesh->getMeshBondData()->getN();
 
-    std::vector<unsigned int> changed;
+    std::vector<uint2> changed;
+
 
     for (unsigned int i = 0; i < size; i++)
         {
@@ -99,6 +117,8 @@ void MeshDynamicBondUpdater::update(uint64_t timestep)
 
         unsigned int idx_a = h_rtag.data[tag_a];
         unsigned int idx_b = h_rtag.data[tag_b];
+
+
 
         //bool already_used = false;
         //for (unsigned int j = 0; j < changed.size(); j++)
@@ -116,11 +136,46 @@ void MeshDynamicBondUpdater::update(uint64_t timestep)
         unsigned int tag_c = bond.tag[2];
         unsigned int tag_d = bond.tag[3];
 
-        unsigned int idx_c = h_rtag.data[tag_c];
-        unsigned int idx_d = h_rtag.data[tag_d];
+	std::cout << "Tags " << tag_a << " " << tag_b << " " << tag_c << " " << tag_d << std::endl;
 
         if (tag_c == tag_d)
             continue;
+
+	bool already_changed = false;
+	for( unsigned int ii = 0; ii < changed.size(); ii++)
+	   {
+	   if( (changed[ii].x == tag_c && changed[ii].y == tag_d) || (changed[ii].x == tag_d && changed[ii].y == tag_c) )
+	      {
+              already_changed = true;
+	      break;
+	      }
+	   }
+	if(already_changed)
+	   continue;
+
+        unsigned int idx_c = h_rtag.data[tag_c];
+        unsigned int idx_d = h_rtag.data[tag_d];
+
+	std::cout << "Idx " << idx_a << " " << idx_b << " " << idx_c << " " << idx_d << std::endl;
+
+	std::cout << "Numbers " << h_n_meshbond.data[idx_c]  << std::endl;
+
+	unsigned int test_idx = idx_c;
+
+	for( unsigned int ii = 0; ii < h_n_meshbond.data[idx_c]; ii++)
+	   {
+	   if( h_meshbond_pos_list.data[table_indexer(idx_c,ii)] > 1 )
+	      continue;
+	   test_idx = h_meshbondlist.data[table_indexer(idx_c,ii)].idx[0];
+	   if(test_idx == idx_d)
+	      break;
+	   }
+
+	if(test_idx == idx_d)
+	   {
+	   std::cout << "FOUND!" << std::endl;
+	   continue;
+	}
 
 	unsigned int tr_idx1 = h_neigh_bonds.data[i].x;
 	unsigned int tr_idx2 = h_neigh_bonds.data[i].y;
@@ -165,7 +220,6 @@ void MeshDynamicBondUpdater::update(uint64_t timestep)
 	    }
 
 
-
         // Initialize the RNG
         RandomGenerator rng(hoomd::Seed(RNGIdentifier::MeshDynamicBondUpdater, timestep, seed),
                             hoomd::Counter(i));
@@ -175,6 +229,9 @@ void MeshDynamicBondUpdater::update(uint64_t timestep)
 
 	Scalar rand_number = uniform(rng);
 	Scalar part_func = exp(-m_inv_T * energyDifference);
+
+	std::cout << "Energy Difference " << energyDifference << " " << part_func << " " << std::endl;
+
 
 	std::vector<unsigned int> tr_idx(6);
 	std::vector<unsigned int> b_idx(4);
@@ -197,6 +254,12 @@ void MeshDynamicBondUpdater::update(uint64_t timestep)
 	   	v_idx[2]=tag_c;
 	   	v_idx[3]=tag_d;
 		}
+
+	   uint2 bb;
+	   bb.x = v_idx[2];
+	   bb.y = v_idx[3];
+	   changed.push_back(bb);
+
 	   unsigned int counter = 4;
 
 	   for(unsigned int j = 0; j < 2; ++j)
@@ -240,6 +303,7 @@ void MeshDynamicBondUpdater::update(uint64_t timestep)
 			counter++;
 			}
 		}
+
 	   if (have_to_check_surrounding)
 		   {
 		   //for (auto& force : m_forces)
@@ -247,10 +311,14 @@ void MeshDynamicBondUpdater::update(uint64_t timestep)
 			energyDifference += force->energyDiffSurrounding(h_rtag.data[v_idx[0]],h_rtag.data[v_idx[1]],h_rtag.data[v_idx[2]],h_rtag.data[v_idx[3]],h_rtag.data[v_idx[4]],h_rtag.data[v_idx[5]],h_rtag.data[v_idx[6]],h_rtag.data[v_idx[7]], type_id);
 		   part_func = exp(-m_inv_T * energyDifference);
 		   }
+
 	   }
 
         if (part_func > rand_number)
             {
+	    std::cout << part_func << " " << rand_number << std::endl;
+	//exit(0);
+
 	    h_bonds.data[i].tag[0] = v_idx[2];
 	    h_bonds.data[i].tag[1] = v_idx[3];
 	    if(v_idx[2] > v_idx[3])

@@ -498,7 +498,7 @@ void HelfrichMeshForceCompute::precomputeParameter()
 
         Scalar inv_nbad = 1.0 / sqrt(dot(nbad, nbad));
 
-        if (dot(nbac, nbad) * inv_nbad * inv_nbac > 0.9)
+        /*if (dot(nbac, nbad) * inv_nbad * inv_nbac > 0.9)
             {
             this->m_exec_conf->msg->error()
                 << "helfrich calculations : triangles (" << idx_a << "," << idx_b << "," << idx_c
@@ -506,6 +506,7 @@ void HelfrichMeshForceCompute::precomputeParameter()
                 << std::endl;
             throw std::runtime_error("Error in bending energy calculation");
             }
+	   */
 
         Scalar inv_s_accb = sqrt(1.0 - c_accb * c_accb);
         if (inv_s_accb < SMALL)

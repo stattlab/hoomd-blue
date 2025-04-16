@@ -333,9 +333,9 @@ Scalar BendingRigidityMeshForceCompute::calcEnergy(unsigned int idx_a,
     z1.z = dab.x * dac.y - dab.y * dac.x;
 
     Scalar3 z2;
-    z2.x = -dbd.y * dab.z + dbd.z * dab.y;
-    z2.y = -dbd.z * dab.x + dbd.x * dab.z;
-    z2.z = -dbd.x * dab.y + dbd.y * dab.x;
+    z2.x = dbd.y * dab.z - dbd.z * dab.y;
+    z2.y = dbd.z * dab.x - dbd.x * dab.z;
+    z2.z = dbd.x * dab.y - dbd.y * dab.x;
 
     Scalar n1 = fast::rsqrt(z1.x * z1.x + z1.y * z1.y + z1.z * z1.z);
     Scalar n2 = fast::rsqrt(z2.x * z2.x + z2.y * z2.y + z2.z * z2.z);
@@ -368,17 +368,17 @@ Scalar BendingRigidityMeshForceCompute::energyDiffSurrounding(unsigned int idx_a
                                                               unsigned int idx_h,
                                                               unsigned int type_id)
     {
-	    Scalar energy = calcEnergy(idx_a,idx_c,idx_e,idx_d,type_id);
-	    energy += calcEnergy(idx_c,idx_b,idx_f,idx_d,type_id);
-	    energy += calcEnergy(idx_a,idx_d,idx_c,idx_g,type_id);
-	    energy += calcEnergy(idx_d,idx_b,idx_c,idx_h,type_id);
+	    Scalar energy_new = calcEnergy(idx_a,idx_c,idx_e,idx_d,type_id);
+	    energy_new += calcEnergy(idx_c,idx_b,idx_f,idx_d,type_id);
+	    energy_new += calcEnergy(idx_a,idx_d,idx_c,idx_g,type_id);
+	    energy_new += calcEnergy(idx_d,idx_b,idx_c,idx_h,type_id);
 
-	    energy -= calcEnergy(idx_a,idx_c,idx_e,idx_b,type_id);
-	    energy -= calcEnergy(idx_c,idx_b,idx_f,idx_a,type_id);
-	    energy -= calcEnergy(idx_a,idx_d,idx_b,idx_g,type_id);
-	    energy -= calcEnergy(idx_d,idx_b,idx_a,idx_h,type_id);
+	    Scalar energy_old = calcEnergy(idx_a,idx_c,idx_e,idx_b,type_id);
+	    energy_old += calcEnergy(idx_c,idx_b,idx_f,idx_a,type_id);
+	    energy_old += calcEnergy(idx_a,idx_d,idx_b,idx_g,type_id);
+	    energy_old += calcEnergy(idx_d,idx_b,idx_a,idx_h,type_id);
 
-	    return energy;
+	    return energy_new - energy_old;
     }
 
 
