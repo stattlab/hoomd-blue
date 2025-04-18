@@ -139,7 +139,7 @@ class TestCollisionMethod:
         "rigid_angmom", [[0, 0, 0, 0], [0, 2, 3, 4]], ids=["Nonrotating", "Rotating"]
     )
     @pytest.mark.parametrize(
-        "rigid_pos", [[0, 0, 0], [5, 5, 5]], ids=["center", "edge"]
+        "rigid_pos", [[0, 0, 0], [10, 10, 10]], ids=["center", "edge"]
     )
     @pytest.mark.parametrize(
         "rigid_def,rigid_properties",
@@ -214,7 +214,7 @@ class TestCollisionMethod:
 
         # create simulation
         initial_snap = one_particle_snapshot_factory(
-            particle_types=["A", "B"], position=rigid_pos, L=11
+            particle_types=["A", "B"], position=rigid_pos, L=21
         )
         total_mass = rigid_properties["mass"][0]
         if initial_snap.communicator.rank == 0:
@@ -340,7 +340,7 @@ class TestCollisionMethod:
         # create simulation
         total_mass = rigid_properties["mass"][0]
         initial_snap = two_particle_snapshot_factory(
-            particle_types=["A", "B", "C"], L=11
+            particle_types=["A", "B", "C"], L=21
         )
         if initial_snap.communicator.rank == 0:
             # put a free particle that doesn't participate in collision on top of
@@ -483,7 +483,7 @@ class TestCollisionMethod:
         # create simulation
         total_mass = rigid_properties["mass"][0]
         initial_snap = two_particle_snapshot_factory(
-            particle_types=["A", "B", "C"], L=11
+            particle_types=["A", "B", "C"], L=21
         )
         if initial_snap.communicator.rank == 0:
             # put a free particle that does participate in collision on top of
