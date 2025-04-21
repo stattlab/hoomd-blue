@@ -128,8 +128,6 @@ void MeshDynamicBondUpdater::update(uint64_t timestep)
 	std::cout <<  h_neigh_triags.data[i].x << " " <<  h_neigh_triags.data[i].y << " " <<  h_neigh_triags.data[i].z  << std::endl;
 	}
 
-
-
     for (unsigned int i = 0; i < size; i++)
         {
         typename MeshBond::members_t& bond = h_bonds.data[i];
@@ -184,20 +182,21 @@ void MeshDynamicBondUpdater::update(uint64_t timestep)
 	unsigned int tr_idx1 = h_neigh_bonds.data[i].x;
 	unsigned int tr_idx2 = h_neigh_bonds.data[i].y;
 
-        typename Angle::members_t& triangle1 = h_triangles.data[tr_idx1];
+        typename Angle::members_t& triangleT = h_triangles.data[tr_idx1];
 
 	for( unsigned int j = 0; j<3; j++)
 	    {	
-	    if(triangle1.tag[j] == tag_d)
+	    if(triangleT.tag[j] == tag_d)
 	    	{
 		tr_idx1 = h_neigh_bonds.data[i].y;
 		tr_idx2 = h_neigh_bonds.data[i].x;
-		triangle1 = h_triangles.data[tr_idx1];
 		break;
 		}
 	    }
 
 	std::cout << "TrIdx " << tr_idx1 << " " << tr_idx2 << std::endl;
+
+        typename Angle::members_t& triangle1 = h_triangles.data[tr_idx1];
 	
         unsigned int iterator = 0;
 
@@ -468,6 +467,26 @@ void MeshDynamicBondUpdater::update(uint64_t timestep)
             m_mesh->getMeshBondData()->groupReorder();
             m_mesh->getMeshTriangleData()->groupReorder();
             }
+
+    std::cout << "Post bonds" << std::endl;
+    for (unsigned int ii = 0; ii < size; ii++)
+    	{
+	std::cout << ii << ": ";
+	for(unsigned int iii = 0; iii < 4; iii++)
+		std::cout <<  h_bonds.data[ii].tag[iii] << " ";
+	std::cout << " | ";
+	std::cout <<  h_neigh_bonds.data[ii].x << " " << h_neigh_bonds.data[ii].y << std::endl;
+	}
+
+    std::cout << "Post tris" << std::endl;
+    for (unsigned int ii = 0; ii < m_mesh->getMeshTriangleData()->getN(); ii++)
+    	{
+	std::cout << ii << " ";
+	for(unsigned int iii = 0; iii < 3; iii++)
+		std::cout <<  h_triangles.data[ii].tag[iii] << " ";
+	std::cout << " | ";
+	std::cout <<  h_neigh_triags.data[ii].x << " " <<  h_neigh_triags.data[ii].y << " " <<  h_neigh_triags.data[ii].z  << std::endl;
+	}
         }
 
     }

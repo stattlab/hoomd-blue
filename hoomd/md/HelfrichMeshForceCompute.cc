@@ -93,7 +93,7 @@ void HelfrichMeshForceCompute::computeForces(uint64_t timestep)
     {
     precomputeParameter();
 
-    std::cout << " Calc force " << timestep << std::endl;
+    //std::cout << " Calc force " << timestep << std::endl;
 
     assert(m_pdata);
     // access the particle data arrays
@@ -491,7 +491,7 @@ void HelfrichMeshForceCompute::precomputeParameter()
             c_addb = -1.0;
 
 
-	std::cout << "Precompute " <<  btag_a << " " << btag_b << " " << btag_c << " " << btag_d <<  ":  " << dac.x << " " << dac.y << " " << dac.z << " " << dbc.x << " " << dbc.y << " " << dbc.z << std::endl;
+	//std::cout << "Precompute " <<  btag_a << " " << btag_b << " " << btag_c << " " << btag_d <<  ":  " << dac.x << " " << dac.y << " " << dac.z << " " << dbc.x << " " << dbc.y << " " << dbc.z << std::endl;
 
         /*
 	vec3<Scalar> nbac
