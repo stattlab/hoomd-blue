@@ -93,6 +93,8 @@ void HelfrichMeshForceCompute::computeForces(uint64_t timestep)
     {
     precomputeParameter();
 
+    std::cout << " Calc force " << timestep << std::endl;
+
     assert(m_pdata);
     // access the particle data arrays
     ArrayHandle<Scalar4> h_pos(m_pdata->getPositions(), access_location::host, access_mode::read);
@@ -488,7 +490,11 @@ void HelfrichMeshForceCompute::precomputeParameter()
         if (c_addb < -1.0)
             c_addb = -1.0;
 
-        vec3<Scalar> nbac
+
+	std::cout << "Precompute " <<  btag_a << " " << btag_b << " " << btag_c << " " << btag_d <<  ":  " << dac.x << " " << dac.y << " " << dac.z << " " << dbc.x << " " << dbc.y << " " << dbc.z << std::endl;
+
+        /*
+	vec3<Scalar> nbac
             = cross(vec3<Scalar>(nab.x, nab.y, nab.z), vec3<Scalar>(nac.x, nac.y, nac.z));
 
         Scalar inv_nbac = 1.0 / sqrt(dot(nbac, nbac));
@@ -498,7 +504,7 @@ void HelfrichMeshForceCompute::precomputeParameter()
 
         Scalar inv_nbad = 1.0 / sqrt(dot(nbad, nbad));
 
-        /*if (dot(nbac, nbad) * inv_nbad * inv_nbac > 0.9)
+        if (dot(nbac, nbad) * inv_nbad * inv_nbac > 0.9)
             {
             this->m_exec_conf->msg->error()
                 << "helfrich calculations : triangles (" << idx_a << "," << idx_b << "," << idx_c
@@ -840,6 +846,26 @@ void HelfrichMeshForceCompute::postcomputeParameter(unsigned int idx_a,
     h_sigma_dash.data[idx_b] += m_sigma_dash_diff_b;
     h_sigma_dash.data[idx_c] += m_sigma_dash_diff_c;
     h_sigma_dash.data[idx_d] += m_sigma_dash_diff_d;
+    }
+
+void HelfrichMeshForceCompute::writeParameter()
+    {
+
+    ArrayHandle<unsigned int> h_rtag(m_pdata->getRTags(), access_location::host, access_mode::read);
+
+    ArrayHandle<Scalar> h_sigma(m_sigma, access_location::host, access_mode::read);
+    ArrayHandle<Scalar3> h_sigma_dash(m_sigma_dash, access_location::host, access_mode::read);
+
+    const unsigned int size = m_pdata->getN();
+    for (unsigned int i = 0; i < size; i++)
+        {
+        unsigned int idx = h_rtag.data[i];
+        Scalar3 sigma_dash = h_sigma_dash.data[idx]; // precomputed
+        Scalar sigma = h_sigma.data[idx]; // precomputed
+					  //
+	std::cout << "Sigmas " << i << ": " << sigma << " " << sigma_dash.x << " " << sigma_dash.y << " " << sigma_dash.z << std::endl;
+	}
+    std::cout << std::endl;
     }
 
 namespace detail

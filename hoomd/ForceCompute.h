@@ -78,6 +78,8 @@ class PYBIND11_EXPORT ForceCompute : public Compute
     //! Computes the parameters for meshes
     virtual void precomputeParameter(){};
 
+    virtual void writeParameter(){};
+
     virtual Scalar energyDiff(unsigned int idx_a,
 		              unsigned int idx_b,
 			      unsigned int idx_c,
@@ -99,6 +101,7 @@ class PYBIND11_EXPORT ForceCompute : public Compute
 				      unsigned int idx_c,
 				      unsigned int idx_d,
 			      	      unsigned int type_id){};
+
 
     virtual bool checkSurrounding(){ return false;}
 

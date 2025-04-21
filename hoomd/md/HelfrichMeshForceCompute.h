@@ -92,6 +92,8 @@ class PYBIND11_EXPORT HelfrichMeshForceCompute : public ForceCompute
     //! compute sigmas
     virtual void precomputeParameter();
 
+    virtual void writeParameter();
+
     virtual void postcomputeParameter(unsigned int idx_a,
 			    	      unsigned int idx_b,
 				      unsigned int idx_c,
