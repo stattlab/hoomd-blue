@@ -1,4 +1,4 @@
-// Copyright (c) 2009-2024 The Regents of the University of Michigan.
+// Copyright (c) 2009-2025 The Regents of the University of Michigan.
 // Part of HOOMD-blue, released under the BSD 3-Clause License.
 
 #include "PairPotentialZetterling.h"
@@ -14,13 +14,13 @@ PairPotentialZetterling::PairPotentialZetterling(std::shared_ptr<SystemDefinitio
     }
 
 LongReal PairPotentialZetterling::energy(const LongReal r_squared,
-                                  const vec3<LongReal>& r_ij,
-                                  const unsigned int type_i,
-                                  const quat<LongReal>& q_i,
-                                  const LongReal charge_i,
-                                  const unsigned int type_j,
-                                  const quat<LongReal>& q_j,
-                                  const LongReal charge_j) const
+                                         const vec3<LongReal>& r_ij,
+                                         const unsigned int type_i,
+                                         const quat<LongReal>& q_i,
+                                         const LongReal charge_i,
+                                         const unsigned int type_j,
+                                         const quat<LongReal>& q_j,
+                                         const LongReal charge_j) const
     {
     unsigned int param_index = m_type_param_index(type_i, type_j);
     const auto& param = m_params[param_index];
@@ -94,9 +94,9 @@ namespace detail
     {
 void exportPairPotentialZetterling(pybind11::module& m)
     {
-    pybind11::class_<PairPotentialZetterling, PairPotential, std::shared_ptr<PairPotentialZetterling>>(
-        m,
-        "PairPotentialZetterling")
+    pybind11::class_<PairPotentialZetterling,
+                     PairPotential,
+                     std::shared_ptr<PairPotentialZetterling>>(m, "PairPotentialZetterling")
         .def(pybind11::init<std::shared_ptr<SystemDefinition>>())
         .def("setParams", &PairPotentialZetterling::setParamsPython)
         .def("getParams", &PairPotentialZetterling::getParamsPython)

@@ -1,4 +1,4 @@
-# Copyright (c) 2009-2024 The Regents of the University of Michigan.
+# Copyright (c) 2009-2025 The Regents of the University of Michigan.
 # Part of HOOMD-blue, released under the BSD 3-Clause License.
 
 """Zetterling pair potential.
@@ -16,7 +16,7 @@ import hoomd
 from .pair import Pair
 
 
-@hoomd.logging.modify_namespace(('hpmc', 'pair', 'Zetterling'))
+@hoomd.logging.modify_namespace(("hpmc", "pair", "Zetterling"))
 class Zetterling(Pair):
     """Zetterling pair potential (HPMC).
 
@@ -28,7 +28,7 @@ class Zetterling(Pair):
 
     `Zetterling` computes the oscillating pair potential between every pair
     of particles in the simulation state. The functional form of the potential,
-    including its behavior under shifting modes. 
+    including its behavior under shifting modes.
 
     .. math::
         U(r) = A \frac{\exp{(\alpha r)\cos{(2 k_F r)}}}{r^3}
@@ -69,7 +69,7 @@ class Zetterling(Pair):
           Screening factor :math:`\alpha`
           :math:`[\mathrm{length}^{-1}]`
         * ``kf`` (`float`, **required**) -
-          Wave number to mimic the Friedel oscillations effect :math:`k_F` 
+          Wave number to mimic the Friedel oscillations effect :math:`k_F`
           :math:`k_F` :math:`[\mathrm{length}^{-1}]`.
         * ``B`` (`float`, **required**) -
           Energy scale of the second term :math:`B`
@@ -82,16 +82,18 @@ class Zetterling(Pair):
         Type: `TypeParameter` [`tuple` [``particle_type``, ``particle_type``],
         `dict`]
     """
+
     _cpp_class_name = "PairPotentialZetterling"
 
-    def __init__(self, default_r_cut=None, default_r_on=0.0, mode='none'):
+    def __init__(self, default_r_cut=None, default_r_on=0.0, mode="none"):
         if default_r_cut is None:
             default_r_cut = float
         else:
             default_r_cut = float(default_r_cut)
 
         params = hoomd.data.typeparam.TypeParameter(
-            'params', 'particle_types',
+            "params",
+            "particle_types",
             hoomd.data.parameterdicts.TypeParameterDict(
                 A=float,
                 alpha=float,
@@ -101,11 +103,14 @@ class Zetterling(Pair):
                 n=float,
                 r_cut=default_r_cut,
                 r_on=float(default_r_on),
-                len_keys=2))
+                len_keys=2,
+            ),
+        )
         self._add_typeparam(params)
 
         self._param_dict.update(
             hoomd.data.parameterdicts.ParameterDict(
-                mode=hoomd.data.typeconverter.OnlyFrom(("none", "shift",
-                                                        "xplor"))))
+                mode=hoomd.data.typeconverter.OnlyFrom(("none", "shift", "xplor"))
+            )
+        )
         self.mode = mode

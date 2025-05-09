@@ -66,15 +66,24 @@ invalid_parameters = [
     dict(A=1.58, alpha=-0.22, kf=4.12, B=0.95533, sigma=1.0),
     dict(A=1.58, alpha=-0.22, kf=4.12, B=0.95533, sigma=1.0, n=18.0),
     dict(A=1.58, alpha=-0.22, kf=4.12, B=0.95533, sigma=1.0, n=18.0, r_cut="invalid"),
-    dict(A=1.58, alpha=-0.22, kf=4.12, B=0.95533, sigma=1.0, n=18.0, r_cut=2.649, r_on="invalid"),
     dict(
-        A=1.58, 
-        alpha=-0.22, 
-        kf=4.12, 
-        B=0.95533, 
-        sigma=1.0, 
-        n=18.0, 
-        r_cut=2.649, 
+        A=1.58,
+        alpha=-0.22,
+        kf=4.12,
+        B=0.95533,
+        sigma=1.0,
+        n=18.0,
+        r_cut=2.649,
+        r_on="invalid",
+    ),
+    dict(
+        A=1.58,
+        alpha=-0.22,
+        kf=4.12,
+        B=0.95533,
+        sigma=1.0,
+        n=18.0,
+        r_cut=2.649,
         r_on=1.0,
         invalid=10,
     ),
@@ -119,7 +128,7 @@ def xplor_factor(r, r_on, r_cut):
 
 def vzetterling(r, A, alpha, kf, B, sigma, n):
     """Compute Zetterling energy."""
-    return A * np.exp(alpha*r) / r**3 * np.cos(2*kf*r) + B * (sigma/r)**n
+    return A * np.exp(alpha * r) / r**3 * np.cos(2 * kf * r) + B * (sigma / r) ** n
 
 
 # (pair params,
@@ -179,7 +188,9 @@ zetterling_test_parameters = [
         "shift",
         1.0,
         vzetterling(r=1.0, A=1.58, alpha=-0.22, kf=4.12, B=0.95533, sigma=1.0, n=18.0)
-        - vzetterling(r=2.649, A=1.58, alpha=-0.22, kf=4.12, B=0.95533, sigma=1.0, n=18.0),
+        - vzetterling(
+            r=2.649, A=1.58, alpha=-0.22, kf=4.12, B=0.95533, sigma=1.0, n=18.0
+        ),
     ),
     (
         dict(A=1.58, alpha=-0.22, kf=4.12, B=0.95533, sigma=1.0, n=18.0, r_cut=2.649),
@@ -188,28 +199,66 @@ zetterling_test_parameters = [
         0.0,
     ),
     (
-        dict(A=1.58, alpha=-0.22, kf=4.12, B=0.95533, sigma=1.0, n=18.0, r_cut=2.649, r_on=0.8),
+        dict(
+            A=1.58,
+            alpha=-0.22,
+            kf=4.12,
+            B=0.95533,
+            sigma=1.0,
+            n=18.0,
+            r_cut=2.649,
+            r_on=0.8,
+        ),
         "xplor",
         1.0,
         vzetterling(r=1.0, A=1.58, alpha=-0.22, kf=4.12, B=0.95533, sigma=1.0, n=18.0)
         * xplor_factor(1.0, 0.8, 2.649),
     ),
     (
-        dict(A=1.58, alpha=-0.22, kf=4.12, B=0.95533, sigma=1.0, n=18.0, r_cut=2.649, r_on=0.8),
+        dict(
+            A=1.58,
+            alpha=-0.22,
+            kf=4.12,
+            B=0.95533,
+            sigma=1.0,
+            n=18.0,
+            r_cut=2.649,
+            r_on=0.8,
+        ),
         "xplor",
         1.5,
         vzetterling(r=1.5, A=1.58, alpha=-0.22, kf=4.12, B=0.95533, sigma=1.0, n=18.0)
         * xplor_factor(1.5, 0.8, 2.649),
     ),
     (
-        dict(A=1.58, alpha=-0.22, kf=4.12, B=0.95533, sigma=1.0, n=18.0, r_cut=2.649, r_on=3.0),
+        dict(
+            A=1.58,
+            alpha=-0.22,
+            kf=4.12,
+            B=0.95533,
+            sigma=1.0,
+            n=18.0,
+            r_cut=2.649,
+            r_on=3.0,
+        ),
         "xplor",
         1.0,
         vzetterling(r=1.0, A=1.58, alpha=-0.22, kf=4.12, B=0.95533, sigma=1.0, n=18.0)
-        - vzetterling(r=2.649, A=1.58, alpha=-0.22, kf=4.12, B=0.95533, sigma=1.0, n=18.0),
+        - vzetterling(
+            r=2.649, A=1.58, alpha=-0.22, kf=4.12, B=0.95533, sigma=1.0, n=18.0
+        ),
     ),
     (
-        dict(A=1.58, alpha=-0.22, kf=4.12, B=0.95533, sigma=1.0, n=18.0, r_cut=2.649, r_on=3.0),
+        dict(
+            A=1.58,
+            alpha=-0.22,
+            kf=4.12,
+            B=0.95533,
+            sigma=1.0,
+            n=18.0,
+            r_cut=2.649,
+            r_on=3.0,
+        ),
         "xplor",
         2.8,
         0,
@@ -244,8 +293,12 @@ def test_multiple_pair_potentials(mc_simulation_factory):
         A=1.58, alpha=-0.5, kf=4.12, B=0.95533, sigma=1.0, n=18.0, r_cut=2.649
     )
 
-    expected_1 = vzetterling(1.0, A=1.58, alpha=-0.22, kf=4.12, B=0.95533, sigma=1.0, n=18.0)
-    expected_2 = vzetterling(1.0, A=1.58, alpha=-0.5, kf=4.12, B=0.95533, sigma=1.0, n=18.0)
+    expected_1 = vzetterling(
+        1.0, A=1.58, alpha=-0.22, kf=4.12, B=0.95533, sigma=1.0, n=18.0
+    )
+    expected_2 = vzetterling(
+        1.0, A=1.58, alpha=-0.5, kf=4.12, B=0.95533, sigma=1.0, n=18.0
+    )
 
     # Some parameters are validated only after attaching.
     simulation = mc_simulation_factory(1.0)
