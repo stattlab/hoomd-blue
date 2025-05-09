@@ -17,7 +17,7 @@ valid_constructor_args = [
 
 @pytest.mark.parametrize("constructor_args", valid_constructor_args)
 def test_valid_construction(device, constructor_args):
-    """Test that OPP can be constructed with valid arguments."""
+    """Test that Zetterling can be constructed with valid arguments."""
     hoomd.hpmc.pair.Zetterling(**constructor_args)
 
 

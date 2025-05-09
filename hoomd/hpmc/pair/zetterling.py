@@ -31,10 +31,11 @@ class Zetterling(Pair):
     including its behavior under shifting modes.
 
     .. math::
-        U(r) = A \frac{\exp{(\alpha r)\cos{(2 k_F r)}}}{r^3}
-              + B \left( \frac{\sigma}{r} \right)^n
+        U(r) = A \\frac{\\exp{(\\alpha r)\\cos{(2 k_F r)}}}{r^3}
+              + B \\left( \\frac{\\sigma}{r} \\right)^n
 
-    The potential was introduced in `F. H. M. Zetterling, M. Dzugutov, and S. Lidin 2001`_.
+    The potential was introduced in `F. H. M. Zetterling, M. Dzugutov, and S. Lidin
+    2001`_.
 
     .. _F. H. M. Zetterling, M. Dzugutov, and S. Lidin 2001:
        https://doi.org/10.1557/PROC-643-K9.5
@@ -64,20 +65,21 @@ class Zetterling(Pair):
 
         * ``A`` (`float`, **required**) -
           Energy scale of the first term :math:`A`
-          :math:`[\mathrm{energy}]`
+          :math:`[\\mathrm{energy}]`
         * ``alpha`` (`float`, **required**) -
           Screening factor :math:`\alpha`
-          :math:`[\mathrm{length}^{-1}]`
+          :math:`[\\mathrm{length}^{-1}]`
         * ``kf`` (`float`, **required**) -
           Wave number to mimic the Friedel oscillations effect :math:`k_F`
-          :math:`k_F` :math:`[\mathrm{length}^{-1}]`.
+          :math:`k_F` :math:`[\\mathrm{length}^{-1}]`.
         * ``B`` (`float`, **required**) -
           Energy scale of the second term :math:`B`
-          :math:`B` :math:`[\mathrm{energy}]`.
+          :math:`B` :math:`[\\mathrm{energy}]`.
         * ``sigma`` (`float`, **required**) -
-          Repulsive core size :math:`\sigma` :math:`[\mathrm{length}]`
+          Repulsive core size :math:`\\sigma` :math:`[\\mathrm{length}]`
         * ``n`` (`float`, **required**) -
-          The power to take \sigma/r in the second term :math:`n` :math:`[\mathrm{dimensionless}]`
+          The power to take \\sigma/r in the second term :math:`n`
+          :math:`[\\mathrm{dimensionless}]`
 
         Type: `TypeParameter` [`tuple` [``particle_type``, ``particle_type``],
         `dict`]
