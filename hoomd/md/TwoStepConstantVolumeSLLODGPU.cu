@@ -95,11 +95,11 @@ __global__ void gpu_nvt_sllod_rescale_step_one_kernel(Scalar4* d_pos,
         // if box deformation caused a flip, wrap pos back into box
         if (flipped)
             {
-            d_image[idx].x += d_image[idx].y;
+            image.x += image.y;
             }
 
         // time to fix the periodic boundary conditions
-        box.wrap(pos, d_image);
+        box.wrap(pos, image);
 
         // Periodic boundary correction to velocity:
         // if particle leaves from (+/-) y boundary it gets (-/+) velocity at boundary
@@ -118,6 +118,7 @@ __global__ void gpu_nvt_sllod_rescale_step_one_kernel(Scalar4* d_pos,
         // write out the results
         d_pos[idx] = make_scalar4(pos.x, pos.y, pos.z, postype.w);
         d_vel[idx] = make_scalar4(vel.x, vel.y, vel.z, velmass.w);
+        d_image[idx] = image;
         }
     }
 
