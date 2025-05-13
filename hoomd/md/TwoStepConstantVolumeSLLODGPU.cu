@@ -68,8 +68,7 @@ __global__ void gpu_nvt_sllod_rescale_step_one_kernel(Scalar4* d_pos,
         vel.x -= shear_rate * pos.y;
 
         // rescale velocity
-        // TEMP DEACTIVATE THERMOSTAT
-        // vel *= rescale_factor;
+        vel *= rescale_factor;
 
         if (vel_correction == true)
             {
@@ -241,8 +240,7 @@ __global__ void gpu_nvt_sllod_rescale_step_two_kernel(Scalar4* d_vel,
         v += Scalar(0.5) * (accel - v_del_u) * deltaT;
 
         // rescale
-        // TEMP DEACTIVATE THERMOSTAT
-        // v *= rescale_factor;
+        v *= rescale_factor;
 
         // save
         d_vel[idx] = make_scalar4(v.x, v.y, v.z, vel.w);
