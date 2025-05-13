@@ -118,7 +118,6 @@ __global__ void gpu_nvt_sllod_rescale_step_one_kernel(Scalar4* d_pos,
         // write out the results
         d_pos[idx] = make_scalar4(pos.x, pos.y, pos.z, postype.w);
         d_vel[idx] = make_scalar4(vel.x, vel.y, vel.z, velmass.w);
-        d_image[idx] = image;
         }
     }
 
