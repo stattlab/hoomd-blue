@@ -74,7 +74,8 @@ void hoomd::md::TwoStepConstantVolumeSLLOD::integrateStepOne(uint64_t timestep)
             v.x -= m_shear_rate*pos.y;
 
             // rescale velocity
-            v *= rescaling_factors[0];
+            // TEMP DEACTIVATE THERMOSTAT
+            // v *= rescaling_factors[0];
 
 
             // apply sllod velocity correction
@@ -322,7 +323,8 @@ void hoomd::md::TwoStepConstantVolumeSLLOD::integrateStepTwo(uint64_t timestep)
         v.x -= m_shear_rate*h_pos.data[j].y;
 
         // rescale velocity
-        v *= rescaling_factors[0];
+        // TEMP DEACTIVATE THERMOSTAT
+        //v *= rescaling_factors[0];
 
         // apply sllod velocity correction
         if(m_vel_correction==true)
