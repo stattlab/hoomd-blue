@@ -255,7 +255,6 @@ __global__ void gpu_nvt_sllod_rescale_step_two_kernel(Scalar4* d_vel,
     \param rescale_factor Exponential velocity scaling factor
 */
 hipError_t gpu_nvt_sllod_rescale_step_two(Scalar4* d_vel,
-
                                           Scalar3* d_accel,
                                           unsigned int* d_group_members,
                                           unsigned int group_size,
