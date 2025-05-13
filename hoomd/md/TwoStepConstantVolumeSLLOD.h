@@ -29,8 +29,9 @@ class PYBIND11_EXPORT TwoStepConstantVolumeSLLOD : public TwoStepConstantVolume
     TwoStepConstantVolumeSLLOD(std::shared_ptr<SystemDefinition> sysdef,
                           std::shared_ptr<ParticleGroup> group,
                           std::shared_ptr<Thermostat> thermostat,
-                          Scalar shear_rate)
-        : TwoStepConstantVolume(sysdef, group, thermostat), m_shear_rate(shear_rate)
+                          Scalar shear_rate,
+                          bool vel_correction)
+        : TwoStepConstantVolume(sysdef, group, thermostat), m_shear_rate(shear_rate), m_vel_correction(vel_correction)
         {
             BoxDim global_box = m_pdata->getGlobalBox();
             const Scalar3 global_hi = global_box.getHi();
@@ -61,6 +62,7 @@ class PYBIND11_EXPORT TwoStepConstantVolumeSLLOD : public TwoStepConstantVolume
 
     Scalar m_shear_rate;
     Scalar m_boundary_shear_velocity;
+    bool m_vel_correction;
     };
 
     } // namespace hoomd::md

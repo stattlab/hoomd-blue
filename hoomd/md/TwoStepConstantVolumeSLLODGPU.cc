@@ -15,8 +15,9 @@ namespace hoomd::md
 TwoStepConstantVolumeSLLODGPU::TwoStepConstantVolumeSLLODGPU(std::shared_ptr<SystemDefinition> sysdef,
                                                    std::shared_ptr<ParticleGroup> group,
                                                    std::shared_ptr<Thermostat> thermostat,
-                                                   Scalar shear_rate)
-    : TwoStepConstantVolumeSLLOD(sysdef, group, thermostat, shear_rate)
+                                                   Scalar shear_rate,
+                                                   bool vel_correction)
+    : TwoStepConstantVolumeSLLOD(sysdef, group, thermostat, shear_rate, vel_correction)
     {
         if (!m_exec_conf->isCUDAEnabled())
         {
@@ -97,6 +98,7 @@ void TwoStepConstantVolumeSLLODGPU::integrateStepOne(uint64_t timestep)
                                          rescalingFactors[0], // m_exp_thermo_fac,
                                          m_deltaT,
                                          m_shear_rate,
+                                         m_vel_correction,
                                          flipped,
                                          m_boundary_shear_velocity,
                                          limits.first,
@@ -184,7 +186,8 @@ void TwoStepConstantVolumeSLLODGPU::integrateStepTwo(uint64_t timestep)
                                          m_tuner_two->getParam()[0],
                                          m_deltaT,
                                          rescalingFactors[0],
-                                         m_shear_rate);
+                                         m_shear_rate,
+                                         m_vel_correction);
 
         if (m_exec_conf->isCUDAErrorCheckingEnabled())
             CHECK_CUDA_ERROR();
@@ -235,6 +238,7 @@ void export_TwoStepConstantVolumeSLLODGPU(pybind11::module& m)
         .def(pybind11::init<std::shared_ptr<SystemDefinition>,
                             std::shared_ptr<ParticleGroup>,
                             std::shared_ptr<Thermostat>,
-                            Scalar>());
+                            Scalar,
+                            bool>());
     }
     } // namespace hoomd::md::detail

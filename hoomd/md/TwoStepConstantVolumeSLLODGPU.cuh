@@ -25,6 +25,7 @@ hipError_t gpu_nvt_sllod_rescale_step_one(Scalar4* d_pos,
                                           Scalar rescale_factor,
                                           Scalar deltaT,
                                           Scalar shear_rate,
+                                          bool vel_correction,
                                           bool flipped,
                                           Scalar boundary_shear_velocity,
                                           bool limit = false,
@@ -39,7 +40,8 @@ hipError_t gpu_nvt_sllod_rescale_step_two(Scalar4* d_vel,
                                           unsigned int block_size,
                                           Scalar deltaT,
                                           Scalar rescale_factor,
-                                          Scalar shear_rate);
+                                          Scalar shear_rate,
+                                          bool vel_correction);
 
     } // end namespace kernel
     } // end namespace md

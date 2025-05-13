@@ -76,8 +76,12 @@ void hoomd::md::TwoStepConstantVolumeSLLOD::integrateStepOne(uint64_t timestep)
             // rescale velocity
             v *= rescaling_factors[0];
 
+
             // apply sllod velocity correction
+            if(m_vel_correction==true)
+            {
             v.x -= Scalar(0.5)*m_shear_rate*v.y*m_deltaT;
+            }
 
             // add flow field
             v.x += m_shear_rate*pos.y;
@@ -101,7 +105,6 @@ void hoomd::md::TwoStepConstantVolumeSLLOD::integrateStepOne(uint64_t timestep)
             // if box deformation caused a flip, account for the box wrapping by modifying images
             if (flipped){
                 h_image.data[j].x += h_image.data[j].y;
-                //  pos.x *= -1;
             }
 
             // Periodic boundary correction to velocity:
@@ -322,7 +325,10 @@ void hoomd::md::TwoStepConstantVolumeSLLOD::integrateStepTwo(uint64_t timestep)
         v *= rescaling_factors[0];
 
         // apply sllod velocity correction
-        v.x -= Scalar(0.5)*m_shear_rate*v.y*m_deltaT;
+        if(m_vel_correction==true)
+        {
+            v.x -= Scalar(0.5)*m_shear_rate*v.y*m_deltaT;
+        }
 
         // add flow field
         v.x += m_shear_rate*h_pos.data[j].y;
@@ -400,6 +406,7 @@ void export_TwoStepConstantVolumeSLLOD(pybind11::module& m)
         .def(pybind11::init<std::shared_ptr<SystemDefinition>,
                             std::shared_ptr<ParticleGroup>,
                             std::shared_ptr<Thermostat>,
-                            Scalar>());
+                            Scalar,
+                            bool>());
     }
     }; // namespace hoomd::md::detail

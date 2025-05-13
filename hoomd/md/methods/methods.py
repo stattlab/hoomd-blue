@@ -252,15 +252,19 @@ class ConstantVolumeSLLOD(Thermostatted):
     """
     )
 
-    def __init__(self, filter, thermostat=None, shear_rate=0):
+    def __init__(self, filter, thermostat=None, shear_rate=0, vel_correction=True):
         super().__init__()
         # store metadata
         param_dict = ParameterDict(
             filter=ParticleFilter,
             thermostat=OnlyTypes(Thermostat, allow_none=True),
-            shear_rate=shear_rate
+            shear_rate=shear_rate,
+            vel_correction=vel_correction
         )
-        param_dict.update(dict(filter=filter, thermostat=thermostat, shear_rate=shear_rate))
+        param_dict.update(dict(filter=filter,
+                               thermostat=thermostat,
+                               shear_rate=shear_rate,
+                               vel_correction=vel_correction))
         # set defaults
         self._param_dict.update(param_dict)
 
@@ -278,11 +282,11 @@ class ConstantVolumeSLLOD(Thermostatted):
         self._thermo = thermo_cls(cpp_sys_def, group,self.shear_rate)
 
         if self.thermostat is None:
-            self._cpp_obj = cls(cpp_sys_def, group, None, self.shear_rate)
+            self._cpp_obj = cls(cpp_sys_def, group, None, self.shear_rate,self.vel_correction)
         else:
             self.thermostat._set_thermo(self.filter, self._thermo)
             self.thermostat._attach(self._simulation)
-            self._cpp_obj = cls(cpp_sys_def, group, self.thermostat._cpp_obj, self.shear_rate)
+            self._cpp_obj = cls(cpp_sys_def, group, self.thermostat._cpp_obj, self.shear_rate,self.vel_correction)
         super()._attach_hook()
 
 

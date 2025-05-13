@@ -41,6 +41,7 @@ __global__ void gpu_nvt_sllod_rescale_step_one_kernel(Scalar4* d_pos,
                                                       Scalar rescale_factor,
                                                       Scalar deltaT,
                                                       Scalar shear_rate,
+                                                      bool vel_correction,
                                                       bool flipped,
                                                       Scalar boundary_shear_velocity,
                                                       bool limit = false,
@@ -67,8 +68,11 @@ __global__ void gpu_nvt_sllod_rescale_step_one_kernel(Scalar4* d_pos,
         // rescale velocity
         vel *= rescale_factor;
 
-        // apply sllod velocity correction
-        vel.x -= Scalar(0.5) * shear_rate * vel.y * deltaT;
+        if (vel_correction == true)
+            {
+            // apply sllod velocity correction
+            vel.x -= Scalar(0.5) * shear_rate * vel.y * deltaT;
+            }
 
         // add flow field
         vel.x += shear_rate * pos.y;
@@ -92,11 +96,10 @@ __global__ void gpu_nvt_sllod_rescale_step_one_kernel(Scalar4* d_pos,
         if (flipped)
             {
             d_image[idx].x += d_image[idx].y;
-            //    pos.x *= -1;
             }
 
         // time to fix the periodic boundary conditions
-        box.wrap(pos, image);
+        box.wrap(pos, d_image);
 
         // Periodic boundary correction to velocity:
         // if particle leaves from (+/-) y boundary it gets (-/+) velocity at boundary
@@ -141,6 +144,7 @@ hipError_t gpu_nvt_sllod_rescale_step_one(Scalar4* d_pos,
                                           Scalar rescale_factor,
                                           Scalar deltaT,
                                           Scalar shear_rate,
+                                          bool vel_correction,
                                           bool flipped,
                                           Scalar boundary_shear_velocity,
                                           bool use_limit,
@@ -175,6 +179,7 @@ hipError_t gpu_nvt_sllod_rescale_step_one(Scalar4* d_pos,
                        rescale_factor,
                        deltaT,
                        shear_rate,
+                       vel_correction,
                        flipped,
                        boundary_shear_velocity,
                        use_limit,
@@ -198,7 +203,8 @@ __global__ void gpu_nvt_sllod_rescale_step_two_kernel(Scalar4* d_vel,
                                                       Scalar4* d_net_force,
                                                       Scalar deltaT,
                                                       Scalar rescale_factor,
-                                                      Scalar shear_rate)
+                                                      Scalar shear_rate,
+                                                      bool vel_correction)
     {
     // determine which particle this thread works on
     int group_idx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -217,8 +223,13 @@ __global__ void gpu_nvt_sllod_rescale_step_two_kernel(Scalar4* d_vel,
         Scalar mass = vel.w;
         accel = accel / mass;
 
-        // SLLOD correction to velocity: shear rate tensor dotted with velocity
-        const Scalar3 v_del_u = make_scalar3(shear_rate * vel.y, 0.0, 0.0);
+        Scalar3 v_del_u = make_scalar3(0.0, 0.0, 0.0);
+
+        if (vel_correction == true)
+            {
+            // SLLOD correction to velocity: shear rate tensor dotted with velocity
+            v_del_u = make_scalar3(shear_rate * vel.y, 0.0, 0.0);
+            }
 
         // update velocity
         v += Scalar(0.5) * (accel - v_del_u) * deltaT;
