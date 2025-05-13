@@ -29,6 +29,8 @@ hipError_t gpu_nvt_sllod_rescale_step_one(Scalar4* d_pos,
                                           bool flipped,
                                           Scalar boundary_shear_velocity,
                                           bool limit = false,
+                                          Scalar global_hi_y,
+                                          Scalar global_lo_y,
                                           Scalar limit_displacement = Scalar(0.));
 
 //! Kernel driver for the second part of the NVT update called by NVTUpdaterGPU

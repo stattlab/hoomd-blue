@@ -82,10 +82,16 @@ void TwoStepConstantVolumeSLLODGPU::integrateStepOne(uint64_t timestep)
         // box deformation: update tilt factor of global box
         bool flipped = deformGlobalBox();
 
+        BoxDim global_box = m_pdata->getGlobalBox();
+        const Scalar global_hi_y = global_box.getHi().y;
+        const Scalar global_lo_y = global_box.getLo().y;
+
         m_exec_conf->setDevice();
+
 
         // perform the update on the GPU
         m_tuner_one->begin();
+
 
         kernel::gpu_nvt_sllod_rescale_step_one(d_pos.data,
                                          d_vel.data,
@@ -101,6 +107,8 @@ void TwoStepConstantVolumeSLLODGPU::integrateStepOne(uint64_t timestep)
                                          m_vel_correction,
                                          flipped,
                                          m_boundary_shear_velocity,
+                                         global_hi_y,
+                                         global_lo_y,
                                          limits.first,
                                          limits.second);
 

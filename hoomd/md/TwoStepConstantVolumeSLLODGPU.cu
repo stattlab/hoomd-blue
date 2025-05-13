@@ -45,6 +45,8 @@ __global__ void gpu_nvt_sllod_rescale_step_one_kernel(Scalar4* d_pos,
                                                       bool flipped,
                                                       Scalar boundary_shear_velocity,
                                                       bool limit = false,
+                                                      Scalar global_hi_y,
+                                                      Scalar global_lo_y,
                                                       Scalar maximum_displacement = Scalar(0.))
     {
     // determine which particle this thread works on
@@ -99,23 +101,22 @@ __global__ void gpu_nvt_sllod_rescale_step_one_kernel(Scalar4* d_pos,
             image.x += image.y;
             }
 
-        // time to fix the periodic boundary conditions
-        box.wrap(pos, image);
-
         // Periodic boundary correction to velocity:
         // if particle leaves from (+/-) y boundary it gets (-/+) velocity at boundary
         // NOTE: pair potentials dependent on differences in
         // velocities (e.g. DPD) are not supported.
 
-        if ((image.y - d_image[idx].y) == 1) // crossed pbc in +y, image increased by 1
+        if (pos.y > global_hi_y) // crossed pbc in +y, image increased by 1
             {
             vel.x -= boundary_shear_velocity;
             }
-        else if ((image.y - d_image[idx].y) == -1) // crossed pbc in -y, image decreased by 1
+        else if (pos.y < global_lo_y) // crossed pbc in -y, image decreased by 1
             {
             vel.x += boundary_shear_velocity;
             }
 
+        // time to fix the periodic boundary conditions
+        box.wrap(pos, image);
         // write out the results
         d_pos[idx] = make_scalar4(pos.x, pos.y, pos.z, postype.w);
         d_vel[idx] = make_scalar4(vel.x, vel.y, vel.z, velmass.w);
@@ -148,6 +149,8 @@ hipError_t gpu_nvt_sllod_rescale_step_one(Scalar4* d_pos,
                                           bool vel_correction,
                                           bool flipped,
                                           Scalar boundary_shear_velocity,
+                                          Scalar global_hi_y,
+                                          Scalar global_lo_y,
                                           bool use_limit,
                                           Scalar maximum_displacement)
     {
@@ -183,6 +186,8 @@ hipError_t gpu_nvt_sllod_rescale_step_one(Scalar4* d_pos,
                        vel_correction,
                        flipped,
                        boundary_shear_velocity,
+                       global_hi_y,
+                       global_lo_y,
                        use_limit,
                        maximum_displacement);
 
