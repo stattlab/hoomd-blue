@@ -262,7 +262,8 @@ hipError_t gpu_nvt_sllod_rescale_step_two(Scalar4* d_vel,
                                           unsigned int block_size,
                                           Scalar deltaT,
                                           Scalar rescale_factor,
-                                          Scalar shear_rate)
+                                          Scalar shear_rate,
+                                          bool vel_correction)
     {
     unsigned int max_block_size;
     hipFuncAttributes attr;
@@ -290,7 +291,8 @@ hipError_t gpu_nvt_sllod_rescale_step_two(Scalar4* d_vel,
                        d_net_force,
                        deltaT,
                        rescale_factor,
-                       shear_rate);
+                       shear_rate,
+                       vel_correction);
 
     return hipSuccess;
     }
