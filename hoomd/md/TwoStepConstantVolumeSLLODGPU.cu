@@ -44,9 +44,9 @@ __global__ void gpu_nvt_sllod_rescale_step_one_kernel(Scalar4* d_pos,
                                                       bool vel_correction,
                                                       bool flipped,
                                                       Scalar boundary_shear_velocity,
-                                                      bool limit = false,
                                                       Scalar global_hi_y,
                                                       Scalar global_lo_y,
+                                                      bool limit = false,
                                                       Scalar maximum_displacement = Scalar(0.))
     {
     // determine which particle this thread works on
