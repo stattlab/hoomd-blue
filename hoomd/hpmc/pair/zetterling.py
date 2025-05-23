@@ -74,10 +74,10 @@ class Zetterling(Pair):
           :math:`[\\mathrm{length}^{-1}]`
         * ``kf`` (`float`, **required**) -
           Wave number to mimic the Friedel oscillations effect :math:`k_F`
-          :math:`k_F` :math:`[\\mathrm{length}^{-1}]`.
+          :math:`[\\mathrm{length}^{-1}]`.
         * ``B`` (`float`, **required**) -
           Energy scale of the second term :math:`B`
-          :math:`B` :math:`[\\mathrm{energy}]`.
+          :math:`[\\mathrm{energy}]`.
         * ``sigma`` (`float`, **required**) -
           Repulsive core size :math:`\\sigma` :math:`[\\mathrm{length}]`
         * ``n`` (`float`, **required**) -
