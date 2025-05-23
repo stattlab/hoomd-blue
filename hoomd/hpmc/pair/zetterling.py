@@ -27,9 +27,9 @@ class Zetterling(Pair):
           :math:`[\\mathrm{length}]`.
         mode (str): Energy shifting/smoothing mode.
 
-    `Zetterling` computes the oscillating pair potential between every pair
-    of particles in the simulation state. The functional form of the potential,
-    including its behavior under shifting modes.
+    `Zetterling` computes the oscillating pair potential between every pair of
+    particles in the simulation state. The functional behavior of the potential
+    under the various shifting modes is the same as in `hoomd.md.pair`.
 
     .. math::
         U(r) = A \\frac{\\exp{(\\alpha r)\\cos{(2 k_F r)}}}{r^3}
