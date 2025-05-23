@@ -12,6 +12,7 @@
 """
 
 import hoomd
+import inspect
 
 from .pair import Pair
 
@@ -86,6 +87,9 @@ class Zetterling(Pair):
     """
 
     _cpp_class_name = "PairPotentialZetterling"
+    __doc__ = inspect.cleandoc(__doc__).replace(
+        "{inherited}", inspect.cleandoc(Pair._doc_inherited)
+    )
 
     def __init__(self, default_r_cut=None, default_r_on=0.0, mode="none"):
         if default_r_cut is None:
