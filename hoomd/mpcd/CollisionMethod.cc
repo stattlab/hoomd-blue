@@ -251,7 +251,7 @@ void mpcd::CollisionMethod::thermalizeConstituentParticles(uint64_t timestep)
 
     ArrayHandle<Scalar4> h_velocity(m_pdata->getVelocities(),
                                     access_location::host,
-                                    access_mode::read);
+                                    access_mode::readwrite);
     ArrayHandle<Scalar4> h_alt_vel(m_pdata->getAltVelocities(),
                                    access_location::host,
                                    access_mode::readwrite);
@@ -375,6 +375,119 @@ void mpcd::CollisionMethod::thermalizeConstituentParticles(uint64_t timestep)
         const vec3<Scalar> velo_change = vel_const - net_vel;
         const vec3<Scalar> angmom_change = mass_const * cross(displacement, velo_change);
         h_angmom_accum.data[central_idx] += vec_to_scalar3(angmom_change);
+        }
+
+    ArrayHandle<Scalar4> h_orientation(m_pdata->getOrientationArray(),
+                                       access_location::host,
+                                       access_mode::read);
+    ArrayHandle<Scalar3> h_inertia(m_pdata->getMomentsOfInertiaArray(),
+                                   access_location::host,
+                                   access_mode::read);
+    // get angular velocity
+    for (unsigned int idx = 0; idx < num_total; ++idx)
+        {
+        // check that the particle is in a rigid body and a central particle
+        const unsigned int central_tag = h_body.data[idx];
+        if (central_tag >= MIN_FLOPPY)
+            {
+            continue;
+            }
+        const unsigned int central_idx = h_rtag.data[central_tag];
+        if (central_idx != idx)
+            {
+            continue;
+            }
+
+        // get net angular momentum
+        vec3<Scalar> net_angmom(h_angmom_accum.data[central_idx]);
+        const quat<Scalar> orientation(h_orientation.data[idx]);
+        const vec3<Scalar> inertia(h_inertia.data[central_idx]);
+
+        // rotate to body frame
+        vec3<Scalar> net_angvel_body = rotate(conj(orientation), net_angmom);
+        if (inertia.x != Scalar(0))
+            {
+            net_angvel_body.x = net_angvel_body.x / inertia.x;
+            }
+        else
+            {
+            net_angvel_body.x = Scalar(0);
+            }
+        if (inertia.y != Scalar(0))
+            {
+            net_angvel_body.y = net_angvel_body.y / inertia.y;
+            }
+        else
+            {
+            net_angvel_body.y = Scalar(0);
+            }
+        if (inertia.z != Scalar(0))
+            {
+            net_angvel_body.z = net_angvel_body.z / inertia.z;
+            }
+        else
+            {
+            net_angvel_body.z = Scalar(0);
+            }
+        vec3<Scalar> net_angvel_space = rotate(orientation, net_angvel_body);
+
+        // set net angular velocity in space frame
+        h_angmom_accum.data[central_idx] += vec_to_scalar3(net_angvel_space);
+        }
+
+    // Subtract off net linear and angular velocity and apply to constituents
+    for (unsigned int idx = 0; idx < num_total; ++idx)
+        {
+        // get the index from the embedded group and check if in a rigid body
+        const unsigned int central_tag = h_body.data[idx];
+        if (central_tag >= MIN_FLOPPY)
+            {
+            continue;
+            }
+        const unsigned int central_idx = h_rtag.data[central_tag];
+        // if the central particle is not local, cannot read or write to it.
+        assert(central_idx != NOT_LOCAL);
+
+        // do not need to thermalize central particle
+        if (idx == central_idx)
+            {
+            continue;
+            }
+
+        // get velocities and masses
+        Scalar4 vel_constituent = h_velocity.data[idx];
+        const Scalar4 thermal_vel_mass = h_alt_vel.data[idx];
+        vec3<Scalar> thermal_vel(thermal_vel_mass);
+
+        // get net angular and linear velocity
+        const Scalar4 net_vel_mass = h_alt_vel.data[central_idx];
+        const vec3<Scalar> net_vel(net_vel_mass);
+        const vec3<Scalar> net_angvel_space(h_angmom_accum.data[central_idx]);
+
+        // get displacement
+        const Scalar4 postype_const = h_postype.data[idx];
+        const vec3<Scalar> pos_const(postype_const);
+        const int3 img_const = h_image.data[idx];
+
+        const Scalar4 postype_central = h_postype.data[central_idx];
+        const vec3<Scalar> pos_central(postype_central);
+        const int3 img_central = h_image.data[central_idx];
+
+        vec3<Scalar> displacement = pos_const - pos_central;
+        const int3 displacement_img = make_int3(img_const.x - img_central.x,
+                                                img_const.y - img_central.y,
+                                                img_const.z - img_central.z);
+        displacement = global_box.shift(displacement, displacement_img);
+
+        // subtract net velocities
+        // thermal_vel -= cross(net_angvel_space, displacement);
+        thermal_vel -= net_vel;
+
+        // add to constituent
+        vel_constituent.x += thermal_vel.x;
+        vel_constituent.y += thermal_vel.y;
+        vel_constituent.z += thermal_vel.z;
+        h_velocity.data[idx] = vel_constituent;
         }
     }
 
