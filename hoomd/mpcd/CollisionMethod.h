@@ -140,6 +140,9 @@ class PYBIND11_EXPORT CollisionMethod : public Autotuned
     //! Begin process of applying collisions to rigid bodies
     void storeInitialEmbeddedGroupVelocities(uint64_t timestep);
 
+    //! thermalize constituent particles of rigid bodies
+    void thermalizeConstituentParticles(uint64_t timestep);
+
     //! Accumulate momenta changes of constituent particles of rigid bodies
     void accumulateRigidBodyMomenta(uint64_t timestep);
 

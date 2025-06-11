@@ -107,6 +107,7 @@ void mpcd::CollisionMethod::collide(uint64_t timestep)
 #endif
             {
             storeInitialEmbeddedGroupVelocities(timestep);
+            thermalizeConstituentParticles(timestep);
             }
         }
 
@@ -238,6 +239,7 @@ void mpcd::CollisionMethod::storeInitialEmbeddedGroupVelocities(uint64_t timeste
         }
     }
 
+void mpcd::CollisionMethod::thermalizeConstituentParticles(uint64_t timestep) { }
 void mpcd::CollisionMethod::accumulateRigidBodyMomenta(uint64_t timestep)
     {
     // zero accumulators
