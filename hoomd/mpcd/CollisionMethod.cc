@@ -10,6 +10,8 @@
 #ifdef ENABLE_MPI
 #include "hoomd/Communicator.h"
 #endif // ENABLE_MPI
+#include "hoomd/RNGIdentifiers.h"
+#include "hoomd/RandomNumbers.h"
 namespace hoomd
     {
 /*!
@@ -239,7 +241,70 @@ void mpcd::CollisionMethod::storeInitialEmbeddedGroupVelocities(uint64_t timeste
         }
     }
 
-void mpcd::CollisionMethod::thermalizeConstituentParticles(uint64_t timestep) { }
+void mpcd::CollisionMethod::thermalizeConstituentParticles(uint64_t timestep)
+    {
+    // zero accumulators
+    m_linmom_accum.zeroFill();
+    m_angmom_accum.zeroFill();
+
+    Scalar T_set(1.0); // for debugging purposes
+
+    ArrayHandle<Scalar4> h_velocity(m_pdata->getVelocities(),
+                                    access_location::host,
+                                    access_mode::read);
+    ArrayHandle<Scalar4> h_alt_vel(m_pdata->getAltVelocities(),
+                                   access_location::host,
+                                   access_mode::overwrite);
+    ArrayHandle<unsigned int> h_body(m_pdata->getBodies(),
+                                     access_location::host,
+                                     access_mode::read);
+    ArrayHandle<unsigned int> h_rtag(m_pdata->getRTags(), access_location::host, access_mode::read);
+    ArrayHandle<unsigned int> h_tag(m_pdata->getTags(), access_location::host, access_mode::read);
+
+    ArrayHandle<Scalar3> h_linmom_accum(m_linmom_accum,
+                                        access_location::host,
+                                        access_mode::readwrite);
+    ArrayHandle<Scalar3> h_angmom_accum(m_angmom_accum,
+                                        access_location::host,
+                                        access_mode::readwrite);
+
+    unsigned int num_total = m_pdata->getN();
+    uint16_t seed = m_sysdef->getSeed();
+    for (unsigned int idx = 0; idx < num_total; ++idx)
+        {
+        // get the index from the embedded group and check if in a rigid body
+        const unsigned int central_tag = h_body.data[idx];
+        if (central_tag >= MIN_FLOPPY)
+            {
+            continue;
+            }
+        const unsigned int central_idx = h_rtag.data[central_tag];
+        // if the central particle is not local, cannot read or write to it.
+        assert(central_idx != NOT_LOCAL);
+
+        // do not need to thermalize central particle
+        if (idx == central_idx)
+            {
+            continue;
+            }
+
+        Scalar mass = h_velocity.data[idx].w;
+        unsigned int tag = h_tag.data[idx];
+        // draw random velocities from normal distribution
+        hoomd::RandomGenerator rng(
+            hoomd::Seed(hoomd::RNGIdentifier::ATCollisionMethod, timestep, seed),
+            hoomd::Counter(tag));
+        hoomd::NormalDistribution<Scalar> gen(fast::sqrt(T_set / mass), 0.0);
+        Scalar3 vel;
+        gen(vel.x, vel.y, rng);
+        vel.z = gen(rng);
+        h_alt_vel.data[idx] = make_scalar4(vel.x, vel.y, vel.z, mass);
+
+        // add to net momentum
+        const Scalar3 linmom_change = mass * vel;
+        h_linmom_accum.data[central_idx] += linmom_change;
+        }
+    }
 void mpcd::CollisionMethod::accumulateRigidBodyMomenta(uint64_t timestep)
     {
     // zero accumulators
