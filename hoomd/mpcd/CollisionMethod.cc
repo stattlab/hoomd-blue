@@ -393,7 +393,7 @@ void mpcd::CollisionMethod::thermalizeConstituentParticles(uint64_t timestep)
         vec3<Scalar> net_angvel_space = rotate(orientation, net_angvel_body);
 
         // set net angular velocity in space frame
-        h_angmom_accum.data[central_idx] += vec_to_scalar3(net_angvel_space);
+        h_angmom_accum.data[central_idx] = vec_to_scalar3(net_angvel_space);
         }
 
     // Subtract off net linear and angular velocity and apply to constituents
