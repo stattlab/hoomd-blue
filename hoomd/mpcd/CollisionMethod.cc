@@ -260,6 +260,11 @@ void mpcd::CollisionMethod::thermalizeConstituentParticles(uint64_t timestep)
                                      access_mode::read);
     ArrayHandle<unsigned int> h_rtag(m_pdata->getRTags(), access_location::host, access_mode::read);
     ArrayHandle<unsigned int> h_tag(m_pdata->getTags(), access_location::host, access_mode::read);
+    ArrayHandle<Scalar4> h_postype(m_pdata->getPositions(),
+                                   access_location::host,
+                                   access_mode::read);
+    ArrayHandle<int3> h_image(m_pdata->getImages(), access_location::host, access_mode::read);
+    const BoxDim& global_box = m_pdata->getGlobalBox();
 
     ArrayHandle<Scalar3> h_linmom_accum(m_linmom_accum,
                                         access_location::host,
@@ -270,6 +275,8 @@ void mpcd::CollisionMethod::thermalizeConstituentParticles(uint64_t timestep)
 
     unsigned int num_total = m_pdata->getN();
     uint16_t seed = m_sysdef->getSeed();
+
+    // get random velocities and accumulate the resulting change in momentum
     for (unsigned int idx = 0; idx < num_total; ++idx)
         {
         // get the index from the embedded group and check if in a rigid body
@@ -288,74 +295,22 @@ void mpcd::CollisionMethod::thermalizeConstituentParticles(uint64_t timestep)
             continue;
             }
 
-        Scalar mass = h_velocity.data[idx].w;
+        Scalar mass_const = h_velocity.data[idx].w;
         unsigned int tag = h_tag.data[idx];
         // draw random velocities from normal distribution
         hoomd::RandomGenerator rng(
             hoomd::Seed(hoomd::RNGIdentifier::ATCollisionMethod, timestep, seed),
             hoomd::Counter(tag));
-        hoomd::NormalDistribution<Scalar> gen(fast::sqrt(T_set / mass), 0.0);
+        hoomd::NormalDistribution<Scalar> gen(fast::sqrt(T_set / mass_const), 0.0);
         Scalar3 vel;
         gen(vel.x, vel.y, rng);
         vel.z = gen(rng);
-        h_alt_vel.data[idx] = make_scalar4(vel.x, vel.y, vel.z, mass);
+        h_alt_vel.data[idx] = make_scalar4(vel.x, vel.y, vel.z, mass_const);
 
         // add to net momentum
-        const Scalar3 linmom_change = mass * vel;
+        const Scalar3 linmom_change = mass_const * vel;
         h_linmom_accum.data[central_idx] += linmom_change;
-        }
 
-    // divide by total mass to get net velocity of random vectors
-    for (unsigned int idx = 0; idx < num_total; ++idx)
-        {
-        // check that the particle is in a rigid body and a central particle
-        const unsigned int central_tag = h_body.data[idx];
-        if (central_tag >= MIN_FLOPPY)
-            {
-            continue;
-            }
-        const unsigned int central_idx = h_rtag.data[central_tag];
-        if (central_idx != idx)
-            {
-            continue;
-            }
-        Scalar mass = h_velocity.data[idx].w;
-        Scalar3 net_velocity = h_linmom_accum.data[central_idx] / mass;
-        h_alt_vel.data[central_idx]
-            = make_scalar4(net_velocity.x, net_velocity.y, net_velocity.z, mass);
-        }
-
-    ArrayHandle<Scalar4> h_postype(m_pdata->getPositions(),
-                                   access_location::host,
-                                   access_mode::read);
-    ArrayHandle<int3> h_image(m_pdata->getImages(), access_location::host, access_mode::read);
-    const BoxDim& global_box = m_pdata->getGlobalBox();
-
-    // Calculate net angular momentum
-    for (unsigned int idx = 0; idx < num_total; ++idx)
-        {
-        // get the index from the embedded group and check if in a rigid body
-        const unsigned int central_tag = h_body.data[idx];
-        if (central_tag >= MIN_FLOPPY)
-            {
-            continue;
-            }
-        const unsigned int central_idx = h_rtag.data[central_tag];
-        // if the central particle is not local, cannot read or write to it.
-        assert(central_idx != NOT_LOCAL);
-
-        // do not need to thermalize central particle
-        if (idx == central_idx)
-            {
-            continue;
-            }
-
-        // get velocities and masses
-        const Scalar4 vel_mass_const = h_alt_vel.data[idx];
-        const vec3<Scalar> vel_const(vel_mass_const);
-        const Scalar mass_const = vel_mass_const.w;
-        const Scalar4 net_vel_mass = h_alt_vel.data[central_idx];
-        const vec3<Scalar> net_vel(net_vel_mass);
         // get displacement
         const Scalar4 postype_const = h_postype.data[idx];
         const vec3<Scalar> pos_const(postype_const);
@@ -372,8 +327,8 @@ void mpcd::CollisionMethod::thermalizeConstituentParticles(uint64_t timestep)
         displacement = global_box.shift(displacement, displacement_img);
 
         // add to net momentum
-        const vec3<Scalar> velo_change = vel_const - net_vel;
-        const vec3<Scalar> angmom_change = mass_const * cross(displacement, velo_change);
+        const vec3<Scalar> rand_vel(vel);
+        const vec3<Scalar> angmom_change = mass_const * cross(displacement, rand_vel);
         h_angmom_accum.data[central_idx] += vec_to_scalar3(angmom_change);
         }
 
@@ -383,7 +338,7 @@ void mpcd::CollisionMethod::thermalizeConstituentParticles(uint64_t timestep)
     ArrayHandle<Scalar3> h_inertia(m_pdata->getMomentsOfInertiaArray(),
                                    access_location::host,
                                    access_mode::read);
-    // get angular velocity
+    // get net linear velocity and net angular velocity of central particles
     for (unsigned int idx = 0; idx < num_total; ++idx)
         {
         // check that the particle is in a rigid body and a central particle
@@ -397,6 +352,12 @@ void mpcd::CollisionMethod::thermalizeConstituentParticles(uint64_t timestep)
             {
             continue;
             }
+
+        // store the net linear velocity in AltVelocities
+        Scalar mass = h_velocity.data[idx].w;
+        Scalar3 net_velocity = h_linmom_accum.data[central_idx] / mass;
+        h_alt_vel.data[central_idx]
+            = make_scalar4(net_velocity.x, net_velocity.y, net_velocity.z, mass);
 
         // get net angular momentum
         vec3<Scalar> net_angmom(h_angmom_accum.data[central_idx]);
@@ -480,8 +441,7 @@ void mpcd::CollisionMethod::thermalizeConstituentParticles(uint64_t timestep)
         displacement = global_box.shift(displacement, displacement_img);
 
         // subtract net velocities
-        // thermal_vel -= cross(net_angvel_space, displacement);
-        thermal_vel -= net_vel;
+        thermal_vel -= net_vel + cross(net_angvel_space, displacement);
 
         // add to constituent
         vel_constituent.x += thermal_vel.x;
