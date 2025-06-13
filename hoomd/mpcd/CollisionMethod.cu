@@ -82,9 +82,6 @@ __global__ void draw_velocities_constituent_particles(Scalar3* d_linmom_accum,
     vel.z = gen(rng);
     d_alt_vel[idx] = make_scalar4(vel.x, vel.y, vel.z, mass_const);
 
-    // add to net momentum
-    const Scalar3 linmom_change = mass_const * vel;
-
     // get displacement
     const Scalar4 postype_const = d_postype[idx];
     const vec3<Scalar> pos_const(postype_const);
@@ -102,16 +99,16 @@ __global__ void draw_velocities_constituent_particles(Scalar3* d_linmom_accum,
 
     // add to net momentum
     const vec3<Scalar> rand_vel(vel);
+    const vec3<Scalar> linmom_change = mass_const * rand_vel;
     const vec3<Scalar> angmom_change = mass_const * cross(displacement, rand_vel);
-    d_angmom_accum[central_idx] += vec_to_scalar3(angmom_change);
 
     // accumulate onto central particle
-    atomicAdd(&d_linmom_accum[central_idx].x, linmom_change.x);
-    atomicAdd(&d_linmom_accum[central_idx].y, linmom_change.y);
-    atomicAdd(&d_linmom_accum[central_idx].z, linmom_change.z);
-    atomicAdd(&d_angmom_accum[central_idx].x, angmom_change.x);
-    atomicAdd(&d_angmom_accum[central_idx].y, angmom_change.y);
-    atomicAdd(&d_angmom_accum[central_idx].z, angmom_change.z);
+    // atomicAdd(&d_linmom_accum[central_idx].x, linmom_change.x);
+    // atomicAdd(&d_linmom_accum[central_idx].y, linmom_change.y);
+    // atomicAdd(&d_linmom_accum[central_idx].z, linmom_change.z);
+    // atomicAdd(&d_angmom_accum[central_idx].x, angmom_change.x);
+    // atomicAdd(&d_angmom_accum[central_idx].y, angmom_change.y);
+    // atomicAdd(&d_angmom_accum[central_idx].z, angmom_change.z);
     }
 
 __global__ void get_net_velocity_rigid_body(const Scalar3* d_linmom_accum,

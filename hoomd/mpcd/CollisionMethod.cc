@@ -45,6 +45,16 @@ mpcd::CollisionMethod::CollisionMethod(std::shared_ptr<SystemDefinition> sysdef,
         m_store_tuner.reset(new Autotuner<1>({AutotunerBase::makeBlockSizeRange(m_exec_conf)},
                                              m_exec_conf,
                                              "mpcd_rigid_store"));
+        m_drawrandvec_tuner.reset(new Autotuner<1>({AutotunerBase::makeBlockSizeRange(m_exec_conf)},
+                                                   m_exec_conf,
+                                                   "mpcd_rigid_rand"));
+        m_netvelo_tuner.reset(new Autotuner<1>({AutotunerBase::makeBlockSizeRange(m_exec_conf)},
+                                               m_exec_conf,
+                                               "mpcd_rigid_netvelo"));
+        m_applyrandvec_tuner.reset(
+            new Autotuner<1>({AutotunerBase::makeBlockSizeRange(m_exec_conf)},
+                             m_exec_conf,
+                             "mpcd_rigid_applyrand"));
         m_accumulate_tuner.reset(new Autotuner<1>({AutotunerBase::makeBlockSizeRange(m_exec_conf)},
                                                   m_exec_conf,
                                                   "mpcd_rigid_accum"));
@@ -52,7 +62,12 @@ mpcd::CollisionMethod::CollisionMethod(std::shared_ptr<SystemDefinition> sysdef,
                                                 m_exec_conf,
                                                 "mpcd_rigid_transfer"));
         m_autotuners.insert(m_autotuners.end(),
-                            {m_store_tuner, m_accumulate_tuner, m_transfer_tuner});
+                            {m_store_tuner,
+                             m_drawrandvec_tuner,
+                             m_netvelo_tuner,
+                             m_applyrandvec_tuner,
+                             m_accumulate_tuner,
+                             m_transfer_tuner});
         }
 #endif // ENABLE_HIP
     }
