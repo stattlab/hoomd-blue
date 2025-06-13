@@ -498,25 +498,24 @@ cudaError_t apply_thermalized_velocity_vectors(const Scalar3* d_angmom_accum,
                                                const unsigned int num_total,
                                                const unsigned int block_size)
     {
-    // unsigned int max_block_size;
-    // cudaFuncAttributes attr;
-    // cudaFuncGetAttributes(&attr,
-    //                       (const void*)mpcd::gpu::kernel::apply_thermalized_velocity_vectors);
-    // max_block_size = attr.maxThreadsPerBlock;
+    unsigned int max_block_size;
+    cudaFuncAttributes attr;
+    cudaFuncGetAttributes(&attr,
+                          (const void*)mpcd::gpu::kernel::apply_thermalized_velocity_vectors);
+    max_block_size = attr.maxThreadsPerBlock;
 
-    // unsigned int run_block_size = min(block_size, max_block_size);
+    unsigned int run_block_size = min(block_size, max_block_size);
 
-    // dim3 grid(num_total / run_block_size + 1);
-    // mpcd::gpu::kernel::apply_thermalized_velocity_vectors<<<grid,
-    // run_block_size>>>(d_angmom_accum,
-    //                                                                                 d_alt_vel,
-    //                                                                                 d_postype,
-    //                                                                                 d_velocity,
-    //                                                                                 d_image,
-    //                                                                                 d_body,
-    //                                                                                 d_rtag,
-    //                                                                                 global_box,
-    //                                                                                 num_total);
+    dim3 grid(num_total / run_block_size + 1);
+    mpcd::gpu::kernel::apply_thermalized_velocity_vectors<<<grid, run_block_size>>>(d_angmom_accum,
+                                                                                    d_alt_vel,
+                                                                                    d_postype,
+                                                                                    d_velocity,
+                                                                                    d_image,
+                                                                                    d_body,
+                                                                                    d_rtag,
+                                                                                    global_box,
+                                                                                    num_total);
     return cudaSuccess;
     }
 
