@@ -658,7 +658,7 @@ void mpcd::CollisionMethod::drawVelocitiesConstituentParticlesGPU(uint64_t times
                                         access_mode::readwrite);
     ArrayHandle<Scalar4> d_alt_vel(m_pdata->getAltVelocities(),
                                    access_location::device,
-                                   access_mode::readwrite);
+                                   access_mode::overwrite);
     ArrayHandle<Scalar4> d_postype(m_pdata->getPositions(),
                                    access_location::device,
                                    access_mode::read);
@@ -697,9 +697,7 @@ void mpcd::CollisionMethod::drawVelocitiesConstituentParticlesGPU(uint64_t times
 
 void mpcd::CollisionMethod::getNetVelocityRigidBodyGPU(uint64_t timestep)
     {
-    ArrayHandle<Scalar3> d_linmom_accum(m_linmom_accum,
-                                        access_location::device,
-                                        access_mode::readwrite);
+    ArrayHandle<Scalar3> d_linmom_accum(m_linmom_accum, access_location::device, access_mode::read);
     ArrayHandle<Scalar3> d_angmom_accum(m_angmom_accum,
                                         access_location::device,
                                         access_mode::readwrite);
@@ -708,7 +706,7 @@ void mpcd::CollisionMethod::getNetVelocityRigidBodyGPU(uint64_t timestep)
                                    access_mode::readwrite);
     ArrayHandle<Scalar4> d_velocity(m_pdata->getVelocities(),
                                     access_location::device,
-                                    access_mode::readwrite);
+                                    access_mode::read);
     ArrayHandle<Scalar4> d_orientation(m_pdata->getOrientationArray(),
                                        access_location::device,
                                        access_mode::read);
@@ -740,15 +738,10 @@ void mpcd::CollisionMethod::getNetVelocityRigidBodyGPU(uint64_t timestep)
 
 void mpcd::CollisionMethod::applyThermalizedVelocityVectorsGPU(uint64_t timestep)
     {
-    ArrayHandle<Scalar3> d_linmom_accum(m_linmom_accum,
-                                        access_location::device,
-                                        access_mode::readwrite);
-    ArrayHandle<Scalar3> d_angmom_accum(m_angmom_accum,
-                                        access_location::device,
-                                        access_mode::readwrite);
+    ArrayHandle<Scalar3> d_angmom_accum(m_angmom_accum, access_location::device, access_mode::read);
     ArrayHandle<Scalar4> d_alt_vel(m_pdata->getAltVelocities(),
                                    access_location::device,
-                                   access_mode::readwrite);
+                                   access_mode::read);
 
     ArrayHandle<Scalar4> d_postype(m_pdata->getPositions(),
                                    access_location::device,
@@ -767,8 +760,7 @@ void mpcd::CollisionMethod::applyThermalizedVelocityVectorsGPU(uint64_t timestep
                                      access_mode::read);
 
     m_applyrandvec_tuner->begin();
-    mpcd::gpu::apply_thermalized_velocity_vectors(d_linmom_accum.data,
-                                                  d_angmom_accum.data,
+    mpcd::gpu::apply_thermalized_velocity_vectors(d_angmom_accum.data,
                                                   d_alt_vel.data,
                                                   d_postype.data,
                                                   d_velocity.data,

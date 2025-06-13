@@ -39,7 +39,7 @@ cudaError_t draw_velocities_constituent_particles(Scalar3* d_linmom_accum,
                                                   const unsigned int num_total,
                                                   const unsigned int block_size);
 
-cudaError_t get_net_velocity_rigid_body(Scalar3* d_linmom_accum,
+cudaError_t get_net_velocity_rigid_body(const Scalar3* d_linmom_accum,
                                         Scalar3* d_angmom_accum,
                                         Scalar4* d_alt_vel,
                                         const Scalar4* d_velocity,
@@ -50,8 +50,7 @@ cudaError_t get_net_velocity_rigid_body(Scalar3* d_linmom_accum,
                                         const unsigned int num_total,
                                         const unsigned int block_size);
 
-cudaError_t apply_thermalized_velocity_vectors(Scalar3* d_linmom_accum,
-                                               Scalar3* d_angmom_accum,
+cudaError_t apply_thermalized_velocity_vectors(const Scalar3* d_angmom_accum,
                                                Scalar4* d_alt_vel,
                                                const Scalar4* d_postype,
                                                const Scalar4* d_velocity,
