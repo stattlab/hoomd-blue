@@ -161,15 +161,9 @@ def test_create_bodies(
     optional_kwargs = {}
     if include_charge:
         optional_kwargs["charges"] = {"A": [1.0, 2.0, 3.0, 4.0]}
-    masses = [5.0, 6.0, 7.0, 8.0]
-    if include_charge and include_mass:
-        rigid.create_bodies(sim.state, charges={"A": charges}, masses={"A": masses})
-    elif include_charge:
-        rigid.create_bodies(sim.state, charges={"A": charges})
-    elif include_mass:
-        rigid.create_bodies(sim.state, masses={"A": masses})
-    else:
-        rigid.create_bodies(sim.state)
+    if include_mass:
+        optional_kwargs["masses"] = {"A": [5.0, 6.0, 7.0, 8.0]}
+    rigid.create_bodies(sim.state, **optional_kwargs)
     snapshot = sim.state.get_snapshot()
     if snapshot.communicator.rank == 0:
         check_bodies(
