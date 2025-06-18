@@ -169,8 +169,8 @@ def test_create_bodies(
         check_bodies(
             snapshot,
             valid_body_definition,
-            charges if include_charge else None,
-            masses if include_mass else None,
+            optional_kwargs["charges"]["A"] if include_charge else None,
+            optional_kwargs["masses"]["A"] if include_mass else None,
         )
 
     sim.operations.integrator = hoomd.md.Integrator(dt=0.005, rigid=rigid)
