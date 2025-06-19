@@ -50,15 +50,13 @@ void MeshDynamicBondUpdater::update(uint64_t timestep)
     {
     uint16_t seed = m_sysdef->getSeed();
 
-    std::cout << "Update " << timestep << std::endl;
-
     std::vector<std::shared_ptr<ForceCompute>> forces = m_integrator->getForces();
 
     //for (auto& force : m_forces)
     for (auto& force : forces)
         {
         force->precomputeParameter();
-        force->writeParameter();
+        //force->writeParameter();
         }
 
     {
@@ -108,26 +106,6 @@ void MeshDynamicBondUpdater::update(uint64_t timestep)
 
     std::vector<uint2> changed;
 
-    std::cout << "Pre bonds" << std::endl;
-    for (unsigned int i = 0; i < size; i++)
-    	{
-	std::cout << i << ": ";
-	for(unsigned int ii = 0; ii < 4; ii++)
-		std::cout <<  h_bonds.data[i].tag[ii] << " ";
-	std::cout << " | ";
-	std::cout <<  h_neigh_bonds.data[i].x << " " << h_neigh_bonds.data[i].y << std::endl;
-	}
-
-    std::cout << "Pre tris" << std::endl;
-    for (unsigned int i = 0; i < m_mesh->getMeshTriangleData()->getN(); i++)
-    	{
-	std::cout << i << " ";
-	for(unsigned int ii = 0; ii < 3; ii++)
-		std::cout <<  h_triangles.data[i].tag[ii] << " ";
-	std::cout << " | ";
-	std::cout <<  h_neigh_triags.data[i].x << " " <<  h_neigh_triags.data[i].y << " " <<  h_neigh_triags.data[i].z  << std::endl;
-	}
-
     for (unsigned int i = 0; i < size; i++)
         {
         typename MeshBond::members_t& bond = h_bonds.data[i];
@@ -144,8 +122,6 @@ void MeshDynamicBondUpdater::update(uint64_t timestep)
 
         unsigned int tag_c = bond.tag[2];
         unsigned int tag_d = bond.tag[3];
-
-	std::cout << "Tags " << tag_a << " " << tag_b << " " << tag_c << " " << tag_d << std::endl;
 
         if (tag_c == tag_d)
             continue;
@@ -193,8 +169,6 @@ void MeshDynamicBondUpdater::update(uint64_t timestep)
 		break;
 		}
 	    }
-
-	std::cout << "TrIdx " << tr_idx1 << " " << tr_idx2 << std::endl;
 
         typename Angle::members_t& triangle1 = h_triangles.data[tr_idx1];
 	
@@ -246,8 +220,6 @@ void MeshDynamicBondUpdater::update(uint64_t timestep)
 	Scalar rand_number = uniform(rng);
 	Scalar part_func = exp(-m_inv_T * energyDifference);
 
-	//std::cout << "Energy Difference " << energyDifference << " " << part_func << " " << std::endl;
-
 	std::vector<unsigned int> tr_idx(6);
 	std::vector<unsigned int> b_idx(4);
 	std::vector<unsigned int> v_idx(8);
@@ -269,11 +241,6 @@ void MeshDynamicBondUpdater::update(uint64_t timestep)
 	   	v_idx[2]=tag_c;
 	   	v_idx[3]=tag_d;
 		}
-
-	   uint2 bb;
-	   bb.x = v_idx[2];
-	   bb.y = v_idx[3];
-	   changed.push_back(bb);
 
 	   unsigned int counter = 4;
 
@@ -319,6 +286,11 @@ void MeshDynamicBondUpdater::update(uint64_t timestep)
 			}
 		}
 
+	   uint2 bb;
+	   bb.x = v_idx[2];
+	   bb.y = v_idx[3];
+	   changed.push_back(bb);
+
 	   if (have_to_check_surrounding)
 		   {
 		   //for (auto& force : m_forces)
@@ -331,49 +303,6 @@ void MeshDynamicBondUpdater::update(uint64_t timestep)
 
         if (part_func > rand_number)
             {
-	    std::cout << part_func << " " << rand_number << " ";
-
-	    for(int ii = 0; ii< 8; ii++)
-		    std::cout << v_idx[ii] << " ";
-	   std::cout << std::endl;
-
-	    for(int ii = 0; ii< 6; ii++)
-		    std::cout << tr_idx[ii] << " ";
-	   std::cout << std::endl;
-
-	    for(int ii = 0; ii< 4; ii++)
-		    std::cout << b_idx[ii] << " ";
-	   std::cout << std::endl;
-
-	    std::cout << "Fliped bond before " << i << ": ";
-	    for( int ii=0; ii<4; ii++)
-		    std::cout <<  h_bonds.data[i].tag[ii] << " ";
-	    std::cout << std::endl;
-
-
-	    for ( int jj=0; jj<4; jj++)
-	    {
-	    std::cout << "Neigboring bond before " << b_idx[jj] << ": ";
-	    for( int ii=0; ii<4; ii++)
-		    std::cout <<  h_bonds.data[b_idx[jj]].tag[ii] << " ";
-	    std::cout << std::endl;
-	    }
-
-	    for ( int jj=0; jj<4; jj++)
-	    	std::cout << "Neigboring list bond before " << b_idx[jj] << ": " <<  h_neigh_bonds.data[b_idx[jj]].x << " " << h_neigh_bonds.data[b_idx[jj]].y << std::endl;
-
-	    for ( int jj=0; jj<2; jj++)
-	    {
-	    std::cout << "Neigboring triags " << tr_idx[jj] << ": ";
-	    for( int ii=0; ii<3; ii++)
-		    std::cout <<  h_triangles.data[tr_idx[jj]].tag[ii] << " ";
-	    std::cout << std::endl;
-	    }
-
-	    for ( int jj=0; jj<2; jj++)
-	    	std::cout << "Neigboring list triags before " << tr_idx[jj] << ": " << h_neigh_triags.data[tr_idx[jj]].x << " " <<  h_neigh_triags.data[tr_idx[jj]].y << " " << h_neigh_triags.data[tr_idx[jj]].z << std::endl;
-	   std::cout << std::endl;
-
 	    //Flip bond
 	    if(v_idx[2] > v_idx[3])
 		{
@@ -431,34 +360,6 @@ void MeshDynamicBondUpdater::update(uint64_t timestep)
 	    h_neigh_triags.data[tr_idx[1]].y = b_idx[1];
 	    h_neigh_triags.data[tr_idx[1]].z = b_idx[3];
 
-	    std::cout << "Fliped bond " << i << ": ";
-	    for( int ii=0; ii<4; ii++)
-		    std::cout <<  h_bonds.data[i].tag[ii] << " ";
-	    std::cout << std::endl;
-
-
-	    for ( int jj=0; jj<4; jj++)
-	    {
-	    std::cout << "Neigboring bond " << b_idx[jj] << ": ";
-	    for( int ii=0; ii<4; ii++)
-		    std::cout <<  h_bonds.data[b_idx[jj]].tag[ii] << " ";
-	    std::cout << std::endl;
-	    }
-
-	    for ( int jj=0; jj<4; jj++)
-	    	std::cout << "Neigboring list bond " << b_idx[jj] << ": " <<  h_neigh_bonds.data[b_idx[jj]].x << " " << h_neigh_bonds.data[b_idx[jj]].y << std::endl;
-
-	    for ( int jj=0; jj<2; jj++)
-	    {
-	    std::cout << "Neigboring triags " << tr_idx[jj] << ": ";
-	    for( int ii=0; ii<3; ii++)
-		    std::cout <<  h_triangles.data[tr_idx[jj]].tag[ii] << " ";
-	    std::cout << std::endl;
-	    }
-
-	    for ( int jj=0; jj<2; jj++)
-	    	std::cout << "Neigboring list triags " << tr_idx[jj] << ": " << h_neigh_triags.data[tr_idx[jj]].x << " " <<  h_neigh_triags.data[tr_idx[jj]].y << " " << h_neigh_triags.data[tr_idx[jj]].z << std::endl;
-
             //for (auto& force : m_forces)
             for (auto& force : forces)
                 {
@@ -467,34 +368,14 @@ void MeshDynamicBondUpdater::update(uint64_t timestep)
             m_mesh->getMeshBondData()->groupReorder();
             m_mesh->getMeshTriangleData()->groupReorder();
             }
-
-    std::cout << "Post bonds" << std::endl;
-    for (unsigned int ii = 0; ii < size; ii++)
-    	{
-	std::cout << ii << ": ";
-	for(unsigned int iii = 0; iii < 4; iii++)
-		std::cout <<  h_bonds.data[ii].tag[iii] << " ";
-	std::cout << " | ";
-	std::cout <<  h_neigh_bonds.data[ii].x << " " << h_neigh_bonds.data[ii].y << std::endl;
-	}
-
-    std::cout << "Post tris" << std::endl;
-    for (unsigned int ii = 0; ii < m_mesh->getMeshTriangleData()->getN(); ii++)
-    	{
-	std::cout << ii << " ";
-	for(unsigned int iii = 0; iii < 3; iii++)
-		std::cout <<  h_triangles.data[ii].tag[iii] << " ";
-	std::cout << " | ";
-	std::cout <<  h_neigh_triags.data[ii].x << " " <<  h_neigh_triags.data[ii].y << " " <<  h_neigh_triags.data[ii].z  << std::endl;
-	}
         }
 
     }
     for (auto& force : forces)
         {
-        force->writeParameter();
+        //force->writeParameter();
         force->precomputeParameter();
-        force->writeParameter();
+        //force->writeParameter();
         }
     }
 

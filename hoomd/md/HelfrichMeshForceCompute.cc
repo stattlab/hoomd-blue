@@ -93,8 +93,6 @@ void HelfrichMeshForceCompute::computeForces(uint64_t timestep)
     {
     precomputeParameter();
 
-    //std::cout << " Calc force " << timestep << std::endl;
-
     assert(m_pdata);
     // access the particle data arrays
     ArrayHandle<Scalar4> h_pos(m_pdata->getPositions(), access_location::host, access_mode::read);
@@ -345,7 +343,6 @@ void HelfrichMeshForceCompute::computeForces(uint64_t timestep)
         unsigned int meshbond_type = m_mesh_data->getMeshBondData()->getTypeByIndex(i);
 
         Fa *= h_params.data[meshbond_type];
-
         if (compute_virial)
             {
             helfrich_virial[0] = Scalar(1. / 2.) * dab.x * Fa.x; // xx
@@ -491,9 +488,6 @@ void HelfrichMeshForceCompute::precomputeParameter()
             c_addb = -1.0;
 
 
-	//std::cout << "Precompute " <<  btag_a << " " << btag_b << " " << btag_c << " " << btag_d <<  ":  " << dac.x << " " << dac.y << " " << dac.z << " " << dbc.x << " " << dbc.y << " " << dbc.z << std::endl;
-
-        /*
 	vec3<Scalar> nbac
             = cross(vec3<Scalar>(nab.x, nab.y, nab.z), vec3<Scalar>(nac.x, nac.y, nac.z));
 
@@ -512,7 +506,6 @@ void HelfrichMeshForceCompute::precomputeParameter()
                 << std::endl;
             throw std::runtime_error("Error in bending energy calculation");
             }
-	   */
 
         Scalar inv_s_accb = sqrt(1.0 - c_accb * c_accb);
         if (inv_s_accb < SMALL)
@@ -691,10 +684,6 @@ Scalar HelfrichMeshForceCompute::energyDiff(unsigned int idx_a,
         inv_s_baad = SMALL;
     inv_s_baad = 1.0 / inv_s_baad;
 
-
-
-
-
     Scalar c_caad = nac.x * nad.x + nac.y * nad.y + nac.z * nad.z;
     if (c_caad > 1.0)
         c_caad = 1.0;
@@ -851,21 +840,48 @@ void HelfrichMeshForceCompute::postcomputeParameter(unsigned int idx_a,
 void HelfrichMeshForceCompute::writeParameter()
     {
 
-    ArrayHandle<unsigned int> h_rtag(m_pdata->getRTags(), access_location::host, access_mode::read);
+    /*ArrayHandle<unsigned int> h_rtag(m_pdata->getRTags(), access_location::host, access_mode::read);
+
+    ArrayHandle<Scalar> h_params(m_params, access_location::host, access_mode::read);
+
+    ArrayHandle<typename MeshBond::members_t> h_bonds(
+        m_mesh_data->getMeshBondData()->getMembersArray(),
+        access_location::host,
+        access_mode::read);
 
     ArrayHandle<Scalar> h_sigma(m_sigma, access_location::host, access_mode::read);
     ArrayHandle<Scalar3> h_sigma_dash(m_sigma_dash, access_location::host, access_mode::read);
 
-    const unsigned int size = m_pdata->getN();
+    assert(h_bonds.data);
+    assert(h_sigma.data);
+    assert(h_sigma_dash.data);
+
+    const unsigned int size = (unsigned int)m_mesh_data->getMeshBondData()->getN();
     for (unsigned int i = 0; i < size; i++)
         {
-        unsigned int idx = h_rtag.data[i];
-        Scalar3 sigma_dash = h_sigma_dash.data[idx]; // precomputed
-        Scalar sigma = h_sigma.data[idx]; // precomputed
-					  //
-	std::cout << "Sigmas " << i << ": " << sigma << " " << sigma_dash.x << " " << sigma_dash.y << " " << sigma_dash.z << std::endl;
-	}
-    std::cout << std::endl;
+        const typename MeshBond::members_t& bond = h_bonds.data[i];
+        unsigned int meshbond_type = m_mesh_data->getMeshBondData()->getTypeByIndex(i);
+
+        unsigned int btag_a = bond.tag[0];
+        assert(btag_a < m_pdata->getMaximumTag() + 1);
+        unsigned int btag_b = bond.tag[1];
+        assert(btag_b < m_pdata->getMaximumTag() + 1);
+
+        unsigned int idx_a = h_rtag.data[btag_a];
+        unsigned int idx_b = h_rtag.data[btag_b];
+
+        assert(idx_a < m_pdata->getN() + m_pdata->getNGhosts());
+        assert(idx_b < m_pdata->getN() + m_pdata->getNGhosts());
+
+        Scalar3 sigma_dash_a = h_sigma_dash.data[idx_a]; // precomputed
+        Scalar3 sigma_dash_b = h_sigma_dash.data[idx_b]; // precomputed
+
+        Scalar sigma_a = h_sigma.data[idx_a]; // precomputed
+        Scalar sigma_b = h_sigma.data[idx_b]; // precomputed
+
+	Scalar energy_a = h_params.data[meshbond_type] * 0.5* dot(sigma_dash_a, sigma_dash_a) / sigma_a;
+	Scalar energy_b = h_params.data[meshbond_type] * 0.5* dot(sigma_dash_b, sigma_dash_b) / sigma_b;
+	}*/
     }
 
 namespace detail

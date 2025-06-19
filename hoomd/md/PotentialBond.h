@@ -66,6 +66,8 @@ template<class evaluator, class Bonds> class PotentialBond : public ForceCompute
 
     //! Actually compute the forces
     virtual void computeForces(uint64_t timestep);
+    
+    virtual void writeParameter();
 
     virtual Scalar energyDiff(unsigned int idx_a,
                               unsigned int idx_b,
@@ -363,6 +365,91 @@ Scalar PotentialBond<evaluator, Bonds>::energyDiff(unsigned int idx_a,
         return (bond_eng2 - bond_eng1);
     else
         return DBL_MAX;
+    }
+
+template<class evaluator, class Bonds>
+void PotentialBond<evaluator, Bonds>::writeParameter()
+    {
+    /*ArrayHandle<Scalar4> h_pos(m_pdata->getPositions(), access_location::host, access_mode::read);
+    ArrayHandle<unsigned int> h_rtag(m_pdata->getRTags(), access_location::host, access_mode::read);
+    ArrayHandle<Scalar> h_charge(m_pdata->getCharges(), access_location::host, access_mode::read);
+
+    // access the parameters
+    ArrayHandle<param_type> h_params(m_params, access_location::host, access_mode::read);
+
+    // there are enough other checks on the input data: but it doesn't hurt to be safe
+    assert(h_pos.data);
+    assert(h_charge.data);
+
+    const BoxDim box = m_pdata->getGlobalBox();
+
+    PDataFlags flags = this->m_pdata->getFlags();
+
+    ArrayHandle<typename Bonds::members_t> h_bonds(m_bond_data->getMembersArray(),
+                                                   access_location::host,
+                                                   access_mode::read);
+    ArrayHandle<typeval_t> h_typeval(m_bond_data->getTypeValArray(),
+                                     access_location::host,
+                                     access_mode::read);
+
+    unsigned int max_local = m_pdata->getN() + m_pdata->getNGhosts();
+
+    // for each of the bonds
+    const unsigned int size = (unsigned int)m_bond_data->getN();
+
+    for (unsigned int i = 0; i < size; i++)
+        {
+        // lookup the tag of each of the particles participating in the bond
+        const typename Bonds::members_t& bond = h_bonds.data[i];
+        assert(bond.tag[0] < m_pdata->getMaximumTag() + 1);
+        assert(bond.tag[1] < m_pdata->getMaximumTag() + 1);
+
+        // transform a and b into indices into the particle data arrays
+        // (MEM TRANSFER: 4 integers)
+        unsigned int idx_a = h_rtag.data[bond.tag[0]];
+        unsigned int idx_b = h_rtag.data[bond.tag[1]];
+
+        // throw an error if this bond is incomplete
+        if (idx_a >= max_local || idx_b >= max_local)
+            {
+            std::ostringstream stream;
+            stream << "Error: bond " << bond.tag[0] << " " << bond.tag[1] << " is incomplete.";
+            throw std::runtime_error(stream.str());
+            }
+
+        // calculate d\vec{r}
+        // (MEM TRANSFER: 6 Scalars / FLOPS: 3)
+        Scalar3 posa = make_scalar3(h_pos.data[idx_a].x, h_pos.data[idx_a].y, h_pos.data[idx_a].z);
+        Scalar3 posb = make_scalar3(h_pos.data[idx_b].x, h_pos.data[idx_b].y, h_pos.data[idx_b].z);
+
+        Scalar3 dx = posb - posa;
+
+        // access charge (if needed)
+        Scalar charge_a = Scalar(0.0);
+        Scalar charge_b = Scalar(0.0);
+        if (evaluator::needsCharge())
+            {
+            charge_a = h_charge.data[idx_a];
+            charge_b = h_charge.data[idx_b];
+            }
+
+        // if the vector crosses the box, pull it back
+        dx = box.minImage(dx);
+
+        // calculate r_ab squared
+        Scalar rsq = dot(dx, dx);
+
+        // compute the force and potential energy
+        Scalar force_divr = Scalar(0.0);
+        Scalar bond_eng = Scalar(0.0);
+        evaluator eval(rsq, h_params.data[h_typeval.data[i].type]);
+        if (evaluator::needsCharge())
+            eval.setCharge(charge_a, charge_b);
+
+        bool evaluated = eval.evalForceAndEnergy(force_divr, bond_eng);
+
+	std::cout << bond.tag[0] << " " << bond.tag[1] << "::  " << bond_eng << " " << fast::sqrt(rsq) << std::endl;
+	}*/
     }
 
 #ifdef ENABLE_MPI
