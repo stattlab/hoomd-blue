@@ -282,7 +282,14 @@ void mpcd::CollisionMethod::checkCollisionWarnings(uint64_t timestep)
                 // only do molecules whose type hasn't been checked before
                 unsigned int type = __scalar_as_int(h_postype.data[central_idx].w);
                 if (rigid_types.find(type) != rigid_types.end())
+                    {
                     continue;
+                    }
+                else
+                    {
+                    // Problem: this line of code causes a segmentation fault
+                    rigid_types.erase(rigid_types.find(type));
+                    }
 
                 // find center of mass position of particle
                 Scalar3 center_of_mass = make_scalar3(0.0, 0.0, 0.0);
@@ -305,17 +312,12 @@ void mpcd::CollisionMethod::checkCollisionWarnings(uint64_t timestep)
                     center_of_mass.y += local_pos.y * mass;
                     center_of_mass.z += local_pos.z * mass;
                     }
-                // PROBLEM: This area causes a segmentation fault
-                // running certain lines of code such as std::cout<<std::endl; cause segmentation
-                // faults
-
+                // PROBLEM: Writing anything to invalid_center_of_mass causes a segmentation fault
                 // check if center of mass in body frame is (0, 0, 0)
-                invalid_center_of_mass
-                    = (center_of_mass.x >= -1.0 * tol && center_of_mass.x <= tol)
-                      || (center_of_mass.y >= -1.0 * tol && center_of_mass.y <= tol)
-                      || (center_of_mass.z >= -1.0 * tol && center_of_mass.z <= tol);
-                // remove the checked rigid body type
-                rigid_types.erase(rigid_types.find(type));
+                bool in_tol = (center_of_mass.x >= -1.0 * tol && center_of_mass.x <= tol)
+                              || (center_of_mass.y >= -1.0 * tol && center_of_mass.y <= tol)
+                              || (center_of_mass.z >= -1.0 * tol && center_of_mass.z <= tol);
+                invalid_center_of_mass = invalid_center_of_mass || !in_tol;
                 }
             }
 
