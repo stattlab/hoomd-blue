@@ -118,18 +118,18 @@ void mpcd::CollisionMethod::collide(uint64_t timestep)
 #ifdef ENABLE_HIP
         if (m_exec_conf->isCUDAEnabled())
             {
+            storeInitialEmbeddedGroupVelocitiesGPU(timestep);
             // thermalize constituent particles to add energy to the rigid body
             drawVelocitiesConstituentParticlesGPU(timestep);
             getNetVelocityRigidBodyGPU(timestep);
             applyThermalizedVelocityVectorsGPU(timestep);
-            storeInitialEmbeddedGroupVelocitiesGPU(timestep);
             }
         else
 #endif
             {
+            storeInitialEmbeddedGroupVelocities(timestep);
             // thermalize constituent particles to add energy to the rigid body
             thermalizeConstituentParticles(timestep);
-            storeInitialEmbeddedGroupVelocities(timestep);
             }
         }
 
