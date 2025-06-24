@@ -257,11 +257,11 @@ class GSD(Writer):
         maximum_write_buffer_size (int): Size (in bytes) to buffer in memory
            before writing to the file. Defaults to 1 MiB.
 
-            .. rubric:: Example:
+           .. rubric:: Example:
 
-            .. code-block:: python
+           .. code-block:: python
 
-                gsd.maximum_write_buffer_size = 16 * 1024**2
+               gsd.maximum_write_buffer_size = 16 * 1024**2
 
         auto_flush_period (float): Time (in seconds) to wait between automatic
             calls to `flush()`. Defaults to 10 seconds.
@@ -275,6 +275,61 @@ class GSD(Writer):
 
     __doc__ = inspect.cleandoc(__doc__).replace(
         "{inherited}", inspect.cleandoc(Writer._doc_inherited)
+    )
+
+    _doc_inherited = (
+        Writer._doc_inherited
+        + """
+    ----------
+
+    **Members inherited from** `GSD <hoomd.write.GSD>`:
+
+    .. py:attribute:: filename
+
+        File name to write (*read-only*).
+        `Read more... <hoomd.write.GSD.filename>`
+
+    .. py:attribute:: filter
+
+        Select the particles to write (*read-only*).
+        `Read more... <hoomd.write.GSD.filter>`
+
+    .. py:attribute:: mode
+
+        The file open mode (*read-only*).
+        `Read more... <hoomd.write.GSD.mode>`
+
+    .. py:attribute:: dynamic
+
+        Field names and/or field categores to save in all frames.
+        `Read more... <hoomd.write.GSD.dynamic>`
+
+    .. py:attribute:: write_diameter
+
+        When `False`, do not write ``particles/diameter``. Set to `True` to write
+        non-default particle diameters.
+        `Read more... <hoomd.write.GSD.write_diameter>`
+
+    .. py:attribute:: maximum_write_buffer_size
+
+        Size (in bytes) to buffer in memory before writing to the file.
+        `Read more... <hoomd.write.GSD.maximum_write_buffer_size>`
+
+    .. py:attribute:: auto_flush_period
+
+        Time (in seconds) to wait between automatic calls to `flush()`.
+        `Read more... <hoomd.write.GSD.auto_flush_period>`
+
+    .. py:property:: logger
+
+        Provide log quantities to write.
+        `Read more... <hoomd.write.GSD.logger>`
+
+    .. py:method:: flush
+
+        Flush the write buffer to the file.
+        `Read more... <hoomd.write.GSD.flush>`
+    """
     )
 
     def __init__(
@@ -408,7 +463,9 @@ class GSD(Writer):
 
         .. rubric:: Example:
 
-            .. code-block:: python
+        .. code-block:: python
+
+            gsd.flush()
         """
         if not self._attached:
             raise RuntimeError(
