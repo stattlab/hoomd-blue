@@ -5,7 +5,6 @@
 
 #include "Analyzer.h"
 #include "ParticleGroup.h"
-#include "SharedSignal.h"
 
 #include "hoomd/extern/gsd.h"
 #include <memory>
