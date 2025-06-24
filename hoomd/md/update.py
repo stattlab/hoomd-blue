@@ -398,14 +398,18 @@ class MeshDynamicalBonding(Updater):
 
         self._forces._sync(self._simulation, self._cpp_obj.forces)
 
+        super()._attach_hook()
+
+    def _detach_hook(self):
+        self._forces._unsync()
+
     @property
     def forces(self):
         return self._forces
 
     @forces.setter
     def forces(self, value):
-        self._forces.clear()
-        self._forces.extend(value)
+        _set_synced_list(self._forces, value)
 
 __all__ = [
     "ActiveRotationalDiffusion",

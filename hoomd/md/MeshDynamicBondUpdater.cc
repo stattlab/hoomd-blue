@@ -11,6 +11,9 @@
 
 #include <iostream>
 
+#include <pybind11/stl_bind.h>
+PYBIND11_MAKE_OPAQUE(std::vector<std::shared_ptr<hoomd::ForceCompute>>);
+
 using namespace std;
 
 namespace hoomd
@@ -50,10 +53,7 @@ void MeshDynamicBondUpdater::update(uint64_t timestep)
     {
     uint16_t seed = m_sysdef->getSeed();
 
-    std::vector<std::shared_ptr<ForceCompute>> forces = m_integrator->getForces();
-
-    //for (auto& force : m_forces)
-    for (auto& force : forces)
+    for (auto& force : m_forces)
         {
         force->precomputeParameter();
         //force->writeParameter();
@@ -201,8 +201,7 @@ void MeshDynamicBondUpdater::update(uint64_t timestep)
 	    }
 
 	bool have_to_check_surrounding = false;
-        //for (auto& force : m_forces)
-        for (auto& force : forces)
+        for (auto& force : m_forces)
 	    {
             energyDifference += force->energyDiff(idx_a, idx_b, idx_cc, idx_dd, type_id);
 	    if(force->checkSurrounding())
@@ -293,8 +292,7 @@ void MeshDynamicBondUpdater::update(uint64_t timestep)
 
 	   if (have_to_check_surrounding)
 		   {
-		   //for (auto& force : m_forces)
-		   for (auto& force : forces)
+		   for (auto& force : m_forces)
 			energyDifference += force->energyDiffSurrounding(h_rtag.data[v_idx[0]],h_rtag.data[v_idx[1]],h_rtag.data[v_idx[2]],h_rtag.data[v_idx[3]],h_rtag.data[v_idx[4]],h_rtag.data[v_idx[5]],h_rtag.data[v_idx[6]],h_rtag.data[v_idx[7]], type_id);
 		   part_func = exp(-m_inv_T * energyDifference);
 		   }
@@ -360,8 +358,7 @@ void MeshDynamicBondUpdater::update(uint64_t timestep)
 	    h_neigh_triags.data[tr_idx[1]].y = b_idx[1];
 	    h_neigh_triags.data[tr_idx[1]].z = b_idx[3];
 
-            //for (auto& force : m_forces)
-            for (auto& force : forces)
+            for (auto& force : m_forces)
                 {
                 force->postcomputeParameter(idx_a, idx_b, idx_cc, idx_dd, type_id);
                 }
@@ -371,18 +368,19 @@ void MeshDynamicBondUpdater::update(uint64_t timestep)
         }
 
     }
-    for (auto& force : forces)
-        {
+    //for (auto& force : forces)
+    //    {
         //force->writeParameter();
-        force->precomputeParameter();
+    //    force->precomputeParameter();
         //force->writeParameter();
-        }
+    //    }
     }
 
 namespace detail
     {
 void export_MeshDynamicBondUpdater(pybind11::module& m)
     {
+    pybind11::bind_vector<std::vector<std::shared_ptr<ForceCompute>>>(m, "ForceComputeList");
     pybind11::class_<MeshDynamicBondUpdater, Updater, std::shared_ptr<MeshDynamicBondUpdater>>(
         m,
         "MeshDynamicBondUpdater")
