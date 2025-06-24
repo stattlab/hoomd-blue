@@ -262,6 +262,15 @@ class GSD(Writer):
             .. code-block:: python
 
                 gsd.maximum_write_buffer_size = 16 * 1024**2
+
+        auto_flush_period (float): Time (in seconds) to wait between automatic
+            calls to `flush()`. Defaults to 10 seconds.
+
+            .. rubric:: Example:
+
+            .. code-block:: python
+
+                gsd.auto_flush_period = 30
     """
 
     __doc__ = inspect.cleandoc(__doc__).replace(
@@ -314,6 +323,7 @@ class GSD(Writer):
                 dynamic=[dynamic_validation],
                 write_diameter=False,
                 maximum_write_buffer_size=1024 * 1024,
+                auto_flush_period=10,
                 _defaults=dict(filter=filter, dynamic=dynamic),
             )
         )
@@ -392,15 +402,13 @@ class GSD(Writer):
     def flush(self):
         """Flush the write buffer to the file.
 
-        Example::
+        See Also:
+            Users should rarely, if ever, need to call `flush()`. GSD automatically
+            calls `flush()` every `auto_flush_period` seconds.
 
-            gsd_writer.flush()
+        .. rubric:: Example:
 
-        Flush all write buffers::
-
-            for writer in simulation.operations.writers:
-                if hasattr(writer, "flush"):
-                    writer.flush()
+            .. code-block:: python
         """
         if not self._attached:
             raise RuntimeError(
