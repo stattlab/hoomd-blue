@@ -378,8 +378,9 @@ void GSDDumpWriter::analyze(uint64_t timestep)
     auto log_data = getLogData();
     write(m_local_frame, log_data);
 
-    if (m_exec_conf->getMPIConfig()->getWalltime() + m_auto_flush_period > m_last_flush_time)
+    if (m_exec_conf->getMPIConfig()->getWalltime() > m_last_flush_time + m_auto_flush_period)
         {
+        m_exec_conf->msg->notice(5) << "GSD: auto flush at step " << timestep << endl;
         flush();
         }
     }
