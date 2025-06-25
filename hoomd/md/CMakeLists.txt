@@ -559,7 +559,8 @@ set(_pair_evaluators Buckingham
                      ForceShiftedLJ
                      Table
                      ExpandedGaussian
-                     WangFrenkel)
+                     WangFrenkel
+                     Zetterling)
 
 
 foreach(_evaluator ${_pair_evaluators})
