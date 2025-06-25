@@ -37,6 +37,9 @@ MeshDynamicBondUpdater::MeshDynamicBondUpdater(std::shared_ptr<SystemDefinition>
 
     m_mesh->createMeshNeighborhood();
 
+    m_update_order.resize(m_mesh->getMeshBondData()->getN());
+
+
     m_exec_conf->msg->notice(5) << "Constructing MeshDynamicBondUpdater" << endl;
     }
 
@@ -104,10 +107,25 @@ void MeshDynamicBondUpdater::update(uint64_t timestep)
     // for each of the angles
     const unsigned int size = (unsigned int)m_mesh->getMeshBondData()->getN();
 
+    hoomd::RandomGenerator rng(
+         hoomd::Seed(hoomd::RNGIdentifier::MeshDynamicBondUpdateOrder, timestep, seed),
+         hoomd::Counter(m_exec_conf->getRank()));
+
+// maybe too slow
+    for (unsigned int i = 0; i < size; i++)
+             m_update_order[i] = i;
+
+    for (unsigned int i = size-1; i>0; i--)
+	{
+	unsigned int j = hoomd::UniformIntDistribution(i)(rng);
+        std::swap(m_update_order[i], m_update_order[j]);
+	}
+
     std::vector<uint2> changed;
 
-    for (unsigned int i = 0; i < size; i++)
+    for (unsigned int cur_bond = 0; cur_bond < size; cur_bond++)
         {
+	unsigned int i = m_update_order[cur_bond];
         typename MeshBond::members_t& bond = h_bonds.data[i];
         assert(bond.tag[0] < m_pdata->getMaximumTag() + 1);
         assert(bond.tag[1] < m_pdata->getMaximumTag() + 1);
@@ -296,7 +314,6 @@ void MeshDynamicBondUpdater::update(uint64_t timestep)
 			energyDifference += force->energyDiffSurrounding(h_rtag.data[v_idx[0]],h_rtag.data[v_idx[1]],h_rtag.data[v_idx[2]],h_rtag.data[v_idx[3]],h_rtag.data[v_idx[4]],h_rtag.data[v_idx[5]],h_rtag.data[v_idx[6]],h_rtag.data[v_idx[7]], type_id);
 		   part_func = exp(-m_inv_T * energyDifference);
 		   }
-
 	   }
 
         if (part_func > rand_number)
