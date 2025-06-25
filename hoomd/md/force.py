@@ -136,7 +136,7 @@ class Force(Compute):
 
     def __init__(self):
         self._in_context_manager = False
-        self._two_attach = False
+        super().__init__()
 
     @log(requires_run=True)
     def energy(self):

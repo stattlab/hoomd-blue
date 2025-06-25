@@ -230,6 +230,8 @@ class NeighborList(Compute):
 
         self._in_context_manager = False
 
+        super().__init__()
+
     def _attach_hook(self):
         if self._mesh is not None:
             self._cpp_obj.addMesh(self._mesh._cpp_obj)

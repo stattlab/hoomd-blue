@@ -546,6 +546,8 @@ class Operation(AutotunedObject):
 
     __doc__ += AutotunedObject._doc_inherited
 
+    def __init__(self):
+        self._two_attach = False
 
 class TriggeredOperation(Operation):
     """Operations that execute on timesteps determined by a trigger.
@@ -591,6 +593,7 @@ class TriggeredOperation(Operation):
         trigger_param = ParameterDict(trigger=hoomd.trigger.Trigger)
         self._param_dict.update(trigger_param)
         self.trigger = trigger
+        super().__init__()
 
 
 class Updater(TriggeredOperation):

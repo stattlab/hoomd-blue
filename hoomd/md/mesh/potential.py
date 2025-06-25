@@ -47,6 +47,7 @@ class MeshPotential(Force):
     )
 
     def __init__(self, mesh):
+        super().__init__()
         self._mesh = validate_mesh(mesh)
         self._two_attach = True
 
