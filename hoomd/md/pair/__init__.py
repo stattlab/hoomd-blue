@@ -172,7 +172,6 @@ __all__ = [
     "OPP",
     "TWF",
     "ZBL",
-    "Zetterling",
     "Buckingham",
     "DPDConservative",
     "Ewald",
@@ -191,5 +190,6 @@ __all__ = [
     "Table",
     "WangFrenkel",
     "Yukawa",
+    "Zetterling",
     "aniso",
 ]
