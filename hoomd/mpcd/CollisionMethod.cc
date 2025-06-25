@@ -372,9 +372,7 @@ void mpcd::CollisionMethod::checkCollisionWarnings(uint64_t timestep)
             }
         if (needs_thermostat && has_no_thermostat)
             {
-            m_exec_conf->msg->error() << "Thermostat required when colliding with rigid "
-                                         "bodies."
-                                      << std::endl;
+            throw std::runtime_error("Thermostat required when colliding with rigid bodies.");
             }
         if (central_interacting)
             {
@@ -384,14 +382,13 @@ void mpcd::CollisionMethod::checkCollisionWarnings(uint64_t timestep)
             }
         if (invalid_center_of_mass)
             {
-            m_exec_conf->msg->error()
-                << "Some rigid bodies do not have center of mass at central particle." << std::endl;
+            throw std::runtime_error(
+                "Some rigid bodies do not have center of mass at central particle.");
             }
         if (invalid_mass_sum)
             {
-            m_exec_conf->msg->error()
-                << "Some rigid bodies have mass != sum of constituent particle masses."
-                << std::endl;
+            throw std::runtime_error(
+                "Mass of some rigid bodies not equal to sum of constituent particle masses.");
             }
         }
     m_checked_collision_warnings = true;
