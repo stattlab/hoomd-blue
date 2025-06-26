@@ -226,17 +226,17 @@ class NeighborList(Compute):
             buffer=float(buffer),
             rebuild_check_delay=int(rebuild_check_delay),
             check_dist=bool(check_dist),
+            mesh=validate_mesh
         )
         params["exclusions"] = exclusions
+        params["mesh"] = mesh
         self._param_dict.update(params)
-
-        self._mesh = validate_mesh(mesh)
 
         self._in_context_manager = False
 
     def _attach_hook(self):
-        if self._mesh is not None:
-            if self._mesh._attached and self._simulation != self._mesh._simulation:
+        if self.mesh is not None:
+            if self.mesh._attached and self._simulation != self.mesh._simulation:
                 warnings.warn(
                     f"{self} object is creating a new equivalent mesh structure."
                     f" This is happending since the neighbor list is moving to" 
@@ -244,12 +244,12 @@ class NeighborList(Compute):
                     f" a new mesh.",
                     RuntimeWarning,
                 )
-            self._mesh._attach(self._simulation)
-            self._cpp_obj.addMesh(self._mesh._cpp_obj)
+            self.mesh._attach(self._simulation)
+            self._cpp_obj.addMesh(self.mesh._cpp_obj)
 
     def _detach_hook(self):
-        if self._mesh is not None:
-            self._mesh._detach_hook()
+        if self.mesh is not None:
+            self.mesh._detach_hook()
 
     @property
     def cpu_local_nlist_arrays(self):
@@ -391,18 +391,6 @@ class NeighborList(Compute):
         if not self._attached:
             raise hoomd.error.DataAccessError("local_pair_list")
         return self._cpp_obj.getLocalPairList(self._simulation.timestep)
-
-    @property
-    def mesh(self):
-        """Mesh data structure used to compute the meshbond exclusions."""
-        return self._mesh
-
-    @mesh.setter
-    def mesh(self, value):
-        if self._attached:
-            raise RuntimeError("mesh cannot be set after calling Simulation.run().")
-        mesh = OnlyTypes(Mesh, allow_none=True)(value)
-        self._mesh = mesh
 
     @property
     def pair_list(self):

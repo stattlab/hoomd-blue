@@ -146,7 +146,7 @@ def test_mesh_simulation(nlist_params, simulation_factory, lattice_snapshot_fact
     sim.run(0)
 
     mesh1 = hoomd.mesh.Mesh()
-    with pytest.raises(RuntimeError):
+    with pytest.raises(hoomd.error.MutabilityError):
         nlist.mesh = mesh1
     assert nlist.mesh == mesh
 
