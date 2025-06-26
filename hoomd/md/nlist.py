@@ -391,6 +391,18 @@ class NeighborList(Compute):
         return self._cpp_obj.getLocalPairList(self._simulation.timestep)
 
     @property
+    def mesh(self):
+        """Mesh data structure used to compute the meshbond exclusions."""
+        return self._mesh
+
+    @mesh.setter
+    def mesh(self, value):
+        if self._attached:
+            raise RuntimeError("mesh cannot be set after calling Simulation.run().")
+        mesh = OnlyTypes(Mesh, allow_none=True)(value)
+        self._mesh = mesh
+
+    @property
     def pair_list(self):
         """(*N_pairs*, 2) `numpy.ndarray` of `numpy.uint32`: Global pair list.
 
