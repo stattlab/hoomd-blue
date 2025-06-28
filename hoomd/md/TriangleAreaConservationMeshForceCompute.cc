@@ -364,34 +364,36 @@ Scalar TriangleAreaConservationMeshForceCompute::energyDiff(unsigned int idx_a,
     Scalar3 nbc = dbc / rbc;
     Scalar3 nbd = dbd / rbd;
 
-    Scalar c_accb = nac.x * nbc.x + nac.y * nbc.y + nac.z * nbc.z;
-    if (c_accb > 1.0)
-        c_accb = 1.0;
-    if (c_accb < -1.0)
-        c_accb = -1.0;
-
-    Scalar c_addb = nad.x * nbd.x + nad.y * nbd.y + nad.z * nbd.z;
-    if (c_addb > 1.0)
-        c_addb = 1.0;
-    if (c_addb < -1.0)
-        c_addb = -1.0;
-
     Scalar c_caad = nac.x * nad.x + nac.y * nad.y + nac.z * nad.z;
     if (c_caad > 1.0)
         c_caad = 1.0;
     if (c_caad < -1.0)
         c_caad = -1.0;
+    Scalar s_caad = sqrt(1.0 - c_caad * c_caad);
 
     Scalar c_cbbd = nbc.x * nbd.x + nbc.y * nbd.y + nbc.z * nbd.z;
     if (c_cbbd > 1.0)
         c_cbbd = 1.0;
     if (c_cbbd < -1.0)
         c_cbbd = -1.0;
-
-    Scalar s_accb = sqrt(1.0 - c_accb * c_accb);
-    Scalar s_addb = sqrt(1.0 - c_addb * c_addb);
-    Scalar s_caad = sqrt(1.0 - c_caad * c_caad);
     Scalar s_cbbd = sqrt(1.0 - c_cbbd * c_cbbd);
+
+    if( s_caad == 0 || s_cbbd == 0)
+	    return DBL_MAX;
+
+    Scalar c_accb = nac.x * nbc.x + nac.y * nbc.y + nac.z * nbc.z;
+    if (c_accb > 1.0)
+        c_accb = 1.0;
+    if (c_accb < -1.0)
+        c_accb = -1.0;
+    Scalar s_accb = sqrt(1.0 - c_accb * c_accb);
+
+    Scalar c_addb = nad.x * nbd.x + nad.y * nbd.y + nad.z * nbd.z;
+    if (c_addb > 1.0)
+        c_addb = 1.0;
+    if (c_addb < -1.0)
+        c_addb = -1.0;
+    Scalar s_addb = sqrt(1.0 - c_addb * c_addb);
 
     Scalar energy_old1 = rac * rbc * s_accb / 2.0 - h_params.data[type_id].A0;
     Scalar energy_old2 = rad * rbd * s_addb / 2.0 - h_params.data[type_id].A0;

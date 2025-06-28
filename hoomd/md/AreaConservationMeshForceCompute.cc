@@ -425,6 +425,23 @@ Scalar AreaConservationMeshForceCompute::energyDiff(unsigned int idx_a,
     dbd.y = h_pos.data[idx_b].y - h_pos.data[idx_d].y;
     dbd.z = h_pos.data[idx_b].z - h_pos.data[idx_d].z;
 
+    Scalar3 dcd;
+    dcd.x = h_pos.data[idx_c].x - h_pos.data[idx_d].x;
+    dcd.y = h_pos.data[idx_c].y - h_pos.data[idx_d].y;
+    dcd.z = h_pos.data[idx_c].z - h_pos.data[idx_d].z;
+
+    int3 acImage = box.getImage(dac);
+    int3 adImage = box.getImage(dad);
+    int3 bcImage = box.getImage(dbc);
+    int3 bdImage = box.getImage(dbd);
+    int3 cdImage = box.getImage(dcd);
+
+    int3 Image1 = acImage+adImage+cdImage;
+    int3 Image2 = bcImage+bdImage+cdImage;
+	
+    if( Image1.x % 2 != 0 || Image1.y % 2 != 0 || Image1.z % 2 != 0 || Image2.x % 2 != 0 || Image2.y % 2 != 0 || Image2.z % 2 != 0)
+	    return DBL_MAX;
+
     // apply minimum image conventions to all 3 vectors
     dac = box.minImage(dac);
     dad = box.minImage(dad);
@@ -441,34 +458,36 @@ Scalar AreaConservationMeshForceCompute::energyDiff(unsigned int idx_a,
     Scalar3 nbc = dbc / rbc;
     Scalar3 nbd = dbd / rbd;
 
-    Scalar c_accb = nac.x * nbc.x + nac.y * nbc.y + nac.z * nbc.z;
-    if (c_accb > 1.0)
-        c_accb = 1.0;
-    if (c_accb < -1.0)
-        c_accb = -1.0;
-
-    Scalar c_addb = nad.x * nbd.x + nad.y * nbd.y + nad.z * nbd.z;
-    if (c_addb > 1.0)
-        c_addb = 1.0;
-    if (c_addb < -1.0)
-        c_addb = -1.0;
-
     Scalar c_caad = nac.x * nad.x + nac.y * nad.y + nac.z * nad.z;
     if (c_caad > 1.0)
         c_caad = 1.0;
     if (c_caad < -1.0)
         c_caad = -1.0;
+    Scalar s_caad = sqrt(1.0 - c_caad * c_caad);
 
     Scalar c_cbbd = nbc.x * nbd.x + nbc.y * nbd.y + nbc.z * nbd.z;
     if (c_cbbd > 1.0)
         c_cbbd = 1.0;
     if (c_cbbd < -1.0)
         c_cbbd = -1.0;
-
-    Scalar s_accb = sqrt(1.0 - c_accb * c_accb);
-    Scalar s_addb = sqrt(1.0 - c_addb * c_addb);
-    Scalar s_caad = sqrt(1.0 - c_caad * c_caad);
     Scalar s_cbbd = sqrt(1.0 - c_cbbd * c_cbbd);
+
+    if( s_caad == 0 || s_cbbd == 0)
+	    return DBL_MAX;
+
+    Scalar c_accb = nac.x * nbc.x + nac.y * nbc.y + nac.z * nbc.z;
+    if (c_accb > 1.0)
+        c_accb = 1.0;
+    if (c_accb < -1.0)
+        c_accb = -1.0;
+    Scalar s_accb = sqrt(1.0 - c_accb * c_accb);
+
+    Scalar c_addb = nad.x * nbd.x + nad.y * nbd.y + nad.z * nbd.z;
+    if (c_addb > 1.0)
+        c_addb = 1.0;
+    if (c_addb < -1.0)
+        c_addb = -1.0;
+    Scalar s_addb = sqrt(1.0 - c_addb * c_addb);
 
     m_area_diff = rac * rad * s_caad + rbc * rbd * s_cbbd;
     m_area_diff -= (rac * rbc * s_accb + rad * rbd * s_addb);
