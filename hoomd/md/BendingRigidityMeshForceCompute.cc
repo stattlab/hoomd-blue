@@ -322,6 +322,28 @@ Scalar BendingRigidityMeshForceCompute::calcEnergy(unsigned int idx_a,
     dad.y = h_pos.data[idx_a].y - h_pos.data[idx_d].y;
     dad.z = h_pos.data[idx_a].z - h_pos.data[idx_d].z;
 
+    Scalar3 dbc;
+    dbc.x = h_pos.data[idx_b].x - h_pos.data[idx_c].x;
+    dbc.y = h_pos.data[idx_b].y - h_pos.data[idx_c].y;
+    dbc.z = h_pos.data[idx_b].z - h_pos.data[idx_c].z;
+
+    Scalar3 dbd;
+    dbd.x = h_pos.data[idx_b].x - h_pos.data[idx_d].x;
+    dbd.y = h_pos.data[idx_b].y - h_pos.data[idx_d].y;
+    dbd.z = h_pos.data[idx_b].z - h_pos.data[idx_d].z;
+
+    int3 acImage = box.getImage(dac);
+    int3 adImage = box.getImage(dad);
+    int3 bcImage = box.getImage(dbc);
+    int3 bdImage = box.getImage(dbd);
+    int3 abImage = box.getImage(dab);
+
+    int3 Image1 = acImage+adImage+abImage;
+    int3 Image2 = bcImage+bdImage+abImage;
+	
+    if( Image1.x % 2 != 0 || Image1.y % 2 != 0 || Image1.z % 2 != 0 || Image2.x % 2 != 0 || Image2.y % 2 != 0 || Image2.z % 2 != 0)
+	    return DBL_MAX;
+
     // apply minimum image conventions to all 3 vectors
     dab = box.minImage(dab);
     dac = box.minImage(dac);
