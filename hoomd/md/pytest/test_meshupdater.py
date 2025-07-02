@@ -40,32 +40,27 @@ def test_before_attaching():
 def local_snapshot_factory(device):
     def make_snapshot(d=0.0, particle_types=["A"], L=20):
         s = hoomd.Snapshot(device.communicator)
-        N = 16
+        N = 64
         if s.communicator.rank == 0:
-            box = [4, 2*np.sqrt(3), L, 0, 0, 0]
+            Lx = 8
+            Ly = 4*np.sqrt(3)
+            box = [Lx, Ly, L, 0, 0, 0]
             s.configuration.box = box
             s.particles.N = N
 
-            base_positions = np.array(
-                [
-                    [-2.0,-1.73205081,0.0],
-                    [-1.0,-1.73205081,0.0],
-                    [0.0,-1.73205081,0.0],
-                    [1.0,-1.73205081,0.0],
-                    [-1.5,-0.8660254,0.0],
-                    [-0.5,-0.8660254,d],
-                    [0.5,-0.8660254,d],
-                    [1.5,-0.8660254,0.0],
-                    [-2.0,0.,0.0],
-                    [-1.0,0.,0.0],
-                    [0.0,0.,0.0],
-                    [1.0,0.,0.0],
-                    [-1.5,0.8660254,0.0],
-                    [-0.5,0.8660254,0.0],
-                    [0.5,0.8660254,0.0],
-                    [1.5,0.8660254,0.0]
-                ]
-            )
+            x = np.arange(-Lx / 2, Lx / 2, Lx / 8)
+            y = np.arange(-Ly / 2, Ly / 2, Ly / 8)
+            X, Y = np.meshgrid(x, y)
+
+            # Offset every second row to create a triangular pattern
+            X[1::2, :] += 0.5
+
+            # Combine X and Y coordinates to define vertex positions
+            base_positions = np.column_stack([X.flatten(), Y.flatten(), np.zeros(N)])
+
+            base_positions[12,2] = d
+            base_positions[13,2] = d
+
             # move particles slightly in direction of MPI decomposition which
             # varies by simulation dimension
             s.particles.position[:] = base_positions
@@ -74,9 +69,40 @@ def local_snapshot_factory(device):
 
     return make_snapshot
 
+def make_mesh(flip=True):
+    row = 8
+    N = row**2
+
+    v_index = np.arange(N)
+    vr_index = v_index + 1
+    vr_index[row - 1 :: row] -= row
+
+    e_index = np.repeat(v_index, 2).reshape(-1, 2)
+    e_index[:, 0] += row
+    e_index[:, 1] -= row
+    e_index = e_index.reshape(row, -1, 2)
+    e_index[1::2] += 1
+    e_index[1::2, -1] -= row
+    e_index = e_index.reshape(-1) % N
+
+    v_index = np.repeat(v_index, 2)
+    vr_index = np.repeat(vr_index, 2)
+    vr_index[1::2] = e_index[1::2]
+    e_index[1::2] = vr_index[0::2]
+
+    triangles = np.column_stack([v_index, vr_index, e_index])
+
+    if flip:
+        triangles[24] = [12,5,21]
+        triangles[25] = [13,21,5]
+    else:
+        triangles[24] = [5,13,12]
+        triangles[25] = [21,12,13]
+
+    return triangles
 
 def test_after_attaching(local_snapshot_factory, simulation_factory):
-    snap = local_snapshot_factory(d=1, L=20)
+    snap = local_snapshot_factory(d=0, L=20)
     sim = simulation_factory(snap)
 
     mesh = hoomd.mesh.Mesh()
@@ -110,84 +136,15 @@ def test_after_attaching(local_snapshot_factory, simulation_factory):
     assert mdb.kT == 0.5
     assert mdb.forces == [mesh_potential1,mesh_potential2]
 
-mesh_triangle_start=[
-            [ 0,  1,  4],
-            [ 0, 12,  1],
-            [ 1,  2,  5],
-            [ 1, 13,  2],
-            [ 2,  3,  6],
-            [ 2, 14,  3],
-            [ 3,  0,  7],
-            [ 3, 15,  0],
-            [ 4,  5,  9],
-            [ 4,  1,  5],
-            [ 5,  2, 10],
-            [ 6, 10,  2],
-            [ 6,  7, 11],
-            [ 6,  3,  7],
-            [ 7,  4,  8],
-            [ 7,  0,  4],
-            [ 8,  9, 12],
-            [ 8,  4,  9],
-            [ 9, 10, 13],
-            [ 9,  5, 10],
-            [10, 11, 14],
-            [10,  6, 11],
-            [11,  8, 15],
-            [11,  7,  8],
-            [12, 13,  1],
-            [12,  9, 13],
-            [13, 14,  2],
-            [13, 10, 14],
-            [14, 15,  3],
-            [14, 11, 15],
-            [15, 12,  0],
-            [15,  8, 12]
-        ]
-
-mesh_triangle_end=[
-            [ 0,  1,  4],
-            [ 0, 12,  1],
-            [ 1,  2,  5],
-            [ 1, 13,  2],
-            [ 2,  3,  6],
-            [ 2, 14,  3],
-            [ 3,  0,  7],
-            [ 3, 15,  0],
-            [ 4,  5,  9],
-            [ 4,  1,  5],
-            [ 2,  6,  5],
-            [10,  5,  6],
-            [ 6,  7, 11],
-            [ 6,  3,  7],
-            [ 7,  4,  8],
-            [ 7,  0,  4],
-            [ 8,  9, 12],
-            [ 8,  4,  9],
-            [ 9, 10, 13],
-            [ 9,  5, 10],
-            [10, 11, 14],
-            [10,  6, 11],
-            [11,  8, 15],
-            [11,  7,  8],
-            [12, 13,  1],
-            [12,  9, 13],
-            [13, 14,  2],
-            [13, 10, 14],
-            [14, 15,  3],
-            [14, 11, 15],
-            [15, 12,  0],
-            [15,  8, 12]
-        ]
-
-
 def test_updating(local_snapshot_factory, simulation_factory):
     snap = local_snapshot_factory(d=0.0, L=20)
     sim = simulation_factory(snap)
 
+    mesh_triangle = make_mesh()
+
     mesh = hoomd.mesh.Mesh()
     mesh.types = ["mesh"]
-    mesh.triangulation = dict(type_ids=[0] * len(mesh_triangle_start), triangles=mesh_triangle_start)
+    mesh.triangulation = dict(type_ids=[0] * len(mesh_triangle), triangles=mesh_triangle)
 
     mesh_potential = hoomd.md.mesh.bond.Harmonic(mesh)
     mesh_potential.params.default = dict(k=1,r0=1)
@@ -206,9 +163,11 @@ def test_updating(local_snapshot_factory, simulation_factory):
 
     sim.run(1)
 
+    mesh_triangle = make_mesh(False)
+
     assert np.isclose(mesh_potential.energy, 0)
 
-    assert np.array_equal(mesh.triangles, mesh_triangle_end)
+    assert np.array_equal(mesh.triangles, make_mesh(False))
 
 _harmonic_arg_list = [
     (hoomd.md.mesh.bond.Harmonic, dict(k=30.0,r0=1.0))
@@ -253,9 +212,11 @@ def test_reduce_energy(local_snapshot_factory, simulation_factory,mesh_potential
     snap = local_snapshot_factory(d=0.5, L=20)
     sim = simulation_factory(snap)
 
+    mesh_triangle = make_mesh()
+
     mesh = hoomd.mesh.Mesh()
     mesh.types = ["mesh"]
-    mesh.triangulation = dict(type_ids=[0] * len(mesh_triangle_start), triangles=mesh_triangle_start)
+    mesh.triangulation = dict(type_ids=[0] * len(mesh_triangle), triangles=mesh_triangle)
 
     mesh_potential = mesh_potential_cls(mesh)
     mesh_potential.params["mesh"] = potential_kwargs
