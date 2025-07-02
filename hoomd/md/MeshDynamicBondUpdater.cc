@@ -57,10 +57,7 @@ void MeshDynamicBondUpdater::update(uint64_t timestep)
     uint16_t seed = m_sysdef->getSeed();
 
     for (auto& force : m_forces)
-        {
         force->precomputeParameter();
-        //force->writeParameter();
-        }
 
     {
 
@@ -130,14 +127,6 @@ void MeshDynamicBondUpdater::update(uint64_t timestep)
         assert(bond.tag[0] < m_pdata->getMaximumTag() + 1);
         assert(bond.tag[1] < m_pdata->getMaximumTag() + 1);
 
-        // transform a and b into indices into the particle data arrays
-        // (MEM TRANSFER: 4 integers)
-        unsigned int tag_a = bond.tag[0];
-        unsigned int tag_b = bond.tag[1];
-
-        unsigned int idx_a = h_rtag.data[tag_a];
-        unsigned int idx_b = h_rtag.data[tag_b];
-
         unsigned int tag_c = bond.tag[2];
         unsigned int tag_d = bond.tag[3];
 
@@ -158,6 +147,30 @@ void MeshDynamicBondUpdater::update(uint64_t timestep)
 
         unsigned int idx_c = h_rtag.data[tag_c];
         unsigned int idx_d = h_rtag.data[tag_d];
+
+	{
+    	ArrayHandle<Scalar4> h_pos(m_pdata->getPositions(), access_location::host, access_mode::read);
+    	Scalar3 boxL = m_pdata->getGlobalBox().getL()/4;
+
+    	Scalar3 dcd;
+    	dcd.x = h_pos.data[idx_c].x - h_pos.data[idx_d].x;
+	if( dcd.x > boxL.x || dcd.x < -boxL.x)
+		continue;
+    	dcd.y = h_pos.data[idx_c].y - h_pos.data[idx_d].y;
+	if( dcd.y > boxL.y || dcd.y < -boxL.y)
+		continue;
+   	dcd.z = h_pos.data[idx_c].z - h_pos.data[idx_d].z;
+	if( dcd.y > boxL.y || dcd.y < -boxL.y)
+		continue;
+	}
+
+
+        unsigned int tag_a = bond.tag[0];
+        unsigned int tag_b = bond.tag[1];
+
+        unsigned int idx_a = h_rtag.data[tag_a];
+        unsigned int idx_b = h_rtag.data[tag_b];
+
 
 	unsigned int test_idx = idx_c;
 
@@ -385,12 +398,6 @@ void MeshDynamicBondUpdater::update(uint64_t timestep)
         }
 
     }
-    //for (auto& force : forces)
-    //    {
-        //force->writeParameter();
-    //    force->precomputeParameter();
-        //force->writeParameter();
-    //    }
     }
 
 namespace detail

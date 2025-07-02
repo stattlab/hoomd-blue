@@ -818,53 +818,6 @@ void HelfrichMeshForceCompute::postcomputeParameter(unsigned int idx_a,
     h_sigma_dash.data[idx_d] += m_sigma_dash_diff_d;
     }
 
-void HelfrichMeshForceCompute::writeParameter()
-    {
-
-    /*ArrayHandle<unsigned int> h_rtag(m_pdata->getRTags(), access_location::host, access_mode::read);
-
-    ArrayHandle<Scalar> h_params(m_params, access_location::host, access_mode::read);
-
-    ArrayHandle<typename MeshBond::members_t> h_bonds(
-        m_mesh_data->getMeshBondData()->getMembersArray(),
-        access_location::host,
-        access_mode::read);
-
-    ArrayHandle<Scalar> h_sigma(m_sigma, access_location::host, access_mode::read);
-    ArrayHandle<Scalar3> h_sigma_dash(m_sigma_dash, access_location::host, access_mode::read);
-
-    assert(h_bonds.data);
-    assert(h_sigma.data);
-    assert(h_sigma_dash.data);
-
-    const unsigned int size = (unsigned int)m_mesh_data->getMeshBondData()->getN();
-    for (unsigned int i = 0; i < size; i++)
-        {
-        const typename MeshBond::members_t& bond = h_bonds.data[i];
-        unsigned int meshbond_type = m_mesh_data->getMeshBondData()->getTypeByIndex(i);
-
-        unsigned int btag_a = bond.tag[0];
-        assert(btag_a < m_pdata->getMaximumTag() + 1);
-        unsigned int btag_b = bond.tag[1];
-        assert(btag_b < m_pdata->getMaximumTag() + 1);
-
-        unsigned int idx_a = h_rtag.data[btag_a];
-        unsigned int idx_b = h_rtag.data[btag_b];
-
-        assert(idx_a < m_pdata->getN() + m_pdata->getNGhosts());
-        assert(idx_b < m_pdata->getN() + m_pdata->getNGhosts());
-
-        Scalar3 sigma_dash_a = h_sigma_dash.data[idx_a]; // precomputed
-        Scalar3 sigma_dash_b = h_sigma_dash.data[idx_b]; // precomputed
-
-        Scalar sigma_a = h_sigma.data[idx_a]; // precomputed
-        Scalar sigma_b = h_sigma.data[idx_b]; // precomputed
-
-	Scalar energy_a = h_params.data[meshbond_type] * 0.5* dot(sigma_dash_a, sigma_dash_a) / sigma_a;
-	Scalar energy_b = h_params.data[meshbond_type] * 0.5* dot(sigma_dash_b, sigma_dash_b) / sigma_b;
-	}*/
-    }
-
 namespace detail
     {
 void export_HelfrichMeshForceCompute(pybind11::module& m)
