@@ -145,6 +145,9 @@ def test_updating(local_snapshot_factory, simulation_factory):
     snap = local_snapshot_factory(d=0.0, L=20)
     sim = simulation_factory(snap)
 
+    if sim.device.communicator.num_ranks > 1:
+        pytest.skip("Cannot run MeshDynamicalBonding with MPI")
+
     mesh_triangle = make_mesh()
 
     mesh = hoomd.mesh.Mesh()
@@ -219,6 +222,9 @@ def test_reduce_energy(
 ):
     snap = local_snapshot_factory(d=0.5, L=20)
     sim = simulation_factory(snap)
+
+    if sim.device.communicator.num_ranks > 1:
+        pytest.skip("Cannot run MeshDynamicalBonding with MPI")
 
     mesh_triangle = make_mesh()
 
