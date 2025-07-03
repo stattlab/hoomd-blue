@@ -369,9 +369,9 @@ class MeshDynamicalBonding(Updater):
         
         mesh (hoomd.mesh.Mesh): Mesh data structure.
 
-        kT (Scalar): Temperature of the simulation :math:`[\mathrm{energy}]`.
+        kT (float): Temperature of the simulation :math:`[\mathrm{energy}]`.
 
-        forces (Sequence[hoomd.md.force.MeshPotential]): Sequence of mesh 
+        forces (Sequence[hoomd.md.mesh.MeshPotential]): Sequence of mesh 
           potentials applied to the updater. The default value of ``None`` 
           initializes an empty list. 
 
