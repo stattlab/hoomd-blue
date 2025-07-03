@@ -390,9 +390,15 @@ class MeshDynamicalBonding(Updater):
           1 & \Delta U(kl) \le U(ij).\\
         \end{cases}
    
-   To obtain energies :math:`U(ij)` and :math:`U(kl)` for the corresponding edge
-   configurations, only the mesh potentials attached to the updater are 
-   considered.
+    To obtain energies :math:`U(ij)` and :math:`U(kl)` for the corresponding edge
+    configurations, only the mesh potentials attached to the updater are 
+    considered.
+
+    Tip:
+        Use `hoomd.mesh.Mesh.create_dynamical_bonding_updater` to construct a 
+        `MeshDynamicalBonding` instance.
+
+    {inherited}
 
     Examples::
 
