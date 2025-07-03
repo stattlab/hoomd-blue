@@ -27,10 +27,9 @@ namespace md
 
 MeshDynamicBondUpdater::MeshDynamicBondUpdater(std::shared_ptr<SystemDefinition> sysdef,
                                                std::shared_ptr<Trigger> trigger,
-					       std::shared_ptr<Integrator> integrator,
                                                std::shared_ptr<MeshDefinition> mesh,
                                                Scalar T)
-    : Updater(sysdef, trigger), m_integrator(integrator), m_mesh(mesh), m_inv_T(1.0 / T)
+    : Updater(sysdef, trigger), m_mesh(mesh), m_inv_T(1.0 / T)
     {
     assert(m_pdata);
     assert(m_mesh);
@@ -410,7 +409,6 @@ void export_MeshDynamicBondUpdater(pybind11::module& m)
         "MeshDynamicBondUpdater")
         .def(pybind11::init<std::shared_ptr<SystemDefinition>,
                             std::shared_ptr<Trigger>,
-			    std::shared_ptr<Integrator>,
                             std::shared_ptr<MeshDefinition>,
                             Scalar>())
         .def_property_readonly("forces", &MeshDynamicBondUpdater::getForces)

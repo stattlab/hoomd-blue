@@ -236,3 +236,15 @@ def test_reduce_energy(local_snapshot_factory, simulation_factory,mesh_potential
     sim.run(1)
 
     assert mesh_potential.energy <= energy
+
+def test_pickling(local_snapshot_factory, simulation_factory):
+    # don't add the rd_updater since operation_pickling_check will deal with
+    # that.
+    snap = local_snapshot_factory(d=0, L=20)
+    sim = simulation_factory(snap)
+    mesh = hoomd.mesh.Mesh()
+
+    mdb = hoomd.md.update.MeshDynamicalBonding(1,mesh, kT = 0.001)
+
+    hoomd.conftest.operation_pickling_check(mdb, sim)
+

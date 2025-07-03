@@ -360,8 +360,8 @@ class ActiveRotationalDiffusion(Updater):
         super()._setattr_param(attr, value)
 
 class MeshDynamicalBonding(Updater):
-    """Dynamical bonding of the applies mesh that allows edge flips according to a
-    Metropolic Monte Carlo algorithm.
+    r"""Dynamical bonding of the applied mesh that allows edge flips according to 
+    a Metropolic Monte Carlo algorithm.
 
     Args:
         trigger (hoomd.trigger.trigger_like): Select the timesteps to triger bond
@@ -371,14 +371,33 @@ class MeshDynamicalBonding(Updater):
 
         kT (Scalar): Temperature of the simulation :math:`[\mathrm{energy}]`.
 
-        forces (Sequence[hoomd.md.force.Force]): Sequence of forces applied to
-          the updater. The default value of ``None`` initializes
-          an empty list. 
+        forces (Sequence[hoomd.md.force.MeshPotential]): Sequence of mesh 
+          potentials applied to the updater. The default value of ``None`` 
+          initializes an empty list. 
+
+    `MeshDynamicalBonding` works directly with `hoomd.mesh.Mesh` to apply edge
+    flips between neighboring triangles in the mesh. At each step, the updater
+    attempts to flip each edge within the mesh in random order. The probability 
+    of fliping an edge :math:`ij` between the common vertices :math:`i` and 
+    :math:`j` of triangles :math:`ijk` and :math:`jil` to an edge :math:`kl` 
+    between :math:`k` and :math:`l` is:
+
+    .. math::
+
+        p_\mathrm{accept} =
+        \begin{cases}
+          \exp(-\beta (U(kl)-U(ij))) & U(kl) > U(ij) \\
+          1 & \Delta U(kl) \le U(ij).\\
+        \end{cases}
+   
+   To obtain energies :math:`U(ij)` and :math:`U(kl)` for the corresponding edge
+   configurations, only the mesh potentials attached to the updater are 
+   considered.
 
     Examples::
 
         mdb = hoomd.md.update.MeshDynamicalBonding(hoomd.trigger.Periodic(100),
-              mesh, kT = 1, forces=[])
+              mesh, kT = 1, forces=[mesh_ponetial])
 
     """
 
@@ -414,7 +433,6 @@ class MeshDynamicalBonding(Updater):
 
         self._cpp_obj = _md.MeshDynamicBondUpdater(
             self._simulation.state._cpp_sys_def, self.trigger,
-            self._simulation.operations.integrator._cpp_obj,
             self.mesh._cpp_obj, self.kT)
 
         self._forces._sync(self._simulation, self._cpp_obj.forces)
