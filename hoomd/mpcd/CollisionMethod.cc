@@ -280,15 +280,11 @@ void mpcd::CollisionMethod::checkCollisionWarnings(uint64_t timestep)
                 if (central_idx >= n_particles_local)
                     continue;
 
-                // only do molecules whose type hasn't been checked before
+                // only do molecules participating in the collision
                 unsigned int type = __scalar_as_int(h_postype.data[central_idx].w);
                 if (rigid_types.find(type) == rigid_types.end())
                     {
                     continue;
-                    }
-                else
-                    {
-                    rigid_types.erase(rigid_types.find(type));
                     }
 
                 // find center of mass position of particle
