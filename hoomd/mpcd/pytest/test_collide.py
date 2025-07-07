@@ -565,6 +565,54 @@ def test_rigid_mass_error(small_snap, simulation_factory):
         sim.run(1)
 
 
+def test_rigid_mass_zero_error(small_snap, simulation_factory):
+    def_rigid = {
+        "constituent_types": ["B", "B", "B", "B"],
+        "positions": [[-2.4, 0, 0], [2.4, 0, 0], [0, -2.4, 0], [0, 2.4, 0]],
+        "orientations": [[1, 0, 0, 0], [1, 0, 0, 0], [1, 0, 0, 0], [1, 0, 0, 0]],
+    }
+    properties_rigid = {
+        "inertia": [0.0, 11.52, 11.52],
+        "mass": np.array([2, 1, 1, 0, 0]),
+    }
+    # create simulation
+    initial_snap = small_snap
+    if initial_snap.communicator.rank == 0:
+        initial_snap.particles.types = ["A", "B"]
+        initial_snap.particles.mass[:] = [properties_rigid["mass"][0]]
+        initial_snap.particles.moment_inertia[:] = [properties_rigid["inertia"]]
+    sim = simulation_factory(initial_snap)
+    sim.seed = 5
+
+    rigid = hoomd.md.constrain.Rigid()
+    rigid.body["A"] = def_rigid
+    rigid.create_bodies(sim.state)
+
+    # add mass of constituents
+    intermed_snap = sim.state.get_snapshot()
+    if intermed_snap.communicator.rank == 0:
+        flags = intermed_snap.particles.typeid == intermed_snap.particles.types.index(
+            "B"
+        )
+        intermed_snap.particles.mass[flags] = properties_rigid["mass"][1:]
+        intermed_snap.wrap()
+    sim.state.set_snapshot(intermed_snap)
+
+    sim.operations.integrator = hoomd.mpcd.Integrator(dt=0, rigid=rigid)
+    sim.operations.integrator.collision_method = (
+        hoomd.mpcd.collide.StochasticRotationDynamics(
+            period=1,
+            embedded_particles=hoomd.filter.Rigid(flags=("constituent",)),
+            angle=90,
+            kT=1,
+        )
+    )
+
+    # run simulation
+    with pytest.raises(RuntimeError):
+        sim.run(1)
+
+
 def test_rigid_center_of_mass_error(small_snap, simulation_factory):
     def_rigid = {
         "constituent_types": ["B", "B"],
@@ -576,7 +624,7 @@ def test_rigid_center_of_mass_error(small_snap, simulation_factory):
     initial_snap = small_snap
     if initial_snap.communicator.rank == 0:
         initial_snap.particles.types = ["A", "B"]
-        initial_snap.particles.mass[:] = [1]
+        initial_snap.particles.mass[:] = [properties_rigid["mass"][0]]
         initial_snap.particles.moment_inertia[:] = [properties_rigid["inertia"]]
     sim = simulation_factory(initial_snap)
     sim.seed = 5

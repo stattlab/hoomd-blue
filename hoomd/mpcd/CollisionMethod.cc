@@ -361,9 +361,7 @@ void mpcd::CollisionMethod::checkCollisionWarnings(uint64_t timestep)
 
         if (invalid_mass)
             {
-            m_exec_conf->msg->warning() << "Some particles have a mass <= 0, may lead to "
-                                           "invalid results during MPCD collision."
-                                        << std::endl;
+            throw std::runtime_error("Some particles have a mass <= 0.");
             }
         if (needs_thermostat && has_no_thermostat)
             {
