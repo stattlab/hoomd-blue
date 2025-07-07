@@ -1091,6 +1091,7 @@ void ForceComposite::findRigidCenters()
         h_lookup_center.data[idx] = central_idx;
         num_centers += 1;
         }
+    m_n_rigid = num_centers;
     }
 
 namespace detail
