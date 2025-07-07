@@ -265,6 +265,10 @@ def test_pickling(local_snapshot_factory, simulation_factory):
     # that.
     snap = local_snapshot_factory(d=0, L=20)
     sim = simulation_factory(snap)
+
+    if sim.device.communicator.num_ranks > 1:
+        pytest.skip("Cannot run MeshDynamicalBonding with MPI")
+
     mesh = hoomd.mesh.Mesh()
 
     mdb = hoomd.md.update.MeshDynamicalBonding(1, mesh, kT=0.001)
