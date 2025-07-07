@@ -122,23 +122,27 @@ def test_after_attaching(local_snapshot_factory, simulation_factory):
 
     sim.operations.integrator = hoomd.md.Integrator(dt=0.005)
 
-    sim.run(0)
+    if sim.device.communicator.num_ranks > 1:
+        with pytest.raises(NotImplementedError):
+            sim.run(0)
+    else:
+        sim.run(0)
 
-    assert mdb.trigger == hoomd.trigger.Periodic(10)
-    assert mdb.kT == 1
-    assert mdb.mesh == mesh
-    assert mdb.forces == [mesh_potential1]
+        assert mdb.trigger == hoomd.trigger.Periodic(10)
+        assert mdb.kT == 1
+        assert mdb.mesh == mesh
+        assert mdb.forces == [mesh_potential1]
 
-    mdb.trigger = hoomd.trigger.Periodic(100)
-    mdb.kT = 0.5
-    mdb.forces.append(mesh_potential2)
+        mdb.trigger = hoomd.trigger.Periodic(100)
+        mdb.kT = 0.5
+        mdb.forces.append(mesh_potential2)
 
-    with pytest.raises(hoomd.error.MutabilityError):
-        mdb.mesh = hoomd.mesh.Mesh()
+        with pytest.raises(hoomd.error.MutabilityError):
+            mdb.mesh = hoomd.mesh.Mesh()
 
-    assert mdb.trigger == hoomd.trigger.Periodic(100)
-    assert mdb.kT == 0.5
-    assert mdb.forces == [mesh_potential1, mesh_potential2]
+        assert mdb.trigger == hoomd.trigger.Periodic(100)
+        assert mdb.kT == 0.5
+        assert mdb.forces == [mesh_potential1, mesh_potential2]
 
 
 def test_updating(local_snapshot_factory, simulation_factory):

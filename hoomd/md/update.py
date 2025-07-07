@@ -5,7 +5,7 @@
 
 from hoomd.md import _md
 import hoomd
-from hoomd.error import SimulationDefinitionError
+from hoomd.error import SimulationDefinitionError, MPINotAvailableError
 from hoomd.operation import Updater
 from hoomd.data import syncedlist
 from hoomd.data.parameterdicts import ParameterDict
@@ -397,6 +397,10 @@ class MeshDynamicalBonding(Updater):
         Use `hoomd.mesh.Mesh.create_dynamical_bonding_updater` to construct a
         `MeshDynamicalBonding` instance.
 
+    Attention:
+        `MeshDynamicalBonding` is NOT implemented for MPI parallel execution!
+
+
     {inherited}
 
     Examples::
@@ -427,25 +431,30 @@ class MeshDynamicalBonding(Updater):
     def _attach_hook(self):
         # create the c++ mirror class
 
-        if self.mesh._attached and self._simulation != self.mesh._simulation:
-            warnings.warn(
-                f"{self} object is creating a new equivalent mesh structure."
-                f" This is happending since the force is moving to a new "
-                f"simulation. To suppress the warning explicitly set new mesh.",
-                RuntimeWarning,
+        if self._simulation.device.communicator.num_ranks == 1:
+            if self.mesh._attached and self._simulation != self.mesh._simulation:
+                warnings.warn(
+                    f"{self} object is creating a new equivalent mesh structure."
+                    f" This is happending since the force is moving to a new "
+                    f"simulation. To suppress the warning explicitly set new mesh.",
+                    RuntimeWarning,
+                )
+            self.mesh._attach(self._simulation)
+
+            self._cpp_obj = _md.MeshDynamicBondUpdater(
+                self._simulation.state._cpp_sys_def,
+                self.trigger,
+                self.mesh._cpp_obj,
+                self.kT,
             )
-        self.mesh._attach(self._simulation)
 
-        self._cpp_obj = _md.MeshDynamicBondUpdater(
-            self._simulation.state._cpp_sys_def,
-            self.trigger,
-            self.mesh._cpp_obj,
-            self.kT,
-        )
+            self._forces._sync(self._simulation, self._cpp_obj.forces)
 
-        self._forces._sync(self._simulation, self._cpp_obj.forces)
-
-        super()._attach_hook()
+            super()._attach_hook()
+        else:
+            raise MPINotAvailableError(
+                "MeshDynamicalBonding is not implemented for MPI"
+            )
 
     def _detach_hook(self):
         self._forces._unsync()
