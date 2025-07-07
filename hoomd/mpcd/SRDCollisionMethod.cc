@@ -309,9 +309,6 @@ void export_SRDCollisionMethod(pybind11::module& m)
         .def_property("angle",
                       &mpcd::SRDCollisionMethod::getRotationAngle,
                       &mpcd::SRDCollisionMethod::setRotationAngle)
-        .def_property("kT",
-                      &mpcd::CollisionMethod::getTemperature,
-                      &mpcd::CollisionMethod::setTemperature);
     }
     } // namespace detail
     } // namespace mpcd
