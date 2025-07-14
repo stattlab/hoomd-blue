@@ -72,10 +72,7 @@ void TwoStepConstantVolumeSLLODGPU::integrateStepOne(uint64_t timestep)
                                   access_location::device,
                                   access_mode::readwrite);
 
-        BoxDim box = m_pdata->getBox();
-        ArrayHandle<unsigned int> d_index_array(m_group->getIndexArray(),
-                                                access_location::device,
-                                                access_mode::read);
+
 
         auto limits = getKernelLimitValues(timestep);
 
@@ -85,6 +82,12 @@ void TwoStepConstantVolumeSLLODGPU::integrateStepOne(uint64_t timestep)
         BoxDim global_box = m_pdata->getGlobalBox();
         const Scalar global_hi_y = global_box.getHi().y;
         const Scalar global_lo_y = global_box.getLo().y;
+
+        BoxDim box = m_pdata->getBox();
+
+        ArrayHandle<unsigned int> d_index_array(m_group->getIndexArray(),
+                                                access_location::device,
+                                                access_mode::read);
 
         m_exec_conf->setDevice();
 
