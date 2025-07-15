@@ -1063,9 +1063,7 @@ void ForceComposite::findRigidCenters()
                                      access_mode::read);
 
     m_rigid_center.resize(m_pdata->getN() + m_pdata->getNGhosts());
-    m_rigid_center.zeroFill();
     m_lookup_center.resize(m_pdata->getN() + m_pdata->getNGhosts());
-    m_lookup_center.zeroFill();
     ArrayHandle<unsigned int> h_rigid_center(m_rigid_center,
                                              access_location::host,
                                              access_mode::overwrite);
