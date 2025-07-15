@@ -646,12 +646,7 @@ void mpcd::CollisionMethod::accumulateRigidBodyMomenta(uint64_t timestep)
 
         // get the index from the particle and check if it is a constituent
         const unsigned int central_idx = h_lookup_center.data[particle_index];
-        if (central_idx >= MIN_FLOPPY)
-            {
-            continue;
-            }
-        // collision on central particle itself already taken care of by collision rule
-        if (particle_index == central_idx)
+        if (central_idx == NO_BODY || central_idx == particle_idx)
             {
             continue;
             }
