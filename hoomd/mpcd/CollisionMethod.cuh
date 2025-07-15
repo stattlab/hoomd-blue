@@ -17,12 +17,6 @@ namespace mpcd
 namespace gpu
     {
 
-cudaError_t store_initial_embedded_group_velocities(Scalar4* d_initial_vel,
-                                                    const Scalar4* d_velocity,
-                                                    const unsigned int* d_embed_group,
-                                                    const unsigned int num_group,
-                                                    const unsigned int block_size);
-
 cudaError_t draw_velocities_constituent_particles(Scalar3* d_linmom_accum,
                                                   Scalar3* d_angmom_accum,
                                                   Scalar4* d_alt_vel,
@@ -57,6 +51,12 @@ cudaError_t apply_thermalized_velocity_vectors(const Scalar3* d_angmom_accum,
                                                const BoxDim& global_box,
                                                const unsigned int num_total,
                                                const unsigned int block_size);
+
+cudaError_t store_initial_embedded_group_velocities(Scalar4* d_initial_vel,
+                                                    const Scalar4* d_velocity,
+                                                    const unsigned int* d_embed_group,
+                                                    const unsigned int num_group,
+                                                    const unsigned int block_size);
 
 cudaError_t accumulate_rigid_body_momenta(Scalar3* d_linmom_accum,
                                           Scalar3* d_angmom_accum,

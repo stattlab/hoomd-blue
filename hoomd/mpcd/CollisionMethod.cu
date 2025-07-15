@@ -20,21 +20,6 @@ namespace gpu
 namespace kernel
     {
 
-__global__ void store_initial_embedded_group_velocities(Scalar4* d_initial_vel,
-                                                        const Scalar4* d_velocity,
-                                                        const unsigned int* d_embed_group,
-                                                        const unsigned int num_group)
-    {
-    // one thread per particle
-    const unsigned int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (idx >= num_group)
-        return;
-
-    // store the initial velocity
-    const unsigned int particle_idx = d_embed_group[idx];
-    d_initial_vel[idx] = d_velocity[particle_idx];
-    }
-
 __global__ void draw_velocities_constituent_particles(Scalar3* d_linmom_accum,
                                                       Scalar3* d_angmom_accum,
                                                       Scalar4* d_alt_vel,
@@ -215,6 +200,21 @@ __global__ void apply_thermalized_velocity_vectors(const Scalar3* d_angmom_accum
     d_velocity[idx] = vel_constituent;
     }
 
+__global__ void store_initial_embedded_group_velocities(Scalar4* d_initial_vel,
+                                                        const Scalar4* d_velocity,
+                                                        const unsigned int* d_embed_group,
+                                                        const unsigned int num_group)
+    {
+    // one thread per particle
+    const unsigned int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx >= num_group)
+        return;
+
+    // store the initial velocity
+    const unsigned int particle_idx = d_embed_group[idx];
+    d_initial_vel[idx] = d_velocity[particle_idx];
+    }
+
 __global__ void accumulate_rigid_body_momenta(Scalar3* d_linmom_accum,
                                               Scalar3* d_angmom_accum,
                                               const Scalar4* d_initial_vel,
@@ -334,30 +334,6 @@ __global__ void transfer_rigid_body_momenta(Scalar3* d_linmom_accum,
     }
     } // end namespace kernel
 
-cudaError_t store_initial_embedded_group_velocities(Scalar4* d_initial_vel,
-                                                    const Scalar4* d_velocity,
-                                                    const unsigned int* d_embed_group,
-                                                    const unsigned int num_group,
-                                                    const unsigned int block_size)
-    {
-    unsigned int max_block_size;
-    cudaFuncAttributes attr;
-    cudaFuncGetAttributes(&attr,
-                          (const void*)mpcd::gpu::kernel::store_initial_embedded_group_velocities);
-    max_block_size = attr.maxThreadsPerBlock;
-
-    unsigned int run_block_size = min(block_size, max_block_size);
-
-    dim3 grid(num_group / run_block_size + 1);
-    mpcd::gpu::kernel::store_initial_embedded_group_velocities<<<grid, run_block_size>>>(
-        d_initial_vel,
-        d_velocity,
-        d_embed_group,
-        num_group);
-
-    return cudaSuccess;
-    }
-
 cudaError_t draw_velocities_constituent_particles(Scalar3* d_linmom_accum,
                                                   Scalar3* d_angmom_accum,
                                                   Scalar4* d_alt_vel,
@@ -455,6 +431,30 @@ cudaError_t apply_thermalized_velocity_vectors(const Scalar3* d_angmom_accum,
                                                                                     d_lookup_center,
                                                                                     global_box,
                                                                                     num_total);
+    return cudaSuccess;
+    }
+
+cudaError_t store_initial_embedded_group_velocities(Scalar4* d_initial_vel,
+                                                    const Scalar4* d_velocity,
+                                                    const unsigned int* d_embed_group,
+                                                    const unsigned int num_group,
+                                                    const unsigned int block_size)
+    {
+    unsigned int max_block_size;
+    cudaFuncAttributes attr;
+    cudaFuncGetAttributes(&attr,
+                          (const void*)mpcd::gpu::kernel::store_initial_embedded_group_velocities);
+    max_block_size = attr.maxThreadsPerBlock;
+
+    unsigned int run_block_size = min(block_size, max_block_size);
+
+    dim3 grid(num_group / run_block_size + 1);
+    mpcd::gpu::kernel::store_initial_embedded_group_velocities<<<grid, run_block_size>>>(
+        d_initial_vel,
+        d_velocity,
+        d_embed_group,
+        num_group);
+
     return cudaSuccess;
     }
 

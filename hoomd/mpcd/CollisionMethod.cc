@@ -42,9 +42,6 @@ mpcd::CollisionMethod::CollisionMethod(std::shared_ptr<SystemDefinition> sysdef,
 #ifdef ENABLE_HIP
     if (m_exec_conf->isCUDAEnabled())
         {
-        m_store_tuner.reset(new Autotuner<1>({AutotunerBase::makeBlockSizeRange(m_exec_conf)},
-                                             m_exec_conf,
-                                             "mpcd_rigid_store"));
         m_drawrandvec_tuner.reset(new Autotuner<1>({AutotunerBase::makeBlockSizeRange(m_exec_conf)},
                                                    m_exec_conf,
                                                    "mpcd_rigid_rand"));
@@ -55,6 +52,9 @@ mpcd::CollisionMethod::CollisionMethod(std::shared_ptr<SystemDefinition> sysdef,
             new Autotuner<1>({AutotunerBase::makeBlockSizeRange(m_exec_conf)},
                              m_exec_conf,
                              "mpcd_rigid_applyrand"));
+        m_store_tuner.reset(new Autotuner<1>({AutotunerBase::makeBlockSizeRange(m_exec_conf)},
+                                             m_exec_conf,
+                                             "mpcd_rigid_store"));
         m_accumulate_tuner.reset(new Autotuner<1>({AutotunerBase::makeBlockSizeRange(m_exec_conf)},
                                                   m_exec_conf,
                                                   "mpcd_rigid_accum"));
@@ -391,26 +391,6 @@ void mpcd::CollisionMethod::checkCollisionWarnings(uint64_t timestep)
         }
     }
 
-void mpcd::CollisionMethod::storeInitialEmbeddedGroupVelocities(uint64_t timestep)
-    {
-    const unsigned int num_group = m_embed_group->getNumMembers();
-    ArrayHandle<Scalar4> h_initial_vel(m_initial_velocity,
-                                       access_location::host,
-                                       access_mode::overwrite);
-    ArrayHandle<unsigned int> h_embed_group(m_embed_group->getIndexArray(),
-                                            access_location::host,
-                                            access_mode::read);
-    ArrayHandle<Scalar4> h_velocity(m_pdata->getVelocities(),
-                                    access_location::host,
-                                    access_mode::read);
-    for (unsigned int idx = 0; idx < num_group; ++idx)
-        {
-        // collect the initial velocities of the embedded particles
-        const unsigned int particle_index = h_embed_group.data[idx];
-        h_initial_vel.data[idx] = h_velocity.data[particle_index];
-        }
-    }
-
 void mpcd::CollisionMethod::thermalizeConstituentParticles(uint64_t timestep)
     {
     // zero accumulators
@@ -596,6 +576,26 @@ void mpcd::CollisionMethod::thermalizeConstituentParticles(uint64_t timestep)
         }
     }
 
+void mpcd::CollisionMethod::storeInitialEmbeddedGroupVelocities(uint64_t timestep)
+    {
+    const unsigned int num_group = m_embed_group->getNumMembers();
+    ArrayHandle<Scalar4> h_initial_vel(m_initial_velocity,
+                                       access_location::host,
+                                       access_mode::overwrite);
+    ArrayHandle<unsigned int> h_embed_group(m_embed_group->getIndexArray(),
+                                            access_location::host,
+                                            access_mode::read);
+    ArrayHandle<Scalar4> h_velocity(m_pdata->getVelocities(),
+                                    access_location::host,
+                                    access_mode::read);
+    for (unsigned int idx = 0; idx < num_group; ++idx)
+        {
+        // collect the initial velocities of the embedded particles
+        const unsigned int particle_index = h_embed_group.data[idx];
+        h_initial_vel.data[idx] = h_velocity.data[particle_index];
+        }
+    }
+
 void mpcd::CollisionMethod::accumulateRigidBodyMomenta(uint64_t timestep)
     {
     // zero accumulators
@@ -748,17 +748,12 @@ void mpcd::CollisionMethod::transferRigidBodyMomenta(uint64_t timestep)
 void mpcd::CollisionMethod::checkRigidAutotuners()
     {
     const bool rigid_body_collision = m_embed_group && m_rigid_bodies;
-    std::vector<std::string> names = {"mpcd_rigid_store",
-                                      "mpcd_rigid_rand",
-                                      "mpcd_rigid_netvelo",
-                                      "mpcd_rigid_accum",
-                                      "mpcd_rigid_transfer"};
     std::vector<std::shared_ptr<AutotunerBase>> new_autotuners;
     new_autotuners.insert(new_autotuners.end(),
-                          {m_store_tuner,
-                           m_drawrandvec_tuner,
+                          {m_drawrandvec_tuner,
                            m_netvelo_tuner,
                            m_applyrandvec_tuner,
+                           m_store_tuner,
                            m_accumulate_tuner,
                            m_transfer_tuner});
     if (m_exec_conf->isCUDAEnabled() && rigid_body_collision)
@@ -785,28 +780,6 @@ void mpcd::CollisionMethod::checkRigidAutotuners()
                 }
             }
         }
-    }
-//! Begin process of applying collisions to rigid bodies (GPU version)
-void mpcd::CollisionMethod::storeInitialEmbeddedGroupVelocitiesGPU(uint64_t timestep)
-    {
-    ArrayHandle<Scalar4> d_initial_vel(m_initial_velocity,
-                                       access_location::device,
-                                       access_mode::overwrite);
-    ArrayHandle<unsigned int> d_embed_group(m_embed_group->getIndexArray(),
-                                            access_location::device,
-                                            access_mode::read);
-    ArrayHandle<Scalar4> d_velocity(m_pdata->getVelocities(),
-                                    access_location::device,
-                                    access_mode::read);
-    m_store_tuner->begin();
-    mpcd::gpu::store_initial_embedded_group_velocities(d_initial_vel.data,
-                                                       d_velocity.data,
-                                                       d_embed_group.data,
-                                                       m_embed_group->getNumMembers(),
-                                                       m_store_tuner->getParam()[0]);
-    if (m_exec_conf->isCUDAErrorCheckingEnabled())
-        CHECK_CUDA_ERROR();
-    m_store_tuner->end();
     }
 
 void mpcd::CollisionMethod::thermalizeConstituentParticlesGPU(uint64_t timestep)
@@ -931,6 +904,29 @@ void mpcd::CollisionMethod::thermalizeConstituentParticlesGPU(uint64_t timestep)
             CHECK_CUDA_ERROR();
         m_applyrandvec_tuner->end();
         }
+    }
+
+//! Begin process of applying collisions to rigid bodies (GPU version)
+void mpcd::CollisionMethod::storeInitialEmbeddedGroupVelocitiesGPU(uint64_t timestep)
+    {
+    ArrayHandle<Scalar4> d_initial_vel(m_initial_velocity,
+                                       access_location::device,
+                                       access_mode::overwrite);
+    ArrayHandle<unsigned int> d_embed_group(m_embed_group->getIndexArray(),
+                                            access_location::device,
+                                            access_mode::read);
+    ArrayHandle<Scalar4> d_velocity(m_pdata->getVelocities(),
+                                    access_location::device,
+                                    access_mode::read);
+    m_store_tuner->begin();
+    mpcd::gpu::store_initial_embedded_group_velocities(d_initial_vel.data,
+                                                       d_velocity.data,
+                                                       d_embed_group.data,
+                                                       m_embed_group->getNumMembers(),
+                                                       m_store_tuner->getParam()[0]);
+    if (m_exec_conf->isCUDAErrorCheckingEnabled())
+        CHECK_CUDA_ERROR();
+    m_store_tuner->end();
     }
 
 //! Accumulate momenta changes of constituent particles of rigid bodies (GPU version)

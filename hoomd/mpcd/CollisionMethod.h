@@ -169,11 +169,11 @@ class PYBIND11_EXPORT CollisionMethod : public Autotuned
     //! Check for issues related to applying collision to rigid bodies
     void checkCollisionWarnings(uint64_t timestep);
 
-    //! Begin process of applying collisions to rigid bodies
-    void storeInitialEmbeddedGroupVelocities(uint64_t timestep);
-
     //! thermalize constituent particles of rigid bodies
     void thermalizeConstituentParticles(uint64_t timestep);
+
+    //! Begin process of applying collisions to rigid bodies
+    void storeInitialEmbeddedGroupVelocities(uint64_t timestep);
 
     //! Accumulate momenta changes of constituent particles of rigid bodies
     void accumulateRigidBodyMomenta(uint64_t timestep);
@@ -186,11 +186,11 @@ class PYBIND11_EXPORT CollisionMethod : public Autotuned
     //! Adds autotuners
     void checkRigidAutotuners();
 
-    //! Begin process of applying collisions to rigid bodies (GPU version)
-    void storeInitialEmbeddedGroupVelocitiesGPU(uint64_t timestep);
-
     //! thermalize constituent particles of rigid bodies
     void thermalizeConstituentParticlesGPU(uint64_t timestep);
+
+    //! Begin process of applying collisions to rigid bodies (GPU version)
+    void storeInitialEmbeddedGroupVelocitiesGPU(uint64_t timestep);
 
     //! Accumulate momenta changes of constituent particles of rigid bodies (GPU version)
     void accumulateRigidBodyMomentaGPU(uint64_t timestep);
@@ -198,10 +198,10 @@ class PYBIND11_EXPORT CollisionMethod : public Autotuned
     //! Finish process of applying collisions to rigid bodies (GPU version)
     void transferRigidBodyMomentaGPU(uint64_t timestep);
 
-    std::shared_ptr<Autotuner<1>> m_store_tuner;        //!< Tuner for storing velocities
     std::shared_ptr<Autotuner<1>> m_drawrandvec_tuner;  //!< Tuner for drawing random vectors
     std::shared_ptr<Autotuner<1>> m_netvelo_tuner;      //!< Tuner for finding net velocity
     std::shared_ptr<Autotuner<1>> m_applyrandvec_tuner; //!< Tuner for applying random vectors
+    std::shared_ptr<Autotuner<1>> m_store_tuner;        //!< Tuner for storing velocities
     std::shared_ptr<Autotuner<1>> m_accumulate_tuner;   //!< Tuner for accumulating momenta
     std::shared_ptr<Autotuner<1>> m_transfer_tuner;     //!< Tuner for transfering momenta
 
