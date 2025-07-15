@@ -7,9 +7,6 @@ Change Log
 5.3.1 (not yet released)
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-5.3.0 (2025-06-26)
-^^^^^^^^^^^^^^^^^^
-
 *Fixed*
 
 * Ensure that GPU devices have full unified memory capabilities
@@ -18,6 +15,11 @@ Change Log
   (`#2089 <https://github.com/glotzerlab/hoomd-blue/pull/2089>`__).
 * Install cuh headers
   (`#2091 <https://github.com/glotzerlab/hoomd-blue/pull/2091>`__).
+* Reduce the time needed to generate mesh bonds
+  (`#2097 <https://github.com/glotzerlab/hoomd-blue/pull/2097>`__).
+
+5.3.0 (2025-06-26)
+^^^^^^^^^^^^^^^^^^
 
 *Added*
 
