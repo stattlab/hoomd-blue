@@ -763,32 +763,25 @@ void mpcd::CollisionMethod::checkRigidAutotuners()
                            m_transfer_tuner});
     if (m_exec_conf->isCUDAEnabled() && rigid_body_collision)
         {
-        for (unsigned int n = 0; n < names.size(); ++n)
+        // add tuners if they aren't already there
+        for (std::shared_ptr<AutotunerBase> rigid_tuner : new_autotuners)
             {
-            bool add_autotuner = true;
-            for (std::shared_ptr<AutotunerBase> tuner : m_autotuners)
+            if (std::find(m_autotuners.begin(), m_autotuners.end(), rigid_tuner)
+                == m_autotuners.end())
                 {
-                if (tuner->getName() == names[n])
-                    {
-                    add_autotuner = false;
-                    }
-                }
-            if (add_autotuner)
-                {
-                m_autotuners.push_back(new_autotuners[n]);
+                m_autotuners.push_back(rigid_tuner);
                 }
             }
         }
     else
         {
-        for (std::string name : names)
+        // remove rigid tuners if present
+        for (unsigned int t = 0; t < m_autotuners.size(); ++t)
             {
-            for (unsigned int t = 0; t < m_autotuners.size(); ++t)
+            if (std::find(new_autotuners.begin(), new_autotuners.end(), m_autotuners[t])
+                != new_autotuners.end())
                 {
-                if (m_autotuners[t]->getName() == name)
-                    {
-                    m_autotuners.erase(m_autotuners.begin() + t);
-                    }
+                m_autotuners.erase(m_autotuners.begin() + t);
                 }
             }
         }
