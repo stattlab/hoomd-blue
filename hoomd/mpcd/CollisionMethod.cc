@@ -93,6 +93,7 @@ void mpcd::CollisionMethod::collide(uint64_t timestep)
         m_check_rigid_tuners = false;
         }
 #endif // ENABLE_HIP
+
     // set random grid shift
     m_cl->drawGridShift(timestep);
 
