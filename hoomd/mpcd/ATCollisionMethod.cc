@@ -20,6 +20,7 @@ mpcd::ATCollisionMethod::ATCollisionMethod(std::shared_ptr<SystemDefinition> sys
     : mpcd::CollisionMethod(sysdef, cur_timestep, period, phase)
     {
     setTemperature(T);
+    requireTemperature();
     m_exec_conf->msg->notice(5) << "Constructing MPCD AT collision method" << std::endl;
     }
 
