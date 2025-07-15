@@ -744,36 +744,49 @@ void mpcd::CollisionMethod::transferRigidBodyMomenta(uint64_t timestep)
 void mpcd::CollisionMethod::checkRigidAutotuners()
     {
     const bool rigid_body_collision = m_embed_group && m_rigid_bodies;
+    std::vector<std::string> names = {"mpcd_rigid_store",
+                                      "mpcd_rigid_rand",
+                                      "mpcd_rigid_netvelo",
+                                      "mpcd_rigid_accum",
+                                      "mpcd_rigid_transfer"};
+    std::vector<std::shared_ptr<AutotunerBase>> new_autotuners;
+    new_autotuners.insert(new_autotuners.end(),
+                          {m_store_tuner,
+                           m_drawrandvec_tuner,
+                           m_netvelo_tuner,
+                           m_applyrandvec_tuner,
+                           m_accumulate_tuner,
+                           m_transfer_tuner});
     if (m_exec_conf->isCUDAEnabled() && rigid_body_collision)
         {
-        m_store_tuner.reset(new Autotuner<1>({AutotunerBase::makeBlockSizeRange(m_exec_conf)},
-                                             m_exec_conf,
-                                             "mpcd_rigid_store"));
-        m_drawrandvec_tuner.reset(new Autotuner<1>({AutotunerBase::makeBlockSizeRange(m_exec_conf)},
-                                                   m_exec_conf,
-                                                   "mpcd_rigid_rand"));
-        m_netvelo_tuner.reset(new Autotuner<1>({AutotunerBase::makeBlockSizeRange(m_exec_conf)},
-                                               m_exec_conf,
-                                               "mpcd_rigid_netvelo"));
-        m_applyrandvec_tuner.reset(
-            new Autotuner<1>({AutotunerBase::makeBlockSizeRange(m_exec_conf)},
-                             m_exec_conf,
-                             "mpcd_rigid_applyrand"));
-        m_accumulate_tuner.reset(new Autotuner<1>({AutotunerBase::makeBlockSizeRange(m_exec_conf)},
-                                                  m_exec_conf,
-                                                  "mpcd_rigid_accum"));
-        m_transfer_tuner.reset(new Autotuner<1>({AutotunerBase::makeBlockSizeRange(m_exec_conf)},
-                                                m_exec_conf,
-                                                "mpcd_rigid_transfer"));
-        std::vector<std::shared_ptr<AutotunerBase>> new_autotuners;
-        new_autotuners.insert(new_autotuners.end(),
-                              {m_store_tuner,
-                               m_drawrandvec_tuner,
-                               m_netvelo_tuner,
-                               m_applyrandvec_tuner,
-                               m_accumulate_tuner,
-                               m_transfer_tuner});
-        m_autotuners.swap(new_autotuners);
+        for (unsigned int n = 0; n < names.size(); ++n)
+            {
+            bool add_autotuner = true;
+            for (std::shared_ptr<AutotunerBase> tuner : m_autotuners)
+                {
+                if (tuner->getName() == names[n])
+                    {
+                    add_autotuner = false;
+                    }
+                }
+            if (add_autotuner)
+                {
+                m_autotuners.push_back(new_autotuners[n]);
+                }
+            }
+        }
+    else
+        {
+        for (std::string name : names)
+            {
+            for (unsigned int t = 0; t < m_autotuners.size(); ++t)
+                {
+                if (m_autotuners[t]->getName() == name)
+                    {
+                    m_autotuners.erase(m_autotuners.begin() + t);
+                    }
+                }
+            }
         }
     }
 //! Begin process of applying collisions to rigid bodies (GPU version)
