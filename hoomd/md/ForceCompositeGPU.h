@@ -68,7 +68,6 @@ class PYBIND11_EXPORT ForceCompositeGPU : public ForceComposite
 
     GPUArray<uint2> m_flag; //!< Flag to read out error condition
 
-    // GPUVector<unsigned int> m_lookup_center; //!< Lookup particle index -> central particle index
     };
 
     } // end namespace md
