@@ -56,12 +56,7 @@ __global__ void draw_velocities_constituent_particles(Scalar3* d_linmom_accum,
 
     // check if it is a constituent and get central index of rigid body
     const unsigned int central_idx = d_lookup_center[idx];
-    if (central_idx >= MIN_FLOPPY)
-        {
-        return;
-        }
-    // do not need to thermalize central particle
-    if (idx == central_idx)
+    if (central_idx == NO_BODY || idx == central_idx)
         {
         return;
         }
@@ -180,12 +175,7 @@ __global__ void apply_thermalized_velocity_vectors(const Scalar3* d_angmom_accum
 
     // check if it is a constituent and get central index of rigid body
     const unsigned int central_idx = d_lookup_center[idx];
-    if (central_idx >= MIN_FLOPPY)
-        {
-        return;
-        }
-    // do not need to thermalize central particle
-    if (idx == central_idx)
+    if (central_idx == NO_BODY || idx == central_idx)
         {
         return;
         }
@@ -244,12 +234,7 @@ __global__ void accumulate_rigid_body_momenta(Scalar3* d_linmom_accum,
     // get the index from the embedded group and check if in a rigid body
     unsigned int particle_idx = d_embed_group[idx];
     const unsigned int central_idx = d_lookup_center[particle_idx];
-    if (central_idx >= MIN_FLOPPY)
-        {
-        return;
-        }
-    // collision on central particle itself already taken care of by collision rule
-    if (particle_idx == central_idx)
+    if (central_idx == NO_BODY || particle_idx == central_idx)
         {
         return;
         }
