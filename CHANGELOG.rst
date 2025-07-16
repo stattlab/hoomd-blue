@@ -17,6 +17,8 @@ Change Log
   (`#2091 <https://github.com/glotzerlab/hoomd-blue/pull/2091>`__).
 * Reduce the time needed to generate mesh bonds
   (`#2097 <https://github.com/glotzerlab/hoomd-blue/pull/2097>`__).
+* Equations displayed in ``hoomd.hpmc.compute.SDF`` documentation
+  (`#2096 <https://github.com/glotzerlab/hoomd-blue/discussions/2096>`__).
 
 5.3.0 (2025-06-26)
 ^^^^^^^^^^^^^^^^^^
