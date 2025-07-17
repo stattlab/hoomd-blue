@@ -155,7 +155,7 @@ cudaError_t mpcd::gpu::partition_particles(void* d_tmp,
                                            unsigned int* d_num_remove,
                                            const unsigned int N)
     {
-    cub::CountingInputIterator<unsigned int> ids(0);
+    thrust::counting_iterator<unsigned int> ids(0);
     cub::DevicePartition::Flagged(d_tmp,
                                   tmp_bytes,
                                   ids,
