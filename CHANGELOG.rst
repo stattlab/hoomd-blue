@@ -4,12 +4,12 @@ Change Log
 5.x
 ---
 
-5.3.1 (not yet released)
-^^^^^^^^^^^^^^^^^^^^^^^^
+5.3.1 (2025-07-18)
+^^^^^^^^^^^^^^^^^^
 
 *Fixed*
 
-* Ensure that GPU devices have full unified memory capabilities
+* Ensure that GPU devices have concurrent unified memory capabilities
   (`#2099 <https://github.com/glotzerlab/hoomd-blue/pull/2099>`__).
 * Fix segfault when attaching nlists with meshes
   (`#2089 <https://github.com/glotzerlab/hoomd-blue/pull/2089>`__).
