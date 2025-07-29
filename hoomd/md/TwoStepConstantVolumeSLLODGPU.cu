@@ -236,7 +236,7 @@ __global__ void gpu_nvt_sllod_rescale_step_two_kernel(Scalar4* d_vel,
         Scalar3 v_del_u = make_scalar3(0.0, 0.0, 0.0);
 
         // update velocity
-        v += Scalar(0.5) * (accel - v_del_u) * deltaT;
+        v += Scalar(0.5) * accel * deltaT;
 
         // remove flow field
         v.x -= shear_rate * pos.y;
@@ -247,7 +247,7 @@ __global__ void gpu_nvt_sllod_rescale_step_two_kernel(Scalar4* d_vel,
         if (vel_correction == true)
             {
             // SLLOD correction to velocity: shear rate tensor dotted with velocity
-            v_del_u = make_scalar3(shear_rate * vel.y, 0.0, 0.0);
+            v.x -= Scalar(0.5) * shear_rate * vel.y * m_deltaT;
             }
 
         // add flow field
