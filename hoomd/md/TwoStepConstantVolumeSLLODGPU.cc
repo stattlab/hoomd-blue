@@ -180,6 +180,9 @@ void TwoStepConstantVolumeSLLODGPU::integrateStepTwo(uint64_t timestep)
         ArrayHandle<Scalar4> d_vel(m_pdata->getVelocities(),
                                    access_location::device,
                                    access_mode::readwrite);
+        ArrayHandle<Scalar4> d_pos(m_pdata->getPositions(),
+                                   access_location::device,
+                                   access_mode::read);
         ArrayHandle<Scalar3> d_accel(m_pdata->getAccelerations(),
                                      access_location::device,
                                      access_mode::readwrite);
@@ -190,6 +193,7 @@ void TwoStepConstantVolumeSLLODGPU::integrateStepTwo(uint64_t timestep)
         // perform the update on the GPU
         m_tuner_two->begin();
         kernel::gpu_nvt_sllod_rescale_step_two(d_vel.data,
+                                         d_pos.data,
                                          d_accel.data,
                                          d_index_array.data,
                                          group_size,

@@ -35,6 +35,7 @@ hipError_t gpu_nvt_sllod_rescale_step_one(Scalar4* d_pos,
 
 //! Kernel driver for the second part of the NVT update called by NVTUpdaterGPU
 hipError_t gpu_nvt_sllod_rescale_step_two(Scalar4* d_vel,
+                                          Scalar4* d_pos,
                                           Scalar3* d_accel,
                                           unsigned int* d_group_members,
                                           unsigned int group_size,

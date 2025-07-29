@@ -204,6 +204,7 @@ hipError_t gpu_nvt_sllod_rescale_step_one(Scalar4* d_pos,
     \param deltaT Amount of real time to step forward in one time step
 */
 __global__ void gpu_nvt_sllod_rescale_step_two_kernel(Scalar4* d_vel,
+                                                      Scalar4* d_pos,
                                                       Scalar3* d_accel,
                                                       unsigned int* d_group_members,
                                                       unsigned int work_size,
@@ -227,10 +228,21 @@ __global__ void gpu_nvt_sllod_rescale_step_two_kernel(Scalar4* d_vel,
         Scalar4 vel = d_vel[idx];
         Scalar3 v = make_scalar3(vel.x, vel.y, vel.z);
 
+        Scalar4 pos = d_pos[idx];
+
         Scalar mass = vel.w;
         accel = accel / mass;
 
         Scalar3 v_del_u = make_scalar3(0.0, 0.0, 0.0);
+
+        // update velocity
+        v += Scalar(0.5) * (accel - v_del_u) * deltaT;
+
+        // remove flow field
+        v.x -= m_shear_rate * pos.y;
+
+        // rescale
+        v *= rescale_factor;
 
         if (vel_correction == true)
             {
@@ -238,11 +250,8 @@ __global__ void gpu_nvt_sllod_rescale_step_two_kernel(Scalar4* d_vel,
             v_del_u = make_scalar3(shear_rate * vel.y, 0.0, 0.0);
             }
 
-        // update velocity
-        v += Scalar(0.5) * (accel - v_del_u) * deltaT;
-
-        // rescale
-        v *= rescale_factor;
+        // add flow field
+        v.x += m_shear_rate * d_pos.y;
 
         // save
         d_vel[idx] = make_scalar4(v.x, v.y, v.z, vel.w);
@@ -262,6 +271,7 @@ __global__ void gpu_nvt_sllod_rescale_step_two_kernel(Scalar4* d_vel,
     \param rescale_factor Exponential velocity scaling factor
 */
 hipError_t gpu_nvt_sllod_rescale_step_two(Scalar4* d_vel,
+                                          Scalar4* d_pos,
                                           Scalar3* d_accel,
                                           unsigned int* d_group_members,
                                           unsigned int group_size,
@@ -292,6 +302,7 @@ hipError_t gpu_nvt_sllod_rescale_step_two(Scalar4* d_vel,
                        0,
                        0,
                        d_vel,
+                       d_pos,
                        d_accel,
                        d_group_members,
                        nwork,
