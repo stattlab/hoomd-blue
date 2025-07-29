@@ -239,7 +239,7 @@ __global__ void gpu_nvt_sllod_rescale_step_two_kernel(Scalar4* d_vel,
         v += Scalar(0.5) * (accel - v_del_u) * deltaT;
 
         // remove flow field
-        v.x -= m_shear_rate * pos.y;
+        v.x -= shear_rate * pos.y;
 
         // rescale
         v *= rescale_factor;
@@ -251,7 +251,7 @@ __global__ void gpu_nvt_sllod_rescale_step_two_kernel(Scalar4* d_vel,
             }
 
         // add flow field
-        v.x += m_shear_rate * d_pos.y;
+        v.x += shear_rate * pos.y;
 
         // save
         d_vel[idx] = make_scalar4(v.x, v.y, v.z, vel.w);
