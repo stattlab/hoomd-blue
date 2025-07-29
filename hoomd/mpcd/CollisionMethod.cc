@@ -164,9 +164,11 @@ void mpcd::CollisionMethod::collide(uint64_t timestep)
     }
 
 /*! Check for warnings and errors related to collision step and rigid bodies
- * \warning If any embedded particles have zero mass and no momentum to transfer
  * \warning If the central particle of a rigid body participates in collision
+ * \throws If any embedded particles have zero mass and no momentum to transfer
  * \throws If rigid body particles participate in collision but cannot be thermostatted
+ * \throws If center of mass of rigid body particles is not at the central particle
+ * \throws If sum of constituent particles' masses is not equal to mass of central particle
  */
 void mpcd::CollisionMethod::checkCollisionWarnings(uint64_t timestep)
     {
