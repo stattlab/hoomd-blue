@@ -1072,7 +1072,7 @@ void ForceComposite::findRigidCenters()
                                               access_mode::overwrite);
     unsigned int num_centers = 0;
     unsigned int n_particles_local = m_pdata->getN() + m_pdata->getNGhosts();
-    for (unsigned int idx = 0; idx < n_particles_local; idx++)
+    for (unsigned int idx = 0; idx < n_particles_local; ++idx)
         {
         unsigned int lookup_center = NO_BODY;
 
