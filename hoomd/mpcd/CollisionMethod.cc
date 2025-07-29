@@ -105,7 +105,7 @@ void mpcd::CollisionMethod::collide(uint64_t timestep)
     // update cell list
     m_cl->compute(timestep);
 
-    // create auxillary array for rigid bodies
+    // setup rigid bodies before collision happens 
     const bool rigid_body_collision = m_embed_group && m_rigid_bodies;
     if (rigid_body_collision)
         {
