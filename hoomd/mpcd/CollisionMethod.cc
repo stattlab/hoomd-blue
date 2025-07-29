@@ -105,7 +105,7 @@ void mpcd::CollisionMethod::collide(uint64_t timestep)
     // update cell list
     m_cl->compute(timestep);
 
-    // setup rigid bodies before collision happens 
+    // setup rigid bodies before collision happens
     const bool rigid_body_collision = m_embed_group && m_rigid_bodies;
     if (rigid_body_collision)
         {
@@ -745,15 +745,15 @@ void mpcd::CollisionMethod::checkRigidAutotuners()
     {
     const bool rigid_body_collision = m_embed_group && m_rigid_bodies;
     std::vector<std::shared_ptr<AutotunerBase>> rigid_autotuners {m_drawrandvec_tuner,
-                           m_netvelo_tuner,
-                           m_applyrandvec_tuner,
-                           m_store_tuner,
-                           m_accumulate_tuner,
-                           m_transfer_tuner};
+                                                                  m_netvelo_tuner,
+                                                                  m_applyrandvec_tuner,
+                                                                  m_store_tuner,
+                                                                  m_accumulate_tuner,
+                                                                  m_transfer_tuner};
     if (m_exec_conf->isCUDAEnabled() && rigid_body_collision)
         {
         // add tuners if they aren't already there
-        for (auto& rigid_tuner : new_autotuners)
+        for (auto& rigid_tuner : rigid_autotuners)
             {
             if (std::find(m_autotuners.begin(), m_autotuners.end(), rigid_tuner)
                 == m_autotuners.end())
@@ -765,7 +765,7 @@ void mpcd::CollisionMethod::checkRigidAutotuners()
     else
         {
         // remove rigid tuners if present
-        for (auto& rigid_tuner : new_autotuners)
+        for (auto& rigid_tuner : rigid_autotuners)
             {
             auto it = std::find(m_autotuners.begin(), m_autotuners.end(), rigid_tuner);
             if (it != m_autotuners.end())
