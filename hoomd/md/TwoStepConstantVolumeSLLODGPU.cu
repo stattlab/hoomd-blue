@@ -108,11 +108,11 @@ __global__ void gpu_nvt_sllod_rescale_step_one_kernel(Scalar4* d_pos,
 
         if (pos.y > global_hi_y) // crossed pbc in +y
             {
-            vel.x -= m_boundary_shear_velocity; // Scalar(2.0)*m_shear_rate*global_hi.y;
+            vel.x -= boundary_shear_velocity; // Scalar(2.0)*m_shear_rate*global_hi.y;
             }
         else if (pos.y < global_lo_y) // crossed pbc in -y
             {
-            vel.x += m_boundary_shear_velocity; //-= Scalar(2.0)*m_shear_rate*global_lo.y;
+            vel.x += boundary_shear_velocity; //-= Scalar(2.0)*m_shear_rate*global_lo.y;
             }
 
         // particles might have moved outside of the box. Wrap them back
