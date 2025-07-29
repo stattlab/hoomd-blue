@@ -744,14 +744,12 @@ void mpcd::CollisionMethod::transferRigidBodyMomenta(uint64_t timestep)
 void mpcd::CollisionMethod::checkRigidAutotuners()
     {
     const bool rigid_body_collision = m_embed_group && m_rigid_bodies;
-    std::vector<std::shared_ptr<AutotunerBase>> new_autotuners;
-    new_autotuners.insert(new_autotuners.end(),
-                          {m_drawrandvec_tuner,
+    std::vector<std::shared_ptr<AutotunerBase>> rigid_autotuners {m_drawrandvec_tuner,
                            m_netvelo_tuner,
                            m_applyrandvec_tuner,
                            m_store_tuner,
                            m_accumulate_tuner,
-                           m_transfer_tuner});
+                           m_transfer_tuner};
     if (m_exec_conf->isCUDAEnabled() && rigid_body_collision)
         {
         // add tuners if they aren't already there
