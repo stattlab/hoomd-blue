@@ -281,6 +281,10 @@ class PYBIND11_EXPORT ForceComposite : public MolecularForceCompute
     std::vector<Scalar> m_d_max;       //!< Maximum body diameter per constituent particle type
     std::vector<bool> m_d_max_changed; //!< True if maximum body diameter changed (per type)
 
+    unsigned int m_n_rigid;                  //!< Number of rigid bodies on the local rank.
+    GPUVector<unsigned int> m_rigid_center;  //!< Local particle indices of all central particles
+    GPUVector<unsigned int> m_lookup_center; //!< Lookup particle index -> central particle index
+
 #ifdef ENABLE_MPI
     /// The system's communicator.
     std::shared_ptr<Communicator> m_comm;
@@ -297,10 +301,6 @@ class PYBIND11_EXPORT ForceComposite : public MolecularForceCompute
 
     //! Compute the forces and torques on the central particle
     virtual void computeForces(uint64_t timestep);
-
-    unsigned int m_n_rigid; //!< Number of rigid bodies on the local rank.
-    GPUVector<unsigned int> m_rigid_center;  //!< Local particle indices of all central particles
-    GPUVector<unsigned int> m_lookup_center; //!< Lookup particle index -> central particle index
     };
 
     } // end namespace md
