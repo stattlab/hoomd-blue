@@ -14,8 +14,8 @@
 #ifdef ENABLE_HIP
 #include <hip/hip_runtime.h>
 #endif
-#include "hoomd/VectorMath.h"
 #include "hoomd/HOOMDMath.h"
+#include "hoomd/VectorMath.h"
 #include <iostream>
 /*! \file EvaluatorYLZ.h
     \brief Defines the dipole potential
@@ -41,8 +41,8 @@ class EvaluatorPairYLZ
     public:
     struct param_type
         {
-        Scalar eps;     //! the energy scale of the Mie potential.
-        Scalar phi; //! Sets the local curvature of the particles: phi = sin(theta_0) 
+        Scalar eps;  //! the energy scale of the Mie potential.
+        Scalar phi;  //! Sets the local curvature of the particles: phi = sin(theta_0)
         Scalar beta; //! sets the scale of the orietnational coupling = 1 - beta(a-1).
         Scalar rmin; //! cutoff of the first minimum where the Mie potential kicks in.
 
@@ -63,7 +63,7 @@ class EvaluatorPairYLZ
 
         HOSTDEVICE void allocate_shared(char*& ptr, unsigned int& available_bytes) const { }
 
-        HOSTDEVICE param_type() : eps(0),  phi(0), beta(0), rmin(0) { }
+        HOSTDEVICE param_type() : eps(0), phi(0), beta(0), rmin(0) { }
 
 #ifndef __HIPCC__
 
@@ -135,18 +135,18 @@ class EvaluatorPairYLZ
         \param _quat_i Quaternion of i^{th} particle
         \param _quat_j Quaternion of j^{th} particle
         \param _eps Electrostatic energy scale
-        \param _phi 
-        \param _beta 
-        \param _rmin 
+        \param _phi
+        \param _beta
+        \param _rmin
         \param _params Per type pair parameters of this potential
     */
     HOSTDEVICE EvaluatorPairYLZ(Scalar3& _dr,
-                                   Scalar4& _quat_i,
-                                   Scalar4& _quat_j,
-                                   Scalar _rcutsq,
-                                   const param_type& _params)
-        : dr(_dr), rcutsq(_rcutsq), quat_i(_quat_i), quat_j(_quat_j),
-          mu_i {0, 0, 0}, mu_j {0, 0, 0}, eps(_params.eps),  phi(_params.phi), beta(_params.beta), rmin(_params.rmin)
+                                Scalar4& _quat_i,
+                                Scalar4& _quat_j,
+                                Scalar _rcutsq,
+                                const param_type& _params)
+        : dr(_dr), rcutsq(_rcutsq), quat_i(_quat_i), quat_j(_quat_j), mu_i {0, 0, 0},
+          mu_j {0, 0, 0}, eps(_params.eps), phi(_params.phi), beta(_params.beta), rmin(_params.rmin)
         {
         }
 
@@ -166,7 +166,7 @@ class EvaluatorPairYLZ
     /*! \param tag_i Tag of particle i
         \param tag_j Tag of particle j
     */
-   HOSTDEVICE void setTags(unsigned int tagi, unsigned int tagj) { }
+    HOSTDEVICE void setTags(unsigned int tagi, unsigned int tagj) { }
 
     //! whether pair potential requires charges
     HOSTDEVICE static bool needsCharge()
@@ -221,7 +221,7 @@ class EvaluatorPairYLZ
         Scalar rinv = fast::rsqrt(rsq);
         Scalar r2inv = Scalar(1.0) / rsq;
         Scalar r4inv = r2inv * r2inv;
-        Scalar rminsq = rmin*rmin;
+        Scalar rminsq = rmin * rmin;
 
         // convert dipole vector in the body frame of each particle to space
         // frame
@@ -231,8 +231,8 @@ class EvaluatorPairYLZ
         vec3<Scalar> f;
         vec3<Scalar> t_i;
         vec3<Scalar> t_j;
-        Scalar e = Scalar(0.0); // define energy of the system
-        Scalar r = Scalar(1.0) / rinv; //define distance between particles
+        Scalar e = Scalar(0.0);        // define energy of the system
+        Scalar r = Scalar(1.0) / rinv; // define distance between particles
 
         bool dipole_i_interactions = (mu_i != vec3<Scalar>(0, 0, 0));
         bool dipole_j_interactions = (mu_j != vec3<Scalar>(0, 0, 0));
@@ -241,52 +241,55 @@ class EvaluatorPairYLZ
         if (dipole_interactions)
             {
             vec3<Scalar> rhat = rvec * rinv;
-            Scalar a = dot(p_i,p_j)-dot(p_i,rhat)*dot(p_j,rhat)+phi*dot((p_i-p_j),rhat)-phi*phi; 
-            vec3<Scalar> da_drhat =p_i * (phi-dot(p_j,rhat)) - p_j * (phi+dot(p_i,rhat));
-            vec3<Scalar> da_dni = p_j + rhat*(phi-dot(p_j,rhat));
-            vec3<Scalar> da_dnj = p_i - rhat*(phi+dot(p_i,rhat));
+            Scalar a = dot(p_i, p_j) - dot(p_i, rhat) * dot(p_j, rhat)
+                       + phi * dot((p_i - p_j), rhat) - phi * phi;
+            vec3<Scalar> da_drhat = p_i * (phi - dot(p_j, rhat)) - p_j * (phi + dot(p_i, rhat));
+            vec3<Scalar> da_dni = p_j + rhat * (phi - dot(p_j, rhat));
+            vec3<Scalar> da_dnj = p_i - rhat * (phi + dot(p_i, rhat));
 
             if (rsq < rminsq)
                 {
-                //Scalar dUdr = eps * 4 * rinv *(rminsq * r2inv - rminsq * rminsq * r4inv);
-                Scalar dUdr = eps*Scalar(4.0)*rinv*(rminsq*r2inv-rminsq*rminsq*r4inv);
+                // Scalar dUdr = eps * 4 * rinv *(rminsq * r2inv - rminsq * rminsq * r4inv);
+                Scalar dUdr = eps * Scalar(4.0) * rinv * (rminsq * r2inv - rminsq * rminsq * r4inv);
                 vec3<Scalar> dU_drhat = -beta * da_drhat;
 
-                f += -dUdr * rhat - (dU_drhat - dot(dU_drhat,rhat)*rhat) * rinv;
+                f += -dUdr * rhat - (dU_drhat - dot(dU_drhat, rhat) * rhat) * rinv;
 
                 // torques
-                vec3<Scalar> dU_dni =  - beta * da_dni;
-                vec3<Scalar> dU_dnj =  - beta * da_dnj;
-                
+                vec3<Scalar> dU_dni = -beta * da_dni;
+                vec3<Scalar> dU_dnj = -beta * da_dnj;
 
-                t_i += cross(dU_dni,p_i);
-                t_j += cross(dU_dnj,p_j);
+                t_i += cross(dU_dni, p_i);
+                t_j += cross(dU_dnj, p_j);
 
-                e += eps * ((rminsq * rminsq * r4inv - Scalar(2.0) * rminsq * r2inv) - beta * (a - Scalar(1.0)));
+                e += eps
+                     * ((rminsq * rminsq * r4inv - Scalar(2.0) * rminsq * r2inv)
+                        - beta * (a - Scalar(1.0)));
                 }
             else
                 {
-                // Code assumes zeta equals 4 
-                Scalar rcut = fast::sqrt(rcutsq); 
+                // Code assumes zeta equals 4
+                Scalar rcut = fast::sqrt(rcutsq);
                 Scalar gamma = Scalar(1.0) + beta * (a - Scalar(1.0));
                 Scalar inv_rmin_diff = Scalar(1.0) / (rcut - rmin);
                 Scalar rdiff = r - rmin;
                 Scalar pi = Scalar(M_PI);
-                Scalar cos_val = fast::cos(pi/Scalar(2.0) * rdiff * inv_rmin_diff); 
-                Scalar sq_cos_val = cos_val * cos_val; 
-                Scalar cos_val_4 = sq_cos_val*sq_cos_val;
-                Scalar sin_val = fast::sin(pi/Scalar(2.0) * rdiff * inv_rmin_diff);
-                Scalar dUdr = gamma * eps * Scalar(4.0) * pi * inv_rmin_diff * cos_val_4 * sq_cos_val * cos_val * sin_val;
+                Scalar cos_val = fast::cos(pi / Scalar(2.0) * rdiff * inv_rmin_diff);
+                Scalar sq_cos_val = cos_val * cos_val;
+                Scalar cos_val_4 = sq_cos_val * sq_cos_val;
+                Scalar sin_val = fast::sin(pi / Scalar(2.0) * rdiff * inv_rmin_diff);
+                Scalar dUdr = gamma * eps * Scalar(4.0) * pi * inv_rmin_diff * cos_val_4
+                              * sq_cos_val * cos_val * sin_val;
                 Scalar U_a = -eps * cos_val_4 * cos_val_4;
                 vec3<Scalar> dU_drhat = beta * U_a * da_drhat;
-                f += -dUdr * rhat - (dU_drhat - dot(dU_drhat,rhat)*rhat) * rinv;
+                f += -dUdr * rhat - (dU_drhat - dot(dU_drhat, rhat) * rhat) * rinv;
                 e += U_a * gamma;
-                
-                //torques
-                vec3<Scalar> dU_dni =  beta * U_a * da_dni;
-                vec3<Scalar> dU_dnj =  beta * U_a * da_dnj;
-                t_i += cross(dU_dni,p_i); // flip cross product to remove negative
-                t_j += cross(dU_dnj,p_j); // flip cross product to remove negative
+
+                // torques
+                vec3<Scalar> dU_dni = beta * U_a * da_dni;
+                vec3<Scalar> dU_dnj = beta * U_a * da_dnj;
+                t_i += cross(dU_dni, p_i); // flip cross product to remove negative
+                t_j += cross(dU_dnj, p_j); // flip cross product to remove negative
                 }
             }
         // dipole i - electrostatic j

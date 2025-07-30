@@ -17,7 +17,7 @@ namespace detail
 // 'shape'.
 template<>
 inline void export_AnisoPotentialPair<EvaluatorPairYLZ>(pybind11::module& m,
-                                                           const std::string& name)
+                                                        const std::string& name)
     {
     pybind11::class_<AnisoPotentialPair<EvaluatorPairYLZ>,
                      ForceCompute,

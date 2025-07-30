@@ -57,6 +57,7 @@ class AnisotropicPair(Pair):
         ret = [json.loads(json_string) for json_string in type_shapes]
         return ret
 
+
 class YLZ(AnisotropicPair):
     r"""Yuan, Lee, Zhang Potential (YLZ) potential.
 
@@ -64,24 +65,24 @@ class YLZ(AnisotropicPair):
         nlist (hoomd.md.nlist.NeighborList): Neighbor list
         default_r_cut (float): Default cutoff radius :math:`[\mathrm{length}]`.
 
-    `YLZ` computes the anisotropic interaction used to model fluidized   
+    `YLZ` computes the anisotropic interaction used to model fluidized
     membranes:
 
     .. math::
 
         U(r_{ij},\mu_{i},\mu_{j})=
         \begin{cases}
-        u\left(r\right)+\left(1-\psi\left(\hat{r}_{ij},\mu_i,\mu_j\right)\right)\epsilon & \text{if }r<r_{min}\\ 
+        u\left(r\right)+\left(1-\psi\left(\hat{r}_{ij},\mu_i,\mu_j\right)\right)\epsilon & \text{if }r<r_{min}\\
         u(r)\psi\left(\hat{r}_{ij},\mu_i,\mu_j\right)& \text{if }r_{min}<r<r_{cut}
         \end{cases}
 
         \mathrm{u}(r)=
         \begin{cases}
-        \epsilon\lbrack(\frac{r_{min}}{r})^{4}-2(\frac{r_{min}}{r})^{2}\rbrack & \text{if }r<r_{min}\\ 
+        \epsilon\lbrack(\frac{r_{min}}{r})^{4}-2(\frac{r_{min}}{r})^{2}\rbrack & \text{if }r<r_{min}\\
         -\epsilon\ cos^{8}(\frac{\pi}{2}\frac{r-r_{min}}{r_{c}-r_{min}}) & \text{if }r_{min}<r<r_{cut}
         \end{cases}
 
-        \psi = 1 + \beta(a-1) 
+        \psi = 1 + \beta(a-1)
         a = \mu_{i}\cdot \mu_{j}-\left(\mu_{i}\cdot\hat{r}_{ij}\right)\left(\mu_{j}\cdot\hat{r}_{ij}\right)+\phi\left(\mu_{i}-\mu_{j}\right)\cdot\hat{r}_{ij}-\phi^2$
     """
 
@@ -93,7 +94,7 @@ class YLZ(AnisotropicPair):
         params = TypeParameter(
             "params",
             "particle_types",
-            TypeParameterDict(eps=float, phi=float,beta=float, rmin=float, len_keys=2),
+            TypeParameterDict(eps=float, phi=float, beta=float, rmin=float, len_keys=2),
         )
         mu = TypeParameter(
             "mu", "particle_types", TypeParameterDict((float, float, float), len_keys=1)
@@ -1264,9 +1265,9 @@ class PatchyYukawa(Patchy):
 
 __all__ = [
     "ALJ",
+    "YLZ",
     "AnisotropicPair",
     "Dipole",
-    "YLZ",
     "GayBerne",
     "Patchy",
     "PatchyExpandedGaussian",
