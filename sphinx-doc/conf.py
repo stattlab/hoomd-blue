@@ -34,6 +34,10 @@ extensions = [
 
 if find_spec("sphinxcontrib.katex") is not None:
     extensions.append("sphinxcontrib.katex")
+
+    katex_options = r"""{
+        output: 'mathml',
+    }"""
 else:
     extensions.append("sphinx.ext.mathjax")
 
