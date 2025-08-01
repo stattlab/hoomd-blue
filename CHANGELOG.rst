@@ -4,6 +4,14 @@ Change Log
 5.x
 ---
 
+5.3.2 (not yet released)
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+*Fixed*
+
+* Display vector math symbol correctly in the documentation
+  (`#2109 <https://github.com/glotzerlab/hoomd-blue/pull/2109>`__).
+
 5.3.1 (2025-07-18)
 ^^^^^^^^^^^^^^^^^^
 
