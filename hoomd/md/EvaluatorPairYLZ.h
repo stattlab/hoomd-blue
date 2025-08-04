@@ -252,7 +252,7 @@ class EvaluatorPairYLZ
                 Scalar dUdr = eps * Scalar(4.0) * rinv * (rminsq * r2inv - rminsq * rminsq * r4inv);
                 vec3<Scalar> dU_drhat = -beta * da_drhat;
 
-		// forces
+                // forces
                 f += -dUdr * rhat - (dU_drhat - dot(dU_drhat, rhat) * rhat) * rinv;
 
                 // torques
