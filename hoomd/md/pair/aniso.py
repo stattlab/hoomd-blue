@@ -58,50 +58,6 @@ class AnisotropicPair(Pair):
         return ret
 
 
-class YLZ(AnisotropicPair):
-    r"""Yuan, Lee, Zhang Potential (YLZ) potential.
-
-    Args:
-        nlist (hoomd.md.nlist.NeighborList): Neighbor list
-        default_r_cut (float): Default cutoff radius :math:`[\mathrm{length}]`.
-
-    `YLZ` computes the anisotropic interaction used to model fluidized
-    membranes:
-
-    .. math::
-
-        U(r_{ij},\mu_{i},\mu_{j})=
-        \begin{cases}
-        u\left(r\right)+\left(1-\psi\left(\hat{r}_{ij},\mu_i,\mu_j\right)\right)\epsilon & \text{if }r<r_{min}\\
-        u(r)\psi\left(\hat{r}_{ij},\mu_i,\mu_j\right)& \text{if }r_{min}<r<r_{cut}
-        \end{cases}
-
-        \mathrm{u}(r)=
-        \begin{cases}
-        \epsilon\lbrack(\frac{r_{min}}{r})^{4}-2(\frac{r_{min}}{r})^{2}\rbrack & \text{if }r<r_{min}\\
-        -\epsilon\ cos^{8}(\frac{\pi}{2}\frac{r-r_{min}}{r_{c}-r_{min}}) & \text{if }r_{min}<r<r_{cut}
-        \end{cases}
-
-        \psi = 1 + \beta(a-1)
-        a = \mu_{i}\cdot \mu_{j}-\left(\mu_{i}\cdot\hat{r}_{ij}\right)\left(\mu_{j}\cdot\hat{r}_{ij}\right)+\phi\left(\mu_{i}-\mu_{j}\right)\cdot\hat{r}_{ij}-\phi^2$
-    """
-
-    _cpp_class_name = "AnisoPotentialPairYLZ"
-    __doc__ = __doc__.replace("{inherited}", AnisotropicPair._doc_inherited)
-
-    def __init__(self, nlist, default_r_cut=None):
-        super().__init__(nlist, default_r_cut, "none")
-        params = TypeParameter(
-            "params",
-            "particle_types",
-            TypeParameterDict(eps=float, phi=float, beta=float, rmin=float, len_keys=2),
-        )
-        mu = TypeParameter(
-            "mu", "particle_types", TypeParameterDict((float, float, float), len_keys=1)
-        )
-        self._extend_typeparam((params, mu))
-
-
 class Dipole(AnisotropicPair):
     r"""Screened dipole-dipole pair forces.
 
@@ -181,6 +137,111 @@ class Dipole(AnisotropicPair):
             "params",
             "particle_types",
             TypeParameterDict(A=float, kappa=float, len_keys=2),
+        )
+        mu = TypeParameter(
+            "mu", "particle_types", TypeParameterDict((float, float, float), len_keys=1)
+        )
+        self._extend_typeparam((params, mu))
+
+
+class YLZ(AnisotropicPair):
+    r"""Yuan, Lee, Zhang Potential (YLZ) potential.
+
+    Args:
+        nlist (hoomd.md.nlist.NeighborList): Neighbor list
+        default_r_cut (float): Default cutoff radius :math:`[\mathrm{length}]`.
+
+    `YLZ` computes the anisotropic interaction commonly used to model fluidized
+    membranes. This function combines a isotropic pair potential, with an
+    orientationally dependent modulation function, :math:`\psi`. The
+    isotropic pair potential is composed of two parts, a 2,4 Lennard-Jones
+    potential set to cut off at the potential minimum, :math:`r_{min}`.
+    The second part of the isotropic potential is a Cosine potential that
+    is a function of both :math:`r_{min}` and :math:`r_{cut}`.:
+
+    .. math::
+
+        U(r_{ij},\mu_{i},\mu_{j})=
+        \begin{cases}
+        u\left(r\right)+\left(1-\psi\left(\hat{r}_{ij},\mu_i,\mu_j\right)\right)
+        \epsilon & \text{if }r<r_{min}\\
+        u(r)\psi\left(\hat{r}_{ij},\mu_i,\mu_j\right)& \text{if }r_{min}<r<r_{cut}
+        \end{cases}
+
+        \mathrm{u}(r)=
+        \begin{cases}
+        \epsilon\lbrack(\frac{r_{min}}{r})^{4}-2(\frac{r_{min}}{r})^{2}\rbrack
+        & \text{if }r<r_{min}\\
+        -\epsilon\ cos^{8}(\frac{\pi}{2}\frac{r-r_{min}}{r_{c}-r_{min}})
+        & \text{if }r_{min}<r<r_{cut}
+        \end{cases}
+
+        \psi = 1 + \beta(a-1)
+
+        a = \mu_{i}\cdot \mu_{j}-\left(\mu_{i}\cdot\hat{r}_{ij}\right)
+        \left(\mu_{j}\cdot\hat{r}_{ij}\right)+\phi\left(\mu_{i}-\mu_{j}
+        \right)\cdot\hat{r}_{ij}-\phi^2
+
+    The modulation function :math:`\psi` creates torques to align the
+    orientation of a pair of particles as function of their axis of
+    symmetry :math:`\mu` in their local reference frame.
+
+    .. invisible-code-block: python
+        ylz = hoomd.md.pair.aniso.YLZ(nlist = neighbor_list,
+                                              default_r_cut = 2.6)
+
+
+        ylz_params = {'eps': 1.0, 'phi': 0.0, 'beta': 1.774532, 'rmin':1.122}
+
+        ylz.params.default = ylz_params
+        ylz.mu.default = (0,0,1)
+        simulation.operations.integrator.forces = [ylz]
+
+    .. py:attribute:: params
+
+        The YLZ potential parameters unique to each pair of particle types. The
+        dictionary has the following keys:
+
+        * ``params`` (`dict`, **required**)
+
+          * ``eps`` (`float`) - :math:`\epsilon` sets the energy well depth
+          * ``phi`` (`float`) - :math:`\phi` is the parameter related to local curvature
+          * ``beta`` (`float`) - :math:`\beta` sets weight of energy
+          penalty for misoriented particles
+          * ``rmin`` (`float`) - :math:`r_{min}` cutoff where the 4,2 LJ begins
+
+
+        .. rubric:: Example:
+
+        .. code-block:: python
+
+            ylz_params = {'eps': 1.0, 'phi': 0.0, 'beta': 1.774532, 'rmin':1.12}
+            ylz.params[('A', 'A')] = ylz_params
+
+    .. py:attribute:: mu
+
+        :math:`\mu` - axis of symmetry in the local reference frame
+        (i.e. :math:`(\mu_x, \mu_y, \mu_z)`)
+
+        Type: `TypeParameter` [``particle_type``, `tuple` [`float`, `float`,
+        `float` ]]
+
+        .. rubric:: Examples:
+
+        .. code-block:: python
+
+            ylz.mu['A'] = (1.0,0.0,0.0)
+    """
+
+    _cpp_class_name = "AnisoPotentialPairYLZ"
+    __doc__ = __doc__.replace("{inherited}", AnisotropicPair._doc_inherited)
+
+    def __init__(self, nlist, default_r_cut=None):
+        super().__init__(nlist, default_r_cut, "none")
+        params = TypeParameter(
+            "params",
+            "particle_types",
+            TypeParameterDict(eps=float, phi=float, beta=float, rmin=float, len_keys=2),
         )
         mu = TypeParameter(
             "mu", "particle_types", TypeParameterDict((float, float, float), len_keys=1)
