@@ -186,6 +186,7 @@ ylz_test_parameters = [
         ],
     ),
 
+    # test cosine function with exponent 15
     (
         hoomd.md.pair.aniso.YLZ,
         {},
@@ -210,6 +211,8 @@ ylz_test_parameters = [
             [-0.07988973 ,-0.28007534,  0.14166464],
         ],
     ),
+
+    # test cosine function with exponent 20
     (
         hoomd.md.pair.aniso.YLZ,
         {},
