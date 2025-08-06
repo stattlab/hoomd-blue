@@ -45,6 +45,7 @@ class EvaluatorPairYLZ
         Scalar phi;  //! Sets the local curvature of the particles: phi = sin(theta_0).
         Scalar beta; //! sets the scale of the orietnational coupling.
         Scalar rmin; //! cutoff of the first minimum where the Lennard-Jones begins.
+        int twozeta;    //! exponential of the cosine potential.
 
 #ifdef ENABLE_HIP
         //! Set CUDA memory hints
@@ -63,7 +64,7 @@ class EvaluatorPairYLZ
 
         HOSTDEVICE void allocate_shared(char*& ptr, unsigned int& available_bytes) const { }
 
-        HOSTDEVICE param_type() : eps(0), phi(0), beta(0), rmin(0) { }
+        HOSTDEVICE param_type() : eps(0), phi(0), beta(0), rmin(0), twozeta(0) { }
 
 #ifndef __HIPCC__
 
@@ -73,6 +74,7 @@ class EvaluatorPairYLZ
             phi = v["phi"].cast<Scalar>();
             beta = v["beta"].cast<Scalar>();
             rmin = v["rmin"].cast<Scalar>();
+            twozeta = v["twozeta"].cast<unsigned int>();
             }
 
         pybind11::object toPython()
@@ -82,6 +84,7 @@ class EvaluatorPairYLZ
             v["phi"] = phi;
             v["beta"] = beta;
             v["rmin"] = rmin;
+            v["twozeta"] = twozeta;
             return v;
             }
 
@@ -146,7 +149,8 @@ class EvaluatorPairYLZ
                                 Scalar _rcutsq,
                                 const param_type& _params)
         : dr(_dr), rcutsq(_rcutsq), quat_i(_quat_i), quat_j(_quat_j), mu_i {0, 0, 0},
-          mu_j {0, 0, 0}, eps(_params.eps), phi(_params.phi), beta(_params.beta), rmin(_params.rmin)
+          mu_j {0, 0, 0}, eps(_params.eps), phi(_params.phi), beta(_params.beta), rmin(_params.rmin),
+	  twozeta(_params.twozeta)
         {
         }
 
@@ -269,17 +273,16 @@ class EvaluatorPairYLZ
             else
                 {
                 Scalar rcut = fast::sqrt(rcutsq);
+		Scalar zeta = Scalar(twozeta)/Scalar(2.0); 
                 Scalar gamma = Scalar(1.0) + beta * (a - Scalar(1.0));
                 Scalar inv_rmin_diff = Scalar(1.0) / (rcut - rmin);
                 Scalar rdiff = r - rmin;
                 Scalar pi = Scalar(M_PI);
                 Scalar cos_val = fast::cos(pi / Scalar(2.0) * rdiff * inv_rmin_diff);
-                Scalar sq_cos_val = cos_val * cos_val;
-                Scalar cos_val_4 = sq_cos_val * sq_cos_val;
                 Scalar sin_val = fast::sin(pi / Scalar(2.0) * rdiff * inv_rmin_diff);
-                Scalar dUdr = gamma * eps * Scalar(4.0) * pi * inv_rmin_diff * cos_val_4
-                              * sq_cos_val * cos_val * sin_val;
-                Scalar U_a = -eps * cos_val_4 * cos_val_4;
+		Scalar cos_pow_minus = fast::pow(cos_val,twozeta-1);
+                Scalar dUdr = gamma * eps * zeta * pi * inv_rmin_diff * cos_pow_minus * sin_val;
+                Scalar U_a = -eps * cos_pow_minus * cos_val;
                 vec3<Scalar> dU_drhat = beta * U_a * da_drhat;
                 f += -dUdr * rhat - (dU_drhat - dot(dU_drhat, rhat) * rhat) * rinv;
                 e += U_a * gamma;
@@ -338,6 +341,7 @@ class EvaluatorPairYLZ
     Scalar phi;
     Scalar beta;
     Scalar rmin;
+    unsigned int twozeta;
     // const param_type &params;   //!< The pair potential parameters
     };
 
