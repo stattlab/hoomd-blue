@@ -40,25 +40,25 @@ class FrictionalPair(Pair):
         ret = [json.loads(json_string) for json_string in type_shapes]
         return ret
 
-class FrictionLJLinear(FrictionalPair):
-    r"""Linear frictional model pair force with the LJ conservative force. 
+class FrictionLJCoulombNewton(FrictionalPair):
+    r"""Coulomb-Newton frictional model pair force with the LJ conservative force. 
 
     Args:
         nlist (hoomd.md.nlist.NeighborList): Neighbor list
         default_r_cut (float): Default cutoff radius: math:`[\mathrm{length}]`.
     
-    `FrictionLJLinear` computes the frictional interaction 
+    `FrictionLJCoulombNewton` computes the frictional interaction 
     between pairs of particles.   
     """
 
-    _cpp_class_name = "FrictionPairFrictionLJLinear"
+    _cpp_class_name = "FrictionPairFrictionLJCoulombNewton"
     __doc__ = __doc__.replace("{inherited}", FrictionalPair._doc_inherited)
 
     def __init__(self, nlist, default_r_cut=None):
         super().__init__(nlist, default_r_cut, 'none')
         params = TypeParameter(
             'params', 'particle_types',
-            TypeParameterDict(epsilon=float, sigma=float, gamma_f=float, kT=float, len_keys=2))
+            TypeParameterDict(epsilon=float, sigma=float, gamma_f=float, kappa_f=float, kT=float, len_keys=2))
         self._add_typeparam(params)
 
 class FrictionLJConstant(FrictionalPair):
@@ -82,25 +82,25 @@ class FrictionLJConstant(FrictionalPair):
             TypeParameterDict(epsilon=float, sigma=float, kappa_f=float, kT=float, len_keys=2))
         self._add_typeparam(params)
 
-class FrictionLJCoulombNewton(FrictionalPair):
-    r"""Coulomb-Newton frictional model pair force with the LJ conservative force. 
+class FrictionLJLinear(FrictionalPair):
+    r"""Linear frictional model pair force with the LJ conservative force. 
 
     Args:
         nlist (hoomd.md.nlist.NeighborList): Neighbor list
         default_r_cut (float): Default cutoff radius: math:`[\mathrm{length}]`.
     
-    `FrictionLJCoulombNewton` computes the frictional interaction 
+    `FrictionLJLinear` computes the frictional interaction 
     between pairs of particles.   
     """
 
-    _cpp_class_name = "FrictionPairFrictionLJCoulombNewton"
+    _cpp_class_name = "FrictionPairFrictionLJLinear"
     __doc__ = __doc__.replace("{inherited}", FrictionalPair._doc_inherited)
 
     def __init__(self, nlist, default_r_cut=None):
         super().__init__(nlist, default_r_cut, 'none')
         params = TypeParameter(
             'params', 'particle_types',
-            TypeParameterDict(epsilon=float, sigma=float, gamma_f=float, kappa_f=float, kT=float, len_keys=2))
+            TypeParameterDict(epsilon=float, sigma=float, gamma_f=float, kT=float, len_keys=2))
         self._add_typeparam(params)
         
 __all__ = [
