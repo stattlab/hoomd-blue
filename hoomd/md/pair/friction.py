@@ -40,27 +40,6 @@ class FrictionalPair(Pair):
         ret = [json.loads(json_string) for json_string in type_shapes]
         return ret
 
-class FrictionLJCoulombNewton(FrictionalPair):
-    r"""Coulomb-Newton frictional model pair force with the LJ conservative force. 
-
-    Args:
-        nlist (hoomd.md.nlist.NeighborList): Neighbor list
-        default_r_cut (float): Default cutoff radius: math:`[\mathrm{length}]`.
-    
-    `FrictionLJCoulombNewton` computes the frictional interaction 
-    between pairs of particles.   
-    """
-
-    _cpp_class_name = "FrictionPairFrictionLJCoulombNewton"
-    __doc__ = __doc__.replace("{inherited}", FrictionalPair._doc_inherited)
-
-    def __init__(self, nlist, default_r_cut=None):
-        super().__init__(nlist, default_r_cut, 'none')
-        params = TypeParameter(
-            'params', 'particle_types',
-            TypeParameterDict(epsilon=float, sigma=float, gamma_f=float, kappa_f=float, kT=float, len_keys=2))
-        self._add_typeparam(params)
-
 class FrictionLJConstant(FrictionalPair):
     r"""Constant frictional model pair force with the LJ conservative force. 
 
@@ -80,6 +59,27 @@ class FrictionLJConstant(FrictionalPair):
         params = TypeParameter(
             'params', 'particle_types',
             TypeParameterDict(epsilon=float, sigma=float, kappa_f=float, kT=float, len_keys=2))
+        self._add_typeparam(params)
+
+class FrictionLJCoulombNewton(FrictionalPair):
+    r"""Coulomb-Newton frictional model pair force with the LJ conservative force. 
+
+    Args:
+        nlist (hoomd.md.nlist.NeighborList): Neighbor list
+        default_r_cut (float): Default cutoff radius: math:`[\mathrm{length}]`.
+    
+    `FrictionLJCoulombNewton` computes the frictional interaction 
+    between pairs of particles.   
+    """
+
+    _cpp_class_name = "FrictionPairFrictionLJCoulombNewton"
+    __doc__ = __doc__.replace("{inherited}", FrictionalPair._doc_inherited)
+
+    def __init__(self, nlist, default_r_cut=None):
+        super().__init__(nlist, default_r_cut, 'none')
+        params = TypeParameter(
+            'params', 'particle_types',
+            TypeParameterDict(epsilon=float, sigma=float, gamma_f=float, kappa_f=float, kT=float, len_keys=2))
         self._add_typeparam(params)
 
 class FrictionLJLinear(FrictionalPair):
@@ -105,8 +105,8 @@ class FrictionLJLinear(FrictionalPair):
         
 __all__ = [
     "FrictionalPair",
-    "FrictionLJCoulombNewton",
     "FrictionLJConstant",
+    "FrictionLJCoulombNewton",
     "FrictionLJLinear",
 ]
  
