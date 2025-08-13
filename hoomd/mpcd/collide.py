@@ -172,7 +172,7 @@ class CollisionMethod(Operation):
     """
     )
 
-    def __init__(self, period, kT=None, embedded_particles=None):
+    def __init__(self, period, embedded_particles=None, kT=None):
         super().__init__()
 
         param_dict = ParameterDict(
