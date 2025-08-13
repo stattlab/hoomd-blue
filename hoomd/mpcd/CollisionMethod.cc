@@ -431,8 +431,8 @@ void mpcd::CollisionMethod::beginThermalizeConstituentParticles(uint64_t timeste
             continue;
             }
 
-        Scalar mass_const = h_velocity.data[idx].w;
-        unsigned int tag = h_tag.data[idx];
+        const Scalar mass_const = h_velocity.data[idx].w;
+        const unsigned int tag = h_tag.data[idx];
         // draw random velocities from normal distribution
         hoomd::RandomGenerator rng(
             hoomd::Seed(hoomd::RNGIdentifier::CollisionMethod, timestep, seed),
