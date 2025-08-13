@@ -387,7 +387,7 @@ class StochasticRotationDynamics(CollisionMethod):
     )
 
     def __init__(self, period, angle, kT=None, embedded_particles=None):
-        super().__init__(period, kT, embedded_particles)
+        super().__init__(period=period, kT=kT, embedded_particles=embedded_particles)
 
         param_dict = ParameterDict(
             angle=float(angle),
