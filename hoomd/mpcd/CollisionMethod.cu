@@ -46,8 +46,8 @@ __global__ void draw_velocities_constituent_particles(Scalar3* d_linmom_accum,
         return;
         }
 
-    Scalar mass_const = d_velocity[idx].w;
-    unsigned int tag = d_tag[idx];
+    const Scalar mass_const = d_velocity[idx].w;
+    const unsigned int tag = d_tag[idx];
     // draw random velocities from normal distribution
     hoomd::RandomGenerator rng(hoomd::Seed(hoomd::RNGIdentifier::CollisionMethod, timestep, seed),
                                hoomd::Counter(tag, 1));
@@ -103,12 +103,12 @@ __global__ void get_net_velocity_rigid_body(const Scalar3* d_linmom_accum,
     const unsigned int central_idx = d_rigid_center[idx];
 
     // store the net linear velocity in AltVelocities
-    Scalar mass = d_velocity[central_idx].w;
-    Scalar3 net_velocity = d_linmom_accum[central_idx] / mass;
+    const Scalar mass = d_velocity[central_idx].w;
+    const Scalar3 net_velocity = d_linmom_accum[central_idx] / mass;
     d_alt_vel[central_idx] = make_scalar4(net_velocity.x, net_velocity.y, net_velocity.z, mass);
 
     // get net angular momentum
-    vec3<Scalar> net_angmom(d_angmom_accum[central_idx]);
+    const vec3<Scalar> net_angmom(d_angmom_accum[central_idx]);
     const quat<Scalar> orientation(d_orientation[central_idx]);
     const vec3<Scalar> inertia(d_inertia[central_idx]);
 
@@ -138,7 +138,7 @@ __global__ void get_net_velocity_rigid_body(const Scalar3* d_linmom_accum,
         {
         net_angvel_body.z = Scalar(0);
         }
-    vec3<Scalar> net_angvel_space = rotate(orientation, net_angvel_body);
+    const vec3<Scalar> net_angvel_space = rotate(orientation, net_angvel_body);
 
     // set net angular velocity in space frame
     d_angmom_accum[central_idx] = vec_to_scalar3(net_angvel_space);

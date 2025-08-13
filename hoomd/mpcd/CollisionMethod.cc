@@ -251,7 +251,7 @@ void mpcd::CollisionMethod::checkCollisionWarnings(uint64_t timestep)
                                                       access_location::host,
                                                       access_mode::read);
             Index2D molecule_indexer = m_rigid_bodies->getMoleculeIndexer();
-            unsigned int nmol = molecule_indexer.getH();
+            const unsigned int nmol = molecule_indexer.getH();
             // access body definitions
             ArrayHandle<Scalar3> h_body_pos(m_rigid_bodies->getBodyOffsets(),
                                             access_location::host,
@@ -271,7 +271,7 @@ void mpcd::CollisionMethod::checkCollisionWarnings(uint64_t timestep)
                                              access_location::host,
                                              access_mode::read);
             // loop over all molecules
-            unsigned int n_particles_local = m_pdata->getN() + m_pdata->getNGhosts();
+            const unsigned int n_particles_local = m_pdata->getN() + m_pdata->getNGhosts();
             for (unsigned int ibody = 0; ibody < nmol && !invalid_center_of_mass; ++ibody)
                 {
                 // get central particle tag from first particle in molecule
@@ -279,13 +279,13 @@ void mpcd::CollisionMethod::checkCollisionWarnings(uint64_t timestep)
                 const unsigned int first_idx = h_molecule_list.data[molecule_indexer(0, ibody)];
                 if (first_idx > n_particles_local)
                     continue;
-                unsigned int central_tag = h_body.data[first_idx];
-                unsigned int central_idx = h_rtag.data[central_tag];
+                const unsigned int central_tag = h_body.data[first_idx];
+                const unsigned int central_idx = h_rtag.data[central_tag];
                 if (central_idx >= n_particles_local)
                     continue;
 
                 // only do molecules participating in the collision
-                unsigned int type = __scalar_as_int(h_postype.data[central_idx].w);
+                const unsigned int type = __scalar_as_int(h_postype.data[central_idx].w);
                 if (rigid_types.find(type) == rigid_types.end())
                     {
                     continue;
@@ -294,33 +294,34 @@ void mpcd::CollisionMethod::checkCollisionWarnings(uint64_t timestep)
                 // find center of mass position of particle
                 Scalar3 center_of_mass = make_scalar3(0.0, 0.0, 0.0);
                 Scalar mass_sum = Scalar(0.0);
-                Scalar center_mass = h_velocity.data[central_idx].w;
+                const Scalar center_mass = h_velocity.data[central_idx].w;
                 for (unsigned int constituent_index = 0;
                      constituent_index < h_molecule_len.data[ibody];
                      ++constituent_index)
                     {
-                    unsigned int idxj
+                    const unsigned int idxj
                         = h_molecule_list.data[molecule_indexer(constituent_index, ibody)];
                     assert(idxj < m_pdata->getN() + m_pdata->getNGhosts());
                     if (idxj == central_idx)
                         continue;
 
                     // get relative position and mass of constituent
-                    unsigned int idx_in_body = h_molecule_order.data[idxj] - 1;
-                    Scalar3 local_pos(h_body_pos.data[h_body_idx(type, idx_in_body)]);
-                    Scalar mass = h_velocity.data[idxj].w;
+                    const unsigned int idx_in_body = h_molecule_order.data[idxj] - 1;
+                    const Scalar3 local_pos(h_body_pos.data[h_body_idx(type, idx_in_body)]);
+                    const Scalar mass = h_velocity.data[idxj].w;
                     // add to accumulating center of mass
                     center_of_mass += mass * local_pos;
                     mass_sum += mass;
                     }
                 // check if center of mass in body frame is (0, 0, 0)
-                invalid_center_of_mass |= !((center_of_mass.x >= -tol && center_of_mass.x <= tol)
-                              && (center_of_mass.y >= -tol && center_of_mass.y <= tol)
-                              && (center_of_mass.z >= -tol && center_of_mass.z <= tol));
+                invalid_center_of_mass
+                    |= !((center_of_mass.x >= -tol && center_of_mass.x <= tol)
+                         && (center_of_mass.y >= -tol && center_of_mass.y <= tol)
+                         && (center_of_mass.z >= -tol && center_of_mass.z <= tol));
 
                 // check if center of mass is the same as the sum of masses
-                Scalar mass_diff = center_mass - mass_sum;
-                bool sum_in_tol = mass_diff >= -tol && mass_diff <= tol;
+                const Scalar mass_diff = center_mass - mass_sum;
+                const bool sum_in_tol = mass_diff >= -tol && mass_diff <= tol;
                 invalid_mass_sum |= !sum_in_tol;
                 }
             }
@@ -394,7 +395,7 @@ void mpcd::CollisionMethod::beginThermalizeConstituentParticles(uint64_t timeste
     m_linmom_accum.zeroFill();
     m_angmom_accum.zeroFill();
 
-    Scalar T_set = (*m_T)(timestep);
+    const Scalar T_set = (*m_T)(timestep);
 
     ArrayHandle<Scalar4> h_velocity(m_pdata->getVelocities(),
                                     access_location::host,
@@ -418,8 +419,8 @@ void mpcd::CollisionMethod::beginThermalizeConstituentParticles(uint64_t timeste
     ArrayHandle<unsigned int> h_lookup_center(m_rigid_bodies->getLookupCenters(),
                                               access_location::host,
                                               access_mode::read);
-    unsigned int num_total = m_pdata->getN();
-    uint16_t seed = m_sysdef->getSeed();
+    const unsigned int num_total = m_pdata->getN();
+    const uint16_t seed = m_sysdef->getSeed();
 
     // get random velocities and accumulate the resulting change in momentum
     for (unsigned int idx = 0; idx < num_total; ++idx)
@@ -492,7 +493,7 @@ void mpcd::CollisionMethod::finishThermalizeConstituentParticles(uint64_t timest
     ArrayHandle<unsigned int> h_lookup_center(m_rigid_bodies->getLookupCenters(),
                                               access_location::host,
                                               access_mode::read);
-    unsigned int num_total = m_pdata->getN();
+    const unsigned int num_total = m_pdata->getN();
     ArrayHandle<Scalar4> h_orientation(m_pdata->getOrientationArray(),
                                        access_location::host,
                                        access_mode::read);
@@ -504,20 +505,20 @@ void mpcd::CollisionMethod::finishThermalizeConstituentParticles(uint64_t timest
                                              access_mode::read);
 
     // get net linear velocity and net angular velocity of central particles
-    unsigned int num_centers = m_rigid_bodies->getNLocal();
+    const unsigned int num_centers = m_rigid_bodies->getNLocal();
     for (unsigned int idx = 0; idx < num_centers; ++idx)
         {
         // get index of central particle
         const unsigned int central_idx = h_rigid_center.data[idx];
 
         // store the net linear velocity in AltVelocities
-        Scalar mass = h_velocity.data[central_idx].w;
-        Scalar3 net_velocity = h_linmom_accum.data[central_idx] / mass;
+        const Scalar mass = h_velocity.data[central_idx].w;
+        const Scalar3 net_velocity = h_linmom_accum.data[central_idx] / mass;
         h_alt_vel.data[central_idx]
             = make_scalar4(net_velocity.x, net_velocity.y, net_velocity.z, mass);
 
         // get net angular momentum
-        vec3<Scalar> net_angmom(h_angmom_accum.data[central_idx]);
+        const vec3<Scalar> net_angmom(h_angmom_accum.data[central_idx]);
         const quat<Scalar> orientation(h_orientation.data[central_idx]);
         const vec3<Scalar> inertia(h_inertia.data[central_idx]);
 
@@ -547,7 +548,7 @@ void mpcd::CollisionMethod::finishThermalizeConstituentParticles(uint64_t timest
             {
             net_angvel_body.z = Scalar(0);
             }
-        vec3<Scalar> net_angvel_space = rotate(orientation, net_angvel_body);
+        const vec3<Scalar> net_angvel_space = rotate(orientation, net_angvel_body);
 
         // set net angular velocity in space frame
         h_angmom_accum.data[central_idx] = vec_to_scalar3(net_angvel_space);
@@ -717,7 +718,7 @@ void mpcd::CollisionMethod::transferRigidBodyMomenta(uint64_t timestep)
                                              access_location::host,
                                              access_mode::read);
     // add accumulated momentum to the central particle
-    unsigned int num_centers = m_rigid_bodies->getNLocal();
+    const unsigned int num_centers = m_rigid_bodies->getNLocal();
     for (unsigned int idx = 0; idx < num_centers; ++idx)
         {
         // get index of central particle
