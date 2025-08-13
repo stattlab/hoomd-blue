@@ -1,10 +1,9 @@
 // Copyright (c) 2009-2025 The Regents of the University of Michigan.
 // Part of HOOMD-blue, released under the BSD 3-Clause License.
 
-#include "FrictionPair.h"
 #include "EvaluatorPairFrictionLJBase.h"
 #include "EvaluatorPairFrictionLJVariants.h"
-
+#include "FrictionPair.h"
 
 namespace hoomd
     {
@@ -25,7 +24,9 @@ void export_FrictionPairFrictionLJConstant(pybind11::module& m)
 
 void export_FrictionPairFrictionLJCoulombNewton(pybind11::module& m)
     {
-    export_FrictionPair<EvaluatorPairFrictionLJCoulombNewton>(m, "FrictionPairFrictionLJCoulombNewton");
+    export_FrictionPair<EvaluatorPairFrictionLJCoulombNewton>(
+        m,
+        "FrictionPairFrictionLJCoulombNewton");
     }
 
     } // end namespace detail

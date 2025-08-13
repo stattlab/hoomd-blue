@@ -28,8 +28,8 @@ namespace md
 //! Template class for computing friction pair potentials on the GPU
 /*! Derived from FrictionPair, this class provides exactly the same interface for computing
    friction pair interactions, forces and torques.  In the same way as FrictionPair, this class
-   serves as a shell dealing with all the details common to every frictional contact calculation while
-   te \a evaluator calculates \f$V(\vec r,\vec e_i, \vec e_j)\f$ in a generic way.
+   serves as a shell dealing with all the details common to every frictional contact calculation
+   while te \a evaluator calculates \f$V(\vec r,\vec e_i, \vec e_j)\f$ in a generic way.
 
     \tparam evaluator EvaluatorPair class used to evaluate potential, force and torque.
     \sa export_FrictionPairGPU()
@@ -38,8 +38,7 @@ template<class evaluator> class FrictionPairGPU : public FrictionPair<evaluator>
     {
     public:
     //! Construct the pair potential
-    FrictionPairGPU(std::shared_ptr<SystemDefinition> sysdef,
-                          std::shared_ptr<NeighborList> nlist);
+    FrictionPairGPU(std::shared_ptr<SystemDefinition> sysdef, std::shared_ptr<NeighborList> nlist);
     //! Destructor
     virtual ~FrictionPairGPU() { };
 
@@ -57,7 +56,7 @@ template<class evaluator> class FrictionPairGPU : public FrictionPair<evaluator>
 
 template<class evaluator>
 FrictionPairGPU<evaluator>::FrictionPairGPU(std::shared_ptr<SystemDefinition> sysdef,
-                                                        std::shared_ptr<NeighborList> nlist)
+                                            std::shared_ptr<NeighborList> nlist)
     : FrictionPair<evaluator>(sysdef, nlist)
     {
     // can't run on the GPU if there aren't any GPUs in the execution configuration
@@ -116,7 +115,7 @@ template<class evaluator> void FrictionPairGPU<evaluator>::computeForces(uint64_
                                access_mode::read);
     ArrayHandle<Scalar4> d_vel(this->m_pdata->getVelocities(),
                                access_location::device,
-                               access_mode::read);  
+                               access_mode::read);
     ArrayHandle<Scalar> d_charge(this->m_pdata->getCharges(),
                                  access_location::device,
                                  access_mode::read);
@@ -139,8 +138,8 @@ template<class evaluator> void FrictionPairGPU<evaluator>::computeForces(uint64_
     BoxDim box = this->m_pdata->getBox();
     unsigned int dim = this->m_sysdef->getNDimensions();
 
-    //uint16_t seed = this->m_sysdef->getSeed();
-    //Scalar deltaT = this->m_deltaT;
+    // uint16_t seed = this->m_sysdef->getSeed();
+    // Scalar deltaT = this->m_deltaT;
 
     // access parameters
     ArrayHandle<Scalar> d_rcutsq(this->m_rcutsq, access_location::device, access_mode::read);
@@ -204,8 +203,8 @@ template<class evaluator> void FrictionPairGPU<evaluator>::computeForces(uint64_
 
 template<class evaluator>
 void FrictionPairGPU<evaluator>::setParams(unsigned int typ1,
-                                                 unsigned int typ2,
-                                                 const typename evaluator::param_type& param)
+                                           unsigned int typ2,
+                                           const typename evaluator::param_type& param)
     {
     FrictionPair<evaluator>::setParams(typ1, typ2, param);
     this->m_params[this->m_typpair_idx(typ1, typ2)].set_memory_hint();
@@ -214,7 +213,7 @@ void FrictionPairGPU<evaluator>::setParams(unsigned int typ1,
 
 template<class evaluator>
 void FrictionPairGPU<evaluator>::setShape(unsigned int typ,
-                                                const typename evaluator::shape_type& shape_param)
+                                          const typename evaluator::shape_type& shape_param)
     {
     FrictionPair<evaluator>::setShape(typ, shape_param);
     this->m_shape_params[typ].set_memory_hint();
@@ -230,9 +229,9 @@ namespace detail
 */
 template<class T> void export_FrictionPairGPU(pybind11::module& m, const std::string& name)
     {
-    pybind11::class_<FrictionPairGPU<T>,
-                     FrictionPair<T>,
-                     std::shared_ptr<FrictionPairGPU<T>>>(m, name.c_str())
+    pybind11::class_<FrictionPairGPU<T>, FrictionPair<T>, std::shared_ptr<FrictionPairGPU<T>>>(
+        m,
+        name.c_str())
         .def(pybind11::init<std::shared_ptr<SystemDefinition>, std::shared_ptr<NeighborList>>());
     }
 

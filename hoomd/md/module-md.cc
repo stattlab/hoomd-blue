@@ -396,7 +396,7 @@ PYBIND11_MODULE(_md, m)
     export_AnisoPotentialPairPatchyMie(m);
     export_AnisoPotentialPairPatchyYukawa(m);
     export_AnisoPotentialPairPatchyTable(m);
-    
+
     export_FrictionPairFrictionLJLinear(m);
     export_FrictionPairFrictionLJConstant(m);
     export_FrictionPairFrictionLJCoulombNewton(m);
@@ -490,11 +490,11 @@ PYBIND11_MODULE(_md, m)
     export_AnisoPotentialPairALJ3DGPU(m);
     export_AnisoPotentialPairDipoleGPU(m);
     export_AnisoPotentialPairGBGPU(m);
-    
+
     export_FrictionPairFrictionLJLinearGPU(m);
     export_FrictionPairFrictionLJConstantGPU(m);
     export_FrictionPairFrictionLJCoulombNewtonGPU(m);
-    
+
     export_AnisoPotentialPairPatchyExpandedGaussianGPU(m);
     ;
     export_AnisoPotentialPairPatchyExpandedLJGPU(m);

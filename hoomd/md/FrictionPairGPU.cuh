@@ -73,34 +73,35 @@ struct a_pair_args_t
                   const hipDeviceProp_t& _devprop,
                   bool _update_shape_param)
         : d_force(_d_force), d_torque(_d_torque), d_virial(_d_virial), virial_pitch(_virial_pitch),
-          N(_N), n_max(_n_max), d_pos(_d_pos), d_vel(_d_vel), d_charge(_d_charge), d_orientation(_d_orientation),
-          d_angmom(_d_angmom), d_diameter(_d_diameter), d_moment_inertia(_d_moment_inertia),
-          d_tag(_d_tag), box(_box), third_law(_third_law), dim(_dim), seed(_seed), timestep(_timestep), deltaT(_deltaT), d_n_neigh(_d_n_neigh), d_nlist(_d_nlist),
-          d_head_list(_d_head_list), d_rcutsq(_d_rcutsq), ntypes(_ntypes), block_size(_block_size),
-          shift_mode(_shift_mode), compute_virial(_compute_virial),
+          N(_N), n_max(_n_max), d_pos(_d_pos), d_vel(_d_vel), d_charge(_d_charge),
+          d_orientation(_d_orientation), d_angmom(_d_angmom), d_diameter(_d_diameter),
+          d_moment_inertia(_d_moment_inertia), d_tag(_d_tag), box(_box), third_law(_third_law),
+          dim(_dim), seed(_seed), timestep(_timestep), deltaT(_deltaT), d_n_neigh(_d_n_neigh),
+          d_nlist(_d_nlist), d_head_list(_d_head_list), d_rcutsq(_d_rcutsq), ntypes(_ntypes),
+          block_size(_block_size), shift_mode(_shift_mode), compute_virial(_compute_virial),
           threads_per_particle(_threads_per_particle), devprop(_devprop),
           update_shape_param(_update_shape_param) { };
 
-    Scalar4* d_force;             //!< Force to write out
-    Scalar4* d_torque;            //!< Torque to write out
-    Scalar* d_virial;             //!< Virial to write out
-    const size_t virial_pitch;    //!< The pitch of the 2D array of virial matrix elements
-    const unsigned int N;         //!< number of particles
-    const unsigned int n_max;     //!< maximum size of particle data arrays
-    const Scalar4* d_pos;         //!< particle positions
+    Scalar4* d_force;                //!< Force to write out
+    Scalar4* d_torque;               //!< Torque to write out
+    Scalar* d_virial;                //!< Virial to write out
+    const size_t virial_pitch;       //!< The pitch of the 2D array of virial matrix elements
+    const unsigned int N;            //!< number of particles
+    const unsigned int n_max;        //!< maximum size of particle data arrays
+    const Scalar4* d_pos;            //!< particle positions
     const Scalar4* d_vel;            //!< particle velocity
-    const Scalar* d_charge;       //!< particle charges
-    const Scalar4* d_orientation; //!< particle orientation to compute forces over
-    const Scalar4* d_angmom;         //!< particle angular momentum 
+    const Scalar* d_charge;          //!< particle charges
+    const Scalar4* d_orientation;    //!< particle orientation to compute forces over
+    const Scalar4* d_angmom;         //!< particle angular momentum
     const Scalar* d_diameter;        //!< particle diameter
     const Scalar3* d_moment_inertia; //!< particle moment of inertia
-    const unsigned int* d_tag;    //!< particle tags to compute forces over
-    const BoxDim box;            //!< Simulation box in GPU format
-    const bool third_law;        //!< Boolean storing if only a half neighborlist is used
-    const unsigned int dim;      //!< Dimension of the simulation
-    uint16_t seed;               //!< Seed of the simulation
-    uint64_t timestep;           //!< Current timestep
-    const Scalar deltaT;         //!< Timestep dt size of the simulation 
+    const unsigned int* d_tag;       //!< particle tags to compute forces over
+    const BoxDim box;                //!< Simulation box in GPU format
+    const bool third_law;            //!< Boolean storing if only a half neighborlist is used
+    const unsigned int dim;          //!< Dimension of the simulation
+    uint16_t seed;                   //!< Seed of the simulation
+    uint64_t timestep;               //!< Current timestep
+    const Scalar deltaT;             //!< Timestep dt size of the simulation
     const unsigned int*
         d_n_neigh;               //!< Device array listing the number of neighbors on each particle
     const unsigned int* d_nlist; //!< Device array listing the neighbors of each particle
@@ -169,32 +170,32 @@ struct a_pair_args_t
 template<class evaluator, unsigned int shift_mode, unsigned int compute_virial, int tpp>
 __global__ void
 gpu_compute_pair_friction_forces_kernel(Scalar4* d_force,
-                                     Scalar4* d_torque,
-                                     Scalar* d_virial,
-                                     const size_t virial_pitch,
-                                     const unsigned int N,
-                                     const Scalar4* d_pos,
-                                     const Scalar4* d_vel,
-                                     const Scalar* d_charge,
-                                     const Scalar4* d_orientation,
-                                     const Scalar4* d_angmom,
-                                     const Scalar* d_diameter,
-                                     const Scalar3* d_moment_inertia,
-                                     const unsigned int* d_tag,
-                                     const BoxDim box,
-                                     const bool third_law,
-                                     const unsigned int dim,
-                                     const uint16_t d_seed,
-                                     const uint64_t d_timestep,
-                                     const Scalar d_deltaT,
-                                     const unsigned int* d_n_neigh,
-                                     const unsigned int* d_nlist,
-                                     const size_t* d_head_list,
-                                     const typename evaluator::param_type* d_params,
-                                     const typename evaluator::shape_type* d_shape_params,
-                                     const Scalar* d_rcutsq,
-                                     const unsigned int ntypes,
-                                     unsigned int max_extra_bytes)
+                                        Scalar4* d_torque,
+                                        Scalar* d_virial,
+                                        const size_t virial_pitch,
+                                        const unsigned int N,
+                                        const Scalar4* d_pos,
+                                        const Scalar4* d_vel,
+                                        const Scalar* d_charge,
+                                        const Scalar4* d_orientation,
+                                        const Scalar4* d_angmom,
+                                        const Scalar* d_diameter,
+                                        const Scalar3* d_moment_inertia,
+                                        const unsigned int* d_tag,
+                                        const BoxDim box,
+                                        const bool third_law,
+                                        const unsigned int dim,
+                                        const uint16_t d_seed,
+                                        const uint64_t d_timestep,
+                                        const Scalar d_deltaT,
+                                        const unsigned int* d_n_neigh,
+                                        const unsigned int* d_nlist,
+                                        const size_t* d_head_list,
+                                        const typename evaluator::param_type* d_params,
+                                        const typename evaluator::shape_type* d_shape_params,
+                                        const Scalar* d_rcutsq,
+                                        const unsigned int ntypes,
+                                        unsigned int max_extra_bytes)
     {
     Index2D typpair_idx(ntypes);
     const unsigned int num_typ_parameters = typpair_idx.getNumElements();
@@ -274,7 +275,7 @@ gpu_compute_pair_friction_forces_kernel(Scalar4* d_force,
         {
         // load in the length of the neighbor list
         unsigned int n_neigh = d_n_neigh[idx];
-        
+
         // read in the particle data
         Scalar4 postypei = __ldg(d_pos + idx);
         Scalar4 veltypei = __ldg(d_vel + idx);
@@ -289,16 +290,19 @@ gpu_compute_pair_friction_forces_kernel(Scalar4* d_force,
         Scalar massi = Scalar(0);
         if (evaluator::needsCharge())
             qi = __ldg(d_charge + idx);
-        if ( evaluator::needsNu())
+        if (evaluator::needsNu())
             massi = veltypei.w;
-        
+
         // calculate angular momentum of i-th particle in the body frame
         quat<Scalar> qxP_i = conj(quati) * angmomi;
-        vec3<Scalar> bf_vel_i = Scalar(0.5) * vec3<Scalar>(qxP_i.v.x / moment_inertia_i.x, qxP_i.v.y / moment_inertia_i.y, qxP_i.v.z / moment_inertia_i.z);
+        vec3<Scalar> bf_vel_i = Scalar(0.5)
+                                * vec3<Scalar>(qxP_i.v.x / moment_inertia_i.x,
+                                               qxP_i.v.y / moment_inertia_i.y,
+                                               qxP_i.v.z / moment_inertia_i.z);
 
         // Rotate angular velocity into global frame
         vec3<Scalar> gf_angvel_i = rotate(quati, bf_vel_i);
-        Scalar3 angvel_i = make_scalar3(gf_angvel_i.x,gf_angvel_i.y,gf_angvel_i.z);
+        Scalar3 angvel_i = make_scalar3(gf_angvel_i.x, gf_angvel_i.y, gf_angvel_i.z);
 
         size_t my_head = d_head_list[idx];
         unsigned int cur_j = 0;
@@ -333,19 +337,22 @@ gpu_compute_pair_friction_forces_kernel(Scalar4* d_force,
                 Scalar massj = Scalar(0);
                 if (evaluator::needsCharge())
                     qj = __ldg(d_charge + cur_j);
-                if ( evaluator::needsNu())
+                if (evaluator::needsNu())
                     massj = veltypej.w;
-                
+
                 // calculate dv_ij
                 Scalar3 dv = velj - veli;
-                
+
                 // calculate angular momentum of i-th particle in the body frame
                 quat<Scalar> qxP_j = conj(quatj) * angmomj;
-                vec3<Scalar> bf_vel_j = Scalar(0.5) * vec3<Scalar>(qxP_j.v.x / moment_inertia_j.x, qxP_j.v.y / moment_inertia_j.y, qxP_j.v.z / moment_inertia_j.z);
+                vec3<Scalar> bf_vel_j = Scalar(0.5)
+                                        * vec3<Scalar>(qxP_j.v.x / moment_inertia_j.x,
+                                                       qxP_j.v.y / moment_inertia_j.y,
+                                                       qxP_j.v.z / moment_inertia_j.z);
 
                 // Rotate angular velocity into global frame
                 vec3<Scalar> gf_angvel_j = rotate(quatj, bf_vel_j);
-                Scalar3 angvel_j = make_scalar3(gf_angvel_j.x,gf_angvel_j.y,gf_angvel_j.z);
+                Scalar3 angvel_j = make_scalar3(gf_angvel_j.x, gf_angvel_j.y, gf_angvel_j.z);
 
                 // calculate dr (with periodic boundary conditions)
                 Scalar3 dx = posi - posj;
@@ -376,11 +383,11 @@ gpu_compute_pair_friction_forces_kernel(Scalar4* d_force,
 
                 // constructor call
                 evaluator eval(dx, angvel_i, angvel_j, dv, diai, diaj, rcutsq, param);
-                
+
                 // Special Potential Pair DPD like Requirements
 
                 // set seed using global tags
-                
+
                 unsigned int tagi = __ldg(d_tag + idx);
                 unsigned int tagj = __ldg(d_tag + cur_j);
 
@@ -395,17 +402,19 @@ gpu_compute_pair_friction_forces_kernel(Scalar4* d_force,
                                   &(s_shape_params[__scalar_as_int(postypej.w)]));
                 if (evaluator::needsTags())
                     eval.setTags(__ldg(d_tag + idx), __ldg(d_tag + cur_j));
-                
+
                 if (evaluator::needsNu())
                     {
                     // Calculate nu for the Ito formalism
-                    Scalar nu_ito = ((Scalar(1.0)/massi)+(Scalar(1.0)/massj))+(((diaj*diaj/Scalar(4.0)) / moment_inertia_j.x) + ((diai*diai/Scalar(4.0)) / moment_inertia_i.x));
+                    Scalar nu_ito = ((Scalar(1.0) / massi) + (Scalar(1.0) / massj))
+                                    + (((diaj * diaj / Scalar(4.0)) / moment_inertia_j.x)
+                                       + ((diai * diai / Scalar(4.0)) / moment_inertia_i.x));
                     eval.setNu(nu_ito);
                     }
 
                 // call evaluator
                 eval.evaluate(jforce, pair_eng, energy_shift, torquei, torquej);
-                
+
                 if (dim == 2)
                     {
                     jforce.z = 0.0;
@@ -521,12 +530,12 @@ struct FrictionPairForceComputeKernel
 
             unsigned int max_block_size;
             hipFuncAttributes attr;
-            hipFuncGetAttributes(
-                &attr,
-                reinterpret_cast<const void*>(&gpu_compute_pair_friction_forces_kernel<evaluator,
-                                                                                    shift_mode,
-                                                                                    compute_virial,
-                                                                                    tpp>));
+            hipFuncGetAttributes(&attr,
+                                 reinterpret_cast<const void*>(
+                                     &gpu_compute_pair_friction_forces_kernel<evaluator,
+                                                                              shift_mode,
+                                                                              compute_virial,
+                                                                              tpp>));
             int max_threads = attr.maxThreadsPerBlock;
             // number of threads has to be multiple of warp size
             max_block_size = max_threads - max_threads % gpu_friction_pair_force_max_tpp;
@@ -561,39 +570,41 @@ struct FrictionPairForceComputeKernel
             block_size = block_size < max_block_size ? block_size : max_block_size;
             dim3 grid(N / (block_size / tpp) + 1, 1, 1);
 
-            hipLaunchKernelGGL(
-                (gpu_compute_pair_friction_forces_kernel<evaluator, shift_mode, compute_virial, tpp>),
-                dim3(grid),
-                dim3(block_size),
-                shared_bytes,
-                0,
-                pair_args.d_force,
-                pair_args.d_torque,
-                pair_args.d_virial,
-                pair_args.virial_pitch,
-                N,
-                pair_args.d_pos,
-                pair_args.d_vel,
-                pair_args.d_charge,
-                pair_args.d_orientation,
-                pair_args.d_angmom,
-                pair_args.d_diameter,
-                pair_args.d_moment_inertia,
-                pair_args.d_tag,
-                pair_args.box,
-                pair_args.third_law,
-                pair_args.dim,
-                pair_args.seed,
-                pair_args.timestep,
-                pair_args.deltaT,
-                pair_args.d_n_neigh,
-                pair_args.d_nlist,
-                pair_args.d_head_list,
-                params,
-                shape_params,
-                pair_args.d_rcutsq,
-                pair_args.ntypes,
-                max_extra_bytes);
+            hipLaunchKernelGGL((gpu_compute_pair_friction_forces_kernel<evaluator,
+                                                                        shift_mode,
+                                                                        compute_virial,
+                                                                        tpp>),
+                               dim3(grid),
+                               dim3(block_size),
+                               shared_bytes,
+                               0,
+                               pair_args.d_force,
+                               pair_args.d_torque,
+                               pair_args.d_virial,
+                               pair_args.virial_pitch,
+                               N,
+                               pair_args.d_pos,
+                               pair_args.d_vel,
+                               pair_args.d_charge,
+                               pair_args.d_orientation,
+                               pair_args.d_angmom,
+                               pair_args.d_diameter,
+                               pair_args.d_moment_inertia,
+                               pair_args.d_tag,
+                               pair_args.box,
+                               pair_args.third_law,
+                               pair_args.dim,
+                               pair_args.seed,
+                               pair_args.timestep,
+                               pair_args.deltaT,
+                               pair_args.d_n_neigh,
+                               pair_args.d_nlist,
+                               pair_args.d_head_list,
+                               params,
+                               shape_params,
+                               pair_args.d_rcutsq,
+                               pair_args.ntypes,
+                               max_extra_bytes);
             }
         else
             {
@@ -623,12 +634,13 @@ struct FrictionPairForceComputeKernel<evaluator, shift_mode, compute_virial, 0>
 /*! \param pair_args Other arguments to pass onto the kernel
     \param d_params Parameters for the potential, stored per type pair
 
-    This is just a driver function for gpu_compute_pair_friction_forces_kernel(), see it for details.
+    This is just a driver function for gpu_compute_pair_friction_forces_kernel(), see it for
+   details.
 */
 template<class evaluator>
 hipError_t gpu_compute_pair_friction_forces(const a_pair_args_t& pair_args,
-                                         const typename evaluator::param_type* d_params,
-                                         const typename evaluator::shape_type* d_shape_params)
+                                            const typename evaluator::param_type* d_params,
+                                            const typename evaluator::shape_type* d_shape_params)
     {
     assert(d_params);
     assert(pair_args.d_rcutsq);
@@ -641,22 +653,19 @@ hipError_t gpu_compute_pair_friction_forces(const a_pair_args_t& pair_args,
             {
         case 0:
             {
-            FrictionPairForceComputeKernel<evaluator, 0, 1, gpu_friction_pair_force_max_tpp>::launch(
-                pair_args,
-                pair_args.N,
-                d_params,
-                d_shape_params);
+            FrictionPairForceComputeKernel<evaluator, 0, 1, gpu_friction_pair_force_max_tpp>::
+                launch(pair_args, pair_args.N, d_params, d_shape_params);
             break;
             }
         case 1:
             {
             FrictionPairForceComputeKernel<evaluator,
-                                        1 && evaluator::implementsEnergyShift(),
-                                        1,
-                                        gpu_friction_pair_force_max_tpp>::launch(pair_args,
-                                                                              pair_args.N,
-                                                                              d_params,
-                                                                              d_shape_params);
+                                           1 && evaluator::implementsEnergyShift(),
+                                           1,
+                                           gpu_friction_pair_force_max_tpp>::launch(pair_args,
+                                                                                    pair_args.N,
+                                                                                    d_params,
+                                                                                    d_shape_params);
             break;
             }
         default:
@@ -669,22 +678,19 @@ hipError_t gpu_compute_pair_friction_forces(const a_pair_args_t& pair_args,
             {
         case 0:
             {
-            FrictionPairForceComputeKernel<evaluator, 0, 0, gpu_friction_pair_force_max_tpp>::launch(
-                pair_args,
-                pair_args.N,
-                d_params,
-                d_shape_params);
+            FrictionPairForceComputeKernel<evaluator, 0, 0, gpu_friction_pair_force_max_tpp>::
+                launch(pair_args, pair_args.N, d_params, d_shape_params);
             break;
             }
         case 1:
             {
             FrictionPairForceComputeKernel<evaluator,
-                                        1 && evaluator::implementsEnergyShift(),
-                                        0,
-                                        gpu_friction_pair_force_max_tpp>::launch(pair_args,
-                                                                              pair_args.N,
-                                                                              d_params,
-                                                                              d_shape_params);
+                                           1 && evaluator::implementsEnergyShift(),
+                                           0,
+                                           gpu_friction_pair_force_max_tpp>::launch(pair_args,
+                                                                                    pair_args.N,
+                                                                                    d_params,
+                                                                                    d_shape_params);
             break;
             }
         default:
@@ -696,8 +702,8 @@ hipError_t gpu_compute_pair_friction_forces(const a_pair_args_t& pair_args,
 #else
 template<class evaluator>
 hipError_t gpu_compute_pair_friction_forces(const a_pair_args_t& pair_args,
-                                         const typename evaluator::param_type* d_params,
-                                         const typename evaluator::shape_type* d_shape_params);
+                                            const typename evaluator::param_type* d_params,
+                                            const typename evaluator::shape_type* d_shape_params);
 #endif
 
     } // end namespace kernel

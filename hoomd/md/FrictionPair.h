@@ -60,8 +60,9 @@ namespace md
    benchmarks show that storing the symmetric type pairs and indexing with Index2D is faster than
    not storing redundant pairs and indexing with Index2DUpperTriangular. All of these values are
    stored in GlobalArray for easy access on the GPU by a derived class. The type of the parameters
-   is defined by \a param_type in the potential friction_evaluator class passed in. See the appropriate
-   documentation for the friction_evaluator for the definition of each element of the parameters.
+   is defined by \a param_type in the potential friction_evaluator class passed in. See the
+   appropriate documentation for the friction_evaluator for the definition of each element of the
+   parameters.
 */
 
 template<class friction_evaluator> class FrictionPair : public ForceCompute
@@ -74,8 +75,7 @@ template<class friction_evaluator> class FrictionPair : public ForceCompute
     typedef typename friction_evaluator::shape_type shape_type;
 
     //! Construct the pair potential
-    FrictionPair(std::shared_ptr<SystemDefinition> sysdef,
-                       std::shared_ptr<NeighborList> nlist);
+    FrictionPair(std::shared_ptr<SystemDefinition> sysdef, std::shared_ptr<NeighborList> nlist);
     //! Destructor
     virtual ~FrictionPair();
 
@@ -113,14 +113,15 @@ template<class friction_evaluator> class FrictionPair : public ForceCompute
         const
         {
         std::vector<std::string> type_shape_mapping(m_pdata->getNTypes());
-        Scalar3 w = make_scalar3(0 ,0, 0);
+        Scalar3 w = make_scalar3(0, 0, 0);
         Scalar3 dv = make_scalar3(0, 0, 0);
         Scalar3 dr = make_scalar3(0, 0, 0);
         Scalar dia = Scalar(0.0);
         Scalar rcut = Scalar(0.0);
         for (unsigned int i = 0; i < type_shape_mapping.size(); i++)
             {
-            friction_evaluator evaluator(dr, w, w, dv, dia, dia, rcut, m_params[m_typpair_idx(i, i)]);
+            friction_evaluator
+                evaluator(dr, w, w, dv, dia, dia, rcut, m_params[m_typpair_idx(i, i)]);
             if (friction_evaluator::needsShape())
                 {
                 evaluator.setShape(&shape_params[i], &shape_params[i]);
@@ -239,7 +240,7 @@ template<class friction_evaluator> class FrictionPair : public ForceCompute
 */
 template<class friction_evaluator>
 FrictionPair<friction_evaluator>::FrictionPair(std::shared_ptr<SystemDefinition> sysdef,
-                                                        std::shared_ptr<NeighborList> nlist)
+                                               std::shared_ptr<NeighborList> nlist)
     : ForceCompute(sysdef), m_nlist(nlist), m_shift_mode(no_shift),
       m_typpair_idx(m_pdata->getNTypes())
     {
@@ -286,8 +287,8 @@ template<class friction_evaluator> FrictionPair<friction_evaluator>::~FrictionPa
 */
 template<class friction_evaluator>
 void FrictionPair<friction_evaluator>::setParams(unsigned int typ1,
-                                                    unsigned int typ2,
-                                                    const param_type& param)
+                                                 unsigned int typ2,
+                                                 const param_type& param)
     {
     validateTypes(typ1, typ2, "setting params");
     m_params[m_typpair_idx(typ1, typ2)] = param;
@@ -295,8 +296,7 @@ void FrictionPair<friction_evaluator>::setParams(unsigned int typ1,
     }
 
 template<class friction_evaluator>
-void FrictionPair<friction_evaluator>::setParamsPython(pybind11::tuple typ,
-                                                          pybind11::object params)
+void FrictionPair<friction_evaluator>::setParamsPython(pybind11::tuple typ, pybind11::object params)
     {
     auto typ1 = m_pdata->getTypeByName(typ[0].cast<std::string>());
     auto typ2 = m_pdata->getTypeByName(typ[1].cast<std::string>());
@@ -315,8 +315,8 @@ pybind11::object FrictionPair<friction_evaluator>::getParamsPython(pybind11::tup
 
 template<class friction_evaluator>
 void FrictionPair<friction_evaluator>::validateTypes(unsigned int typ1,
-                                                        unsigned int typ2,
-                                                        std::string action)
+                                                     unsigned int typ2,
+                                                     std::string action)
     {
     // TODO change logic to just throw an exception
     auto n_types = this->m_pdata->getNTypes();
@@ -346,8 +346,7 @@ void FrictionPair<friction_evaluator>::setShape(unsigned int typ, const shape_ty
           set.
 */
 template<class friction_evaluator>
-void FrictionPair<friction_evaluator>::setShapePython(std::string typ,
-                                                         pybind11::object shape_param)
+void FrictionPair<friction_evaluator>::setShapePython(std::string typ, pybind11::object shape_param)
     {
     auto typ_ = m_pdata->getTypeByName(typ);
     setShape(typ_, shape_type(shape_param, m_exec_conf->isCUDAEnabled()));
@@ -447,9 +446,15 @@ void FrictionPair<friction_evaluator>::computeForces(uint64_t timestep)
     ArrayHandle<Scalar4> h_orientation(m_pdata->getOrientationArray(),
                                        access_location::host,
                                        access_mode::read);
-    ArrayHandle<Scalar4> h_angmom(m_pdata->getAngularMomentumArray(), access_location::host, access_mode::read);
-    ArrayHandle<Scalar> h_diameter(m_pdata->getDiameters(), access_location::host, access_mode::read);
-    ArrayHandle<Scalar3> h_moment_inertia(m_pdata->getMomentsOfInertiaArray(), access_location::host, access_mode::read);
+    ArrayHandle<Scalar4> h_angmom(m_pdata->getAngularMomentumArray(),
+                                  access_location::host,
+                                  access_mode::read);
+    ArrayHandle<Scalar> h_diameter(m_pdata->getDiameters(),
+                                   access_location::host,
+                                   access_mode::read);
+    ArrayHandle<Scalar3> h_moment_inertia(m_pdata->getMomentsOfInertiaArray(),
+                                          access_location::host,
+                                          access_mode::read);
 
     ArrayHandle<unsigned int> h_tag(m_pdata->getTags(), access_location::host, access_mode::read);
 
@@ -468,7 +473,7 @@ void FrictionPair<friction_evaluator>::computeForces(uint64_t timestep)
 
         PDataFlags flags = this->m_pdata->getFlags();
         bool compute_virial = flags[pdata_flag::pressure_tensor];
-        
+
         uint16_t seed = this->m_sysdef->getSeed();
 
         // for each particle
@@ -476,7 +481,7 @@ void FrictionPair<friction_evaluator>::computeForces(uint64_t timestep)
             {
             // access the particle's position and type (MEM TRANSFER: 4 scalars)
             Scalar3 pi = make_scalar3(h_pos.data[i].x, h_pos.data[i].y, h_pos.data[i].z);
-            
+
             quat<Scalar> quat_i(h_orientation.data[i]);
 
             // get the velocitie of i-th particle and transform it from body to principle frame
@@ -488,7 +493,10 @@ void FrictionPair<friction_evaluator>::computeForces(uint64_t timestep)
             // calculate angmom_i (angular momentum of th particle in the body frame)
             quat<Scalar> angmom_i(h_angmom.data[i]);
             quat<Scalar> qxP_i = conj(quat_i) * angmom_i;
-            vec3<Scalar> bf_vel_i = Scalar(0.5) * vec3(qxP_i.v.x / h_moment_inertia.data[i].x, qxP_i.v.y / h_moment_inertia.data[i].y, qxP_i.v.z / h_moment_inertia.data[i].z);
+            vec3<Scalar> bf_vel_i = Scalar(0.5)
+                                    * vec3(qxP_i.v.x / h_moment_inertia.data[i].x,
+                                           qxP_i.v.y / h_moment_inertia.data[i].y,
+                                           qxP_i.v.z / h_moment_inertia.data[i].z);
 
             // Rotate angular velocity into global frame
             vec3<Scalar> gf_angvel_i = rotate(quat_i, bf_vel_i);
@@ -502,7 +510,7 @@ void FrictionPair<friction_evaluator>::computeForces(uint64_t timestep)
             Scalar mass_i = Scalar(0.0);
             if (friction_evaluator::needsCharge())
                 qi = h_charge.data[i];
-            
+
             if (friction_evaluator::needsNu())
                 mass_i = h_vel.data[i].w;
 
@@ -534,17 +542,20 @@ void FrictionPair<friction_evaluator>::computeForces(uint64_t timestep)
                 Scalar3 pj = make_scalar3(h_pos.data[j].x, h_pos.data[j].y, h_pos.data[j].z);
                 Scalar3 dx = pi - pj;
                 quat<Scalar> quat_j(h_orientation.data[j]);
-                
+
                 // get the velocitie of jth particle and transform it from body to principle frame
                 Scalar3 vel_j = make_scalar3(h_vel.data[j].x, h_vel.data[j].y, h_vel.data[j].z);
 
                 // calculate dv_ij
                 Scalar3 dv = vel_j - vel_i;
-                
+
                 // calculate angmom_j (angular momentum of jth particle in the global frame)
                 quat<Scalar> angmom_j(h_angmom.data[j]);
                 quat<Scalar> qxP_j = conj(quat_j) * angmom_j;
-                vec3<Scalar> bf_vel_j = Scalar(0.5) * vec3(qxP_j.v.x / h_moment_inertia.data[j].x, qxP_j.v.y / h_moment_inertia.data[j].y, qxP_j.v.z / h_moment_inertia.data[j].z);
+                vec3<Scalar> bf_vel_j = Scalar(0.5)
+                                        * vec3(qxP_j.v.x / h_moment_inertia.data[j].x,
+                                               qxP_j.v.y / h_moment_inertia.data[j].y,
+                                               qxP_j.v.z / h_moment_inertia.data[j].z);
 
                 // Rotate angular velocity into global frame
                 vec3<Scalar> gf_angvel_j = rotate(quat_j, bf_vel_j);
@@ -587,15 +598,15 @@ void FrictionPair<friction_evaluator>::computeForces(uint64_t timestep)
                 Scalar pair_eng = Scalar(0.0);
 
                 friction_evaluator eval(dx, angvel_i, angvel_j, dv, dia_i, dia_j, rcutsq, param);
-                
+
                 // set seed using global tags
                 unsigned int tagi = h_tag.data[i];
                 unsigned int tagj = h_tag.data[j];
-                
+
                 eval.set_seed_ij_timestep(seed, tagi, tagj, timestep);
                 eval.setDeltaT(this->m_deltaT);
                 eval.setThirdLaw(third_law);
-   
+
                 if (friction_evaluator::needsCharge())
                     eval.setCharge(qi, qj);
                 if (friction_evaluator::needsShape())
@@ -605,7 +616,10 @@ void FrictionPair<friction_evaluator>::computeForces(uint64_t timestep)
                 if (friction_evaluator::needsNu())
                     {
                     // Calculate nu for the Ito formalism
-                    Scalar nu_ito = ((Scalar(1.0)/mass_i)+(Scalar(1.0)/mass_j))+(((dia_j*dia_j/Scalar(4.0)) / h_moment_inertia.data[j].z) + ((dia_i*dia_i/Scalar(4.0)) / h_moment_inertia.data[i].z));
+                    Scalar nu_ito
+                        = ((Scalar(1.0) / mass_i) + (Scalar(1.0) / mass_j))
+                          + (((dia_j * dia_j / Scalar(4.0)) / h_moment_inertia.data[j].z)
+                             + ((dia_i * dia_i / Scalar(4.0)) / h_moment_inertia.data[i].z));
                     eval.setNu(nu_ito);
                     }
 
@@ -613,9 +627,10 @@ void FrictionPair<friction_evaluator>::computeForces(uint64_t timestep)
 
                 if (evaluated)
                     {
-                    // Prevent the particles to rotate out of plane in the 2D case (Only a problem if the pairwise temperature is non zero). Dont know why it is not 
-                    // handled by the Integrator
-                    if (m_sysdef->getNDimensions()==2)
+                    // Prevent the particles to rotate out of plane in the 2D case (Only a problem
+                    // if the pairwise temperature is non zero). Dont know why it is not handled by
+                    // the Integrator
+                    if (m_sysdef->getNDimensions() == 2)
                         {
                         force.z = 0.0;
                         torque_i.x = 0.0;
@@ -731,9 +746,7 @@ template<class T> void export_FrictionPair(pybind11::module& m, const std::strin
         .def(("get" + T::getShapeParamName()).c_str(), &FrictionPair<T>::getShapePython)
         .def("setRCut", &FrictionPair<T>::setRCutPython)
         .def("getRCut", &FrictionPair<T>::getRCut)
-        .def_property("mode",
-                      &FrictionPair<T>::getShiftMode,
-                      &FrictionPair<T>::setShiftModePython)
+        .def_property("mode", &FrictionPair<T>::getShiftMode, &FrictionPair<T>::setShiftModePython)
         .def("getTypeShapesPy", &FrictionPair<T>::getTypeShapesPy);
     }
 

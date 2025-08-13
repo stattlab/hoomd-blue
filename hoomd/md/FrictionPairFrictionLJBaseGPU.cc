@@ -1,9 +1,9 @@
 // Copyright (c) 2009-2025 The Regents of the University of Michigan.
 // Part of HOOMD-blue, released under the BSD 3-Clause License.
 
-#include "FrictionPairGPU.h"
 #include "EvaluatorPairFrictionLJBase.h"
 #include "EvaluatorPairFrictionLJVariants.h"
+#include "FrictionPairGPU.h"
 
 namespace hoomd
     {
@@ -23,7 +23,9 @@ void export_FrictionPairFrictionLJConstantGPU(pybind11::module& m)
 
 void export_FrictionPairFrictionLJCoulombNewtonGPU(pybind11::module& m)
     {
-    export_FrictionPairGPU<EvaluatorPairFrictionLJCoulombNewton>(m, "FrictionPairFrictionLJCoulombNewtonGPU");
+    export_FrictionPairGPU<EvaluatorPairFrictionLJCoulombNewton>(
+        m,
+        "FrictionPairFrictionLJCoulombNewtonGPU");
     }
 
     } // end namespace detail

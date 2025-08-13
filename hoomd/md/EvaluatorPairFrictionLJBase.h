@@ -14,9 +14,9 @@
 #ifdef ENABLE_HIP
 #include <hip/hip_runtime.h>
 #endif
-#include "hoomd/VectorMath.h"
 #include "hoomd/RNGIdentifiers.h"
 #include "hoomd/RandomNumbers.h"
+#include "hoomd/VectorMath.h"
 #include <iostream>
 /*! \file EvaluatorPairFrictionLJBase.h
     \brief Defines the base for frictional contact interactions
@@ -38,24 +38,25 @@
 namespace hoomd
     {
 namespace md
-    {     
-template <class Derived>
-class EvaluatorPairFrictionLJBase
+    {
+template<class Derived> class EvaluatorPairFrictionLJBase
     {
     public:
-
     // Add the eval_factors() method declaration
-    HOSTDEVICE void eval_factors(Scalar& factor_f, Scalar& factor_r, Scalar w, Scalar du){
+    HOSTDEVICE void eval_factors(Scalar& factor_f, Scalar& factor_r, Scalar w, Scalar du)
+        {
         static_cast<Derived*>(this)->eval_factors(factor_f, factor_r, w, du);
-    }
+        }
 
     struct param_type
         {
         Scalar sigma_6;     // Sigma^6 parameter of the LJ-Potential
-        Scalar epsilon_x_4; // 4*Epsilon parameter of the LJ-Potential 
-        Scalar gamma;       // Gamma parameter of the frictional contacts (optional depends on friction type)
-        Scalar kappa;       // kappa parameter of the frictional contacts (optional depends on friction type)
-        Scalar pair_temp;   // Temperature of the pairwise thermostat
+        Scalar epsilon_x_4; // 4*Epsilon parameter of the LJ-Potential
+        Scalar
+            gamma; // Gamma parameter of the frictional contacts (optional depends on friction type)
+        Scalar
+            kappa; // kappa parameter of the frictional contacts (optional depends on friction type)
+        Scalar pair_temp; // Temperature of the pairwise thermostat
 
 #ifdef ENABLE_HIP
         //! Set CUDA memory hints
@@ -159,16 +160,18 @@ class EvaluatorPairFrictionLJBase
         \param _params Per type pair parameters of this potential
     */
     HOSTDEVICE EvaluatorPairFrictionLJBase(Scalar3& _dr,
-                                   Scalar3& _angvel_i,
-                                   Scalar3& _angvel_j,
-                                   Scalar3& _dv,
-                                   Scalar _dia_i,
-                                   Scalar _dia_j,
-                                   Scalar _rcutsq,
-                                   const param_type& _params)
-        : dr(_dr), rcutsq(_rcutsq), angvel_i(_angvel_i), angvel_j(_angvel_j),
-          dv(_dv), dia_i(_dia_i), dia_j(_dia_j), lj1(_params.epsilon_x_4 * _params.sigma_6 * _params.sigma_6),
-          lj2(_params.epsilon_x_4 * _params.sigma_6), gamma(_params.gamma), kappa(_params.kappa), pair_temp(_params.pair_temp)
+                                           Scalar3& _angvel_i,
+                                           Scalar3& _angvel_j,
+                                           Scalar3& _dv,
+                                           Scalar _dia_i,
+                                           Scalar _dia_j,
+                                           Scalar _rcutsq,
+                                           const param_type& _params)
+        : dr(_dr), rcutsq(_rcutsq), angvel_i(_angvel_i), angvel_j(_angvel_j), dv(_dv),
+          dia_i(_dia_i), dia_j(_dia_j),
+          lj1(_params.epsilon_x_4 * _params.sigma_6 * _params.sigma_6),
+          lj2(_params.epsilon_x_4 * _params.sigma_6), gamma(_params.gamma), kappa(_params.kappa),
+          pair_temp(_params.pair_temp)
         {
         }
 
@@ -189,7 +192,7 @@ class EvaluatorPairFrictionLJBase
         {
         return true;
         }
-    
+
     //! whether pair potential requires nu_ito
     HOSTDEVICE static bool needsNu()
         {
@@ -206,20 +209,22 @@ class EvaluatorPairFrictionLJBase
     /*! \param shape_i Shape of particle i
         \param shape_j Shape of particle j
     */
-    HOSTDEVICE void setShape(const shape_type* shapei, const shape_type* shapej) {}
-    
-    // Seed, Timestep, and the particle ids are necessary for the correlation of the pair noise (equation 26 and 27 of manuscript)
-    HOSTDEVICE void set_seed_ij_timestep(uint16_t seed, unsigned int i, unsigned int j, uint64_t timestep)
+    HOSTDEVICE void setShape(const shape_type* shapei, const shape_type* shapej) { }
+
+    // Seed, Timestep, and the particle ids are necessary for the correlation of the pair noise
+    // (equation 26 and 27 of manuscript)
+    HOSTDEVICE void
+    set_seed_ij_timestep(uint16_t seed, unsigned int i, unsigned int j, uint64_t timestep)
         {
         m_seed = seed;
         m_i = i;
         m_j = j;
         m_timestep = timestep;
         }
-        
+
     //! Set the timestep size
     HOSTDEVICE void setDeltaT(Scalar dt)
-        {   
+        {
         m_deltaT = dt;
         }
 
@@ -237,18 +242,18 @@ class EvaluatorPairFrictionLJBase
 
     //! Accept the optional nu value
     /*! \param nu_ito nu value for the ito formalism
-    */
-   HOSTDEVICE void setNu(Scalar nu_ito) 
-   {
-   nu_ij = nu_ito;
-   }
-    //! Set the third law value 
-    /*! \param third_law 
-    */
-   HOSTDEVICE void setThirdLaw(bool third_law)
-   {
-   m_third_law = third_law;
-   }
+     */
+    HOSTDEVICE void setNu(Scalar nu_ito)
+        {
+        nu_ij = nu_ito;
+        }
+    //! Set the third law value
+    /*! \param third_law
+     */
+    HOSTDEVICE void setThirdLaw(bool third_law)
+        {
+        m_third_law = third_law;
+        }
 
     //! Evaluate the force and energy
     /*! \param force Output parameter to write the computed force.
@@ -266,52 +271,50 @@ class EvaluatorPairFrictionLJBase
                              Scalar3& torque_i,
                              Scalar3& torque_j)
         {
-
         vec3<Scalar> rvec(dr);
         vec3<Scalar> w_i(angvel_i);
         vec3<Scalar> w_j(angvel_j);
         vec3<Scalar> v_ij(dv);
         Scalar d_i(dia_i);
         Scalar d_j(dia_j);
-           
+
         Scalar rsq = dot(rvec, rvec);
-                    
+
         if (rsq > rcutsq)
             return false;
-            
-        //! Define the force and torques which get applied to the particles    
+
+        //! Define the force and torques which get applied to the particles
         vec3<Scalar> f;
-        vec3<Scalar> t_j(0.0,0.0,0.0);
-        vec3<Scalar> t_i(0.0,0.0,0.0);
-            
+        vec3<Scalar> t_j(0.0, 0.0, 0.0);
+        vec3<Scalar> t_i(0.0, 0.0, 0.0);
+
         //! Calculation of the repulsive LJ-Force
         Scalar rinv = fast::rsqrt(rsq);
         Scalar r2inv = Scalar(1.0) / rsq;
         Scalar r6inv = r2inv * r2inv * r2inv;
-    
+
         //! Calculation of the repulsive LJ-Force
         Scalar force_divr = r2inv * r6inv * (Scalar(12.0) * lj1 * r6inv - Scalar(6.0) * lj2);
-        f  = force_divr * rvec;
-            
+        f = force_divr * rvec;
+
         //! Calculation of the rotational friction Force
-            
+
         //! e_ij: unit vector between center of masses
         vec3<Scalar> e_ij = Scalar(-1.0) * rvec * rinv;
-                    
+
         //! Project v_ij onto perpendicular to e_ij
-        vec3<Scalar> P_e_v = v_ij - (dot(v_ij,e_ij) * e_ij);
-            
+        vec3<Scalar> P_e_v = v_ij - (dot(v_ij, e_ij) * e_ij);
+
         //! Calculate (w_i*R_i+w_j*R_j)
         vec3<Scalar> wiRiwjRj = Scalar(0.5) * (d_i * w_i + d_j * w_j);
-    
+
         //! Calculate the relative tangential velocity u_ij at the contact point
-        vec3<Scalar> u_ij = P_e_v - cross(wiRiwjRj,e_ij);
-        Scalar du = fast::sqrt(dot(u_ij,u_ij));
-            
+        vec3<Scalar> u_ij = P_e_v - cross(wiRiwjRj, e_ij);
+        Scalar du = fast::sqrt(dot(u_ij, u_ij));
+
         //! du should not be too small to avoid division by zero
         if (TOLERANCE_DU < du)
             {
-                
             unsigned int m_oi, m_oj;
             int sign_xi = 1;
             // initialize the RNG
@@ -325,46 +328,51 @@ class EvaluatorPairFrictionLJBase
                 m_oi = m_i;
                 m_oj = m_j;
                 if (!m_third_law)
-                    sign_xi = -1; // If the neighborlist is only halfe the antisymmetric correlations have to be handled here! (Maybe there is a better way?)
+                    sign_xi
+                        = -1; // If the neighborlist is only halfe the antisymmetric correlations
+                              // have to be handled here! (Maybe there is a better way?)
                 }
-    
+
             //! Init Random number Generator
-            hoomd::RandomGenerator rng(hoomd::Seed(hoomd::RNGIdentifier::EvaluatorPairFrictionLJBase, m_timestep, m_seed), hoomd::Counter(m_oi, m_oj));
-                
+            hoomd::RandomGenerator rng(
+                hoomd::Seed(hoomd::RNGIdentifier::EvaluatorPairFrictionLJBase, m_timestep, m_seed),
+                hoomd::Counter(m_oi, m_oj));
+
             //! Distant dependend factor
-            Scalar w = fast::sqrt(dot(f,f));
-            
+            Scalar w = fast::sqrt(dot(f, f));
+
             Scalar factor_f = Scalar(0.0);
             Scalar factor_r = Scalar(0.0);
-            
-            //! How the factors are calculated depends on the friction type (currently implemented in EvaluatorPairFrictionLJVariants.h is linear, constant and coulombNewton) 
-            eval_factors(factor_f,factor_r,w,du);
-                
-            //! Calculation of the Rotational Friction force and torque    
-            vec3<Scalar> f_f = factor_f * (P_e_v + cross(e_ij,wiRiwjRj));
-            vec3<Scalar> exff = cross(e_ij,f_f);
-    
+
+            //! How the factors are calculated depends on the friction type (currently implemented
+            //! in EvaluatorPairFrictionLJVariants.h is linear, constant and coulombNewton)
+            eval_factors(factor_f, factor_r, w, du);
+
+            //! Calculation of the Rotational Friction force and torque
+            vec3<Scalar> f_f = factor_f * (P_e_v + cross(e_ij, wiRiwjRj));
+            vec3<Scalar> exff = cross(e_ij, f_f);
+
             //! Noise for rotational friction
             Scalar sigma_f = fast::sqrt(pair_temp / m_deltaT);
-                    
+
             Scalar xi_x = sign_xi * hoomd::NormalDistribution<Scalar>(sigma_f)(rng);
             Scalar xi_y = sign_xi * hoomd::NormalDistribution<Scalar>(sigma_f)(rng);
             Scalar xi_z = sign_xi * hoomd::NormalDistribution<Scalar>(sigma_f)(rng);
-                
+
             Scalar N_x = hoomd::NormalDistribution<Scalar>(sigma_f)(rng);
             Scalar N_y = hoomd::NormalDistribution<Scalar>(sigma_f)(rng);
             Scalar N_z = hoomd::NormalDistribution<Scalar>(sigma_f)(rng);
-                
+
             vec3<Scalar> xi = vec3<Scalar>(xi_x, xi_y, xi_z);
-            vec3<Scalar> N = vec3<Scalar>(N_x, N_y, N_z); 
-                
+            vec3<Scalar> N = vec3<Scalar>(N_x, N_y, N_z);
+
             vec3<Scalar> f_r = factor_r * (xi - dot(xi, e_ij) * e_ij - cross(e_ij, N));
             vec3<Scalar> t_r = factor_r * (cross(e_ij, xi) + N - dot(N, e_ij) * e_ij);
-                
+
             //! Calculate the torque on the particles
             t_i = (d_i / Scalar(2.0)) * (exff + t_r);
             t_j = (d_j / Scalar(2.0)) * (exff + t_r);
-                 
+
             //! Add all forces
             f = f + f_f + f_r;
             }
@@ -372,7 +380,7 @@ class EvaluatorPairFrictionLJBase
         force = vec_to_scalar3(f);
         torque_i = vec_to_scalar3(t_i);
         torque_j = vec_to_scalar3(t_j);
-        //pair_eng = e;
+        // pair_eng = e;
 
         return true;
         }
@@ -406,22 +414,23 @@ class EvaluatorPairFrictionLJBase
 #endif
 
     protected:
-    Scalar3 dr;                 //!< Stored vector pointing between particle centers of mass
-    Scalar rcutsq;              //!< Stored rcutsq from the constructor
-    Scalar3 angvel_i, angvel_j; //!< Stored angular momentum of ith and jth particle from the constructor
-    Scalar3 dv;                 //!< Stored velocity difference vij between the ith and jth particle
-    Scalar dia_i, dia_j;        //!< Stored diameter of ith and jth particle from the constructor
-    Scalar nu_ij;               //!< Factor which depends if Ito or the Stratonovich case.
-    bool m_third_law;           //!< Boolean storing if only a half neighborlist is used
-    Scalar lj1, lj2;            //!< lj1 and lj2 parameter extracted from the params passed to the constructor
-    Scalar gamma;               //!< Optional gamma parameter from the constructor
-    Scalar kappa;               //!< Optional kappa parameter from the constructor
-    Scalar pair_temp;           //!< User set temperature for the DPD like PRNG
-    Scalar m_deltaT;            //!< Timestep size stored from constructor
-    uint16_t m_seed;            //!< User set seed for thermostat PRNG
-    unsigned int m_i;           //!< Index of first particle. For use in PRNG
-    unsigned int m_j;           //!< Index of second particle. For use in PRNG
-    uint64_t m_timestep;        //!< timestep for use in PRNG
+    Scalar3 dr;    //!< Stored vector pointing between particle centers of mass
+    Scalar rcutsq; //!< Stored rcutsq from the constructor
+    Scalar3 angvel_i,
+        angvel_j;        //!< Stored angular momentum of ith and jth particle from the constructor
+    Scalar3 dv;          //!< Stored velocity difference vij between the ith and jth particle
+    Scalar dia_i, dia_j; //!< Stored diameter of ith and jth particle from the constructor
+    Scalar nu_ij;        //!< Factor which depends if Ito or the Stratonovich case.
+    bool m_third_law;    //!< Boolean storing if only a half neighborlist is used
+    Scalar lj1, lj2;  //!< lj1 and lj2 parameter extracted from the params passed to the constructor
+    Scalar gamma;     //!< Optional gamma parameter from the constructor
+    Scalar kappa;     //!< Optional kappa parameter from the constructor
+    Scalar pair_temp; //!< User set temperature for the DPD like PRNG
+    Scalar m_deltaT;  //!< Timestep size stored from constructor
+    uint16_t m_seed;  //!< User set seed for thermostat PRNG
+    unsigned int m_i; //!< Index of first particle. For use in PRNG
+    unsigned int m_j; //!< Index of second particle. For use in PRNG
+    uint64_t m_timestep; //!< timestep for use in PRNG
     // const param_type &params;   //!< The pair potential parameters
     };
 
