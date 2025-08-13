@@ -272,9 +272,7 @@ void mpcd::CollisionMethod::checkCollisionWarnings(uint64_t timestep)
                                              access_mode::read);
             // loop over all molecules
             unsigned int n_particles_local = m_pdata->getN() + m_pdata->getNGhosts();
-            for (unsigned int ibody = 0;
-                 ibody < nmol && !(invalid_center_of_mass || rigid_types.empty());
-                 ++ibody)
+            for (unsigned int ibody = 0; ibody < nmol && !invalid_center_of_mass; ++ibody)
                 {
                 // get central particle tag from first particle in molecule
                 assert(h_molecule_len.data[ibody] > 0);
