@@ -264,7 +264,7 @@ class AndersenThermostat(CollisionMethod):
     )
 
     def __init__(self, period, kT, embedded_particles=None):
-        super().__init__(period, kT, embedded_particles)
+        super().__init__(period=period, kT=kT, embedded_particles=embedded_particles)
 
     def _attach_hook(self):
         sim = self._simulation
