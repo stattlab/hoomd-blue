@@ -138,11 +138,6 @@ class PYBIND11_EXPORT CollisionMethod : public Autotuned
         }
 
     protected:
-    void requireTemperature()
-        {
-        m_needs_temperature = true;
-        }
-
     std::shared_ptr<SystemDefinition> m_sysdef;                //!< HOOMD system definition
     std::shared_ptr<hoomd::ParticleData> m_pdata;              //!< HOOMD particle data
     std::shared_ptr<mpcd::ParticleData> m_mpcd_pdata;          //!< MPCD particle data
@@ -163,8 +158,28 @@ class PYBIND11_EXPORT CollisionMethod : public Autotuned
     GPUArray<Scalar3> m_linmom_accum;     //!< Accumulated change in linear momentum of rigid bodies
     GPUArray<Scalar3> m_angmom_accum; //!< Accumulated change in angular momentum of rigid bodies
 
+#ifdef ENABLE_HIP
+    std::shared_ptr<Autotuner<1>> m_drawrandvec_tuner;  //!< Tuner for drawing random vectors
+    std::shared_ptr<Autotuner<1>> m_netvelo_tuner;      //!< Tuner for finding net velocity
+    std::shared_ptr<Autotuner<1>> m_applyrandvec_tuner; //!< Tuner for applying random vectors
+    std::shared_ptr<Autotuner<1>> m_store_tuner;        //!< Tuner for storing velocities
+    std::shared_ptr<Autotuner<1>> m_accumulate_tuner;   //!< Tuner for accumulating momenta
+    std::shared_ptr<Autotuner<1>> m_transfer_tuner;     //!< Tuner for transfering momenta
+
+    bool m_check_rigid_tuners; //!< True if rigid autotuners need to be tuned
+#endif                         // ENABLE_HIP
+
     //! Check if a collision should occur and advance the timestep counter
     virtual bool shouldCollide(uint64_t timestep);
+
+    //! Call the collision rule
+    virtual void rule(uint64_t timestep) { }
+
+    //! If the Collision requires the temperature
+    void requireTemperature()
+        {
+        m_needs_temperature = true;
+        }
 
     //! Check for issues related to applying collision to rigid bodies
     void checkCollisionWarnings(uint64_t timestep);
@@ -203,19 +218,7 @@ class PYBIND11_EXPORT CollisionMethod : public Autotuned
 
     //! Finish process of applying collisions to rigid bodies (GPU version)
     void transferRigidBodyMomentaGPU(uint64_t timestep);
-
-    std::shared_ptr<Autotuner<1>> m_drawrandvec_tuner;  //!< Tuner for drawing random vectors
-    std::shared_ptr<Autotuner<1>> m_netvelo_tuner;      //!< Tuner for finding net velocity
-    std::shared_ptr<Autotuner<1>> m_applyrandvec_tuner; //!< Tuner for applying random vectors
-    std::shared_ptr<Autotuner<1>> m_store_tuner;        //!< Tuner for storing velocities
-    std::shared_ptr<Autotuner<1>> m_accumulate_tuner;   //!< Tuner for accumulating momenta
-    std::shared_ptr<Autotuner<1>> m_transfer_tuner;     //!< Tuner for transfering momenta
-
-    bool m_check_rigid_tuners; //!< True if rigid autotuners need to be tuned
-#endif                         // ENABLE_HIP
-
-    //! Call the collision rule
-    virtual void rule(uint64_t timestep) { }
+#endif // ENABLE_HIP
     };
     } // end namespace mpcd
     } // end namespace hoomd
