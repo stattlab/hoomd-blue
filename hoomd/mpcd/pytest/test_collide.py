@@ -475,51 +475,8 @@ class TestCollisionMethod:
             assert np.allclose(new_velo_constituent, expected_velocity)
 
 
-def test_rigid_thermostat_error(small_snap, simulation_factory):
-    def_rigid = {
-        "constituent_types": ["B", "B"],
-        "positions": [[-2.4, 0, 0], [2.4, 0, 0]],
-        "orientations": [[1, 0, 0, 0], [1, 0, 0, 0]],
-    }
-    masses = np.array([1, 1])
-    # create simulation
-    initial_snap = small_snap
-    if initial_snap.communicator.rank == 0:
-        initial_snap.particles.types = ["A", "B"]
-        initial_snap.particles.mass[:] = [np.sum(masses)]
-    sim = simulation_factory(initial_snap)
-    sim.seed = 5
-
-    rigid = hoomd.md.constrain.Rigid()
-    rigid.body["A"] = def_rigid
-    rigid.create_bodies(sim.state)
-
-    # add mass of constituents
-    intermed_snap = sim.state.get_snapshot()
-    if intermed_snap.communicator.rank == 0:
-        flags = intermed_snap.particles.typeid == intermed_snap.particles.types.index(
-            "B"
-        )
-        intermed_snap.particles.mass[flags] = masses
-        intermed_snap.wrap()
-    sim.state.set_snapshot(intermed_snap)
-
-    sim.operations.integrator = hoomd.mpcd.Integrator(dt=0, rigid=rigid)
-    sim.operations.integrator.collision_method = (
-        hoomd.mpcd.collide.StochasticRotationDynamics(
-            period=1,
-            embedded_particles=hoomd.filter.Rigid(flags=("constituent",)),
-            angle=90,
-        )
-    )
-
-    # run simulation
-    with pytest.raises(RuntimeError):
-        sim.run(1)
-
-
 @pytest.mark.parametrize(
-    "def_rigid,masses",
+    "def_rigid,masses,init_args",
     [
         (
             {
@@ -527,7 +484,17 @@ def test_rigid_thermostat_error(small_snap, simulation_factory):
                 "positions": [[-2.4, 0, 0], [2.4, 0, 0]],
                 "orientations": [[1, 0, 0, 0], [1, 0, 0, 0]],
             },
+            np.array([2, 1, 1]),
+            {},
+        ),
+        (
+            {
+                "constituent_types": ["B", "B"],
+                "positions": [[-2.4, 0, 0], [2.4, 0, 0]],
+                "orientations": [[1, 0, 0, 0], [1, 0, 0, 0]],
+            },
             np.array([1, 1, 1]),
+            {"kT": 1},
         ),
         (
             {
@@ -541,6 +508,7 @@ def test_rigid_thermostat_error(small_snap, simulation_factory):
                 ],
             },
             np.array([2, 1, 1, 0, 0]),
+            {"kT": 1},
         ),
         (
             {
@@ -549,11 +517,14 @@ def test_rigid_thermostat_error(small_snap, simulation_factory):
                 "orientations": [[1, 0, 0, 0], [1, 0, 0, 0]],
             },
             np.array([2, 0.5, 1.5]),
+            {"kT": 1},
         ),
     ],
-    ids=["summation_error", "zero_mass_error", "center_loc_error"],
+    ids=["thermostat_error", "summation_error", "zero_mass_error", "center_loc_error"],
 )
-def test_rigid_mass_errors(small_snap, simulation_factory, def_rigid, masses):
+def test_rigid_mass_errors(
+    small_snap, simulation_factory, def_rigid, masses, init_args
+):
     # create simulation
     initial_snap = small_snap
     if initial_snap.communicator.rank == 0:
@@ -582,7 +553,7 @@ def test_rigid_mass_errors(small_snap, simulation_factory, def_rigid, masses):
             period=1,
             embedded_particles=hoomd.filter.Rigid(flags=("constituent",)),
             angle=90,
-            kT=1,
+            **init_args,
         )
     )
 
