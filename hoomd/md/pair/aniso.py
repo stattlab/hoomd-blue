@@ -234,7 +234,7 @@ class YLZ(AnisotropicPair):
 
         .. code-block:: python
 
-            ylz.mu['A'] = (1.0,0.0,0.0)
+            ylz.mu['A'] = (1.0, 0.0, 0.0)
 
     """
 
