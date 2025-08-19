@@ -238,7 +238,7 @@ class YLZ(AnisotropicPair):
         Type: `TypeParameter` [``particle_type``, `tuple` [`float`, `float`,
         `float` ]]
 
-        .. rubric:: Examples:
+        .. rubric:: Example:
 
         .. code-block:: python
 
