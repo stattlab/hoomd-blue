@@ -16,6 +16,8 @@ Change Log
 
 * Display vector math symbol correctly in the documentation
   (`#2109 <https://github.com/glotzerlab/hoomd-blue/pull/2109>`__).
+* Display equations correctly in the documentation
+  (`#2118 <https://github.com/glotzerlab/hoomd-blue/pull/2118>`__).
 
 5.3.1 (2025-07-18)
 ^^^^^^^^^^^^^^^^^^

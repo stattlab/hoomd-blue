@@ -1156,15 +1156,15 @@ class Moliere(Pair):
     Example::
 
         nl = nlist.Cell()
-        moliere = pair.Moliere(default_r_cut = 3.0, nlist=nl)
+        moliere = pair.Moliere(default_r_cut=3.0, nlist=nl)
 
         Zi = 54
         Zj = 7
         e = 1
         a0 = 1
-        aF = 0.8853 * a0 / (np.sqrt(Zi) + np.sqrt(Zj))**(2/3)
+        aF = 0.8853 * a0 / (np.sqrt(Zi) + np.sqrt(Zj)) ** (2 / 3)
 
-        moliere.params[('A', 'B')] = dict(qi=Zi*e, qj=Zj*e, aF=aF)
+        moliere.params[("A", "B")] = dict(qi=Zi * e, qj=Zj * e, aF=aF)
 
     {inherited}
 
@@ -1246,9 +1246,9 @@ class ZBL(Pair):
         Zj = 7
         e = 1
         a0 = 1
-        aF = 0.8853 * a0 / (Zi**(0.23) + Zj**(0.23))
+        aF = 0.8853 * a0 / (Zi ** (0.23) + Zj ** (0.23))
 
-        zbl.params[('A', 'B')] = dict(qi=Zi*e, qj=Zj*e, aF=aF)
+        zbl.params[("A", "B")] = dict(qi=Zi * e, qj=Zj * e, aF=aF)
 
     {inherited}
 
@@ -1557,9 +1557,9 @@ class DLVO(Pair):
 
         nl = hoomd.md.nlist.Cell()
         dlvo = hoomd.md.pair.DLVO(nlist=nl)
-        dlvo.params[('A', 'A')] = dict(A=1.0, kappa=1.0, Z=2, a1=1, a2=1)
-        dlvo.params[('A', 'B')] = dict(A=2.0, kappa=0.5, Z=3, a1=1, a2=3)
-        dlvo.params[('B', 'B')] = dict(A=2.0, kappa=0.5, Z=3, a1=3, a2=3)
+        dlvo.params[("A", "A")] = dict(A=1.0, kappa=1.0, Z=2, a1=1, a2=1)
+        dlvo.params[("A", "B")] = dict(A=2.0, kappa=0.5, Z=3, a1=1, a2=3)
+        dlvo.params[("B", "B")] = dict(A=2.0, kappa=0.5, Z=3, a1=3, a2=3)
 
     {inherited}
 

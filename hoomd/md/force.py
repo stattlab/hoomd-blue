@@ -433,13 +433,12 @@ class Active(Force):
     Examples::
 
         all = hoomd.filter.All()
-        active = hoomd.md.force.Active(
-            filter=hoomd.filter.All()
-            )
-        active.active_force['A','B'] = (1,0,0)
-        active.active_torque['A','B'] = (0,0,0)
+        active = hoomd.md.force.Active(filter=hoomd.filter.All())
+        active.active_force["A", "B"] = (1, 0, 0)
+        active.active_torque["A", "B"] = (0, 0, 0)
         rotational_diffusion_updater = active.create_diffusion_updater(
-            trigger=10)
+            trigger=10
+        )
         sim.operations += rotational_diffusion_updater
 
     Note:
