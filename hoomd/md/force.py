@@ -411,8 +411,11 @@ class Active(Force):
 
     .. math::
 
-        \vec{F}_i = \mathbf{q}_i \vec{f}_i \mathbf{q}_i^* \\
-        \vec{\tau}_i = \mathbf{q}_i \vec{u}_i \mathbf{q}_i^*,
+        \vec{F}_i = \mathbf{q}_i \vec{f}_i \mathbf{q}_i^*
+
+    .. math::
+
+        \vec{\tau}_i = \mathbf{q}_i \vec{u}_i \mathbf{q}_i^*
 
     where :math:`\vec{f}_i` is the active force in the local particle
     coordinate system (set by type `active_force`) and :math:`\vec{u}_i`

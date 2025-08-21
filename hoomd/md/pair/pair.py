@@ -1137,7 +1137,7 @@ class Moliere(Pair):
 
     .. math::
         U(r) = \frac{Z_i Z_j e^2}{4 \pi \epsilon_0 r_{ij}} \left[ 0.35 \exp
-          \left( -0.3 \frac{r_{ij}}{a_F} \right) + \\
+          \left( -0.3 \frac{r_{ij}}{a_F} \right) +
           0.55 \exp \left( -1.2 \frac{r_{ij}}{a_F} \right) + 0.10 \exp
           \left( -6.0 \frac{r_{ij}}{a_F} \right) \right]
 
@@ -1220,9 +1220,9 @@ class ZBL(Pair):
     .. math::
         U(r) =
           \frac{Z_i Z_j e^2}{4 \pi \epsilon_0 r_{ij}} \left[ 0.1818
-          \exp \left( -3.2 \frac{r_{ij}}{a_F} \right) \right. \\
-          + 0.5099 \exp \left( -0.9423 \frac{r_{ij}}{a_F} \right) \\
-          + 0.2802 \exp \left( -0.4029 \frac{r_{ij}}{a_F} \right) \\
+          \exp \left( -3.2 \frac{r_{ij}}{a_F} \right) \right.
+          + 0.5099 \exp \left( -0.9423 \frac{r_{ij}}{a_F} \right)
+          + 0.2802 \exp \left( -0.4029 \frac{r_{ij}}{a_F} \right)
           + \left. 0.02817 \exp \left( -0.2016 \frac{r_{ij}}{a_F} \right)
           \right]
 
@@ -1536,14 +1536,12 @@ class DLVO(Pair):
     on every particle in the simulation state with:
 
     .. math::
-        \begin{split}
-        V_{\mathrm{DLVO}}(r) = &- \frac{A}{6} \left[
+        V_{\mathrm{DLVO}}(r) = - \frac{A}{6} \left[
             \frac{2a_1a_2}{r^2 - (a_1+a_2)^2} +
-            \frac{2a_1a_2}{r^2 - (a_1-a_2)^2} \\
+            \frac{2a_1a_2}{r^2 - (a_1-a_2)^2}
             + \log \left(
-            \frac{r^2 - (a_1+a_2)^2}{r^2 - (a_1-a_2)^2} \right) \right] \\
-            & + \frac{a_1 a_2}{a_1+a_2} Z e^{-\kappa(r - (a_1+a_2))}
-        \end{split}
+            \frac{r^2 - (a_1+a_2)^2}{r^2 - (a_1-a_2)^2} \right) \right]
+            + \frac{a_1 a_2}{a_1+a_2} Z e^{-\kappa(r - (a_1+a_2))}
 
     where :math:`a_1` is the radius of first particle in the pair, :math:`a_2`
     is the radius of second particle in the pair, :math:`A` is the Hamaker
@@ -2195,8 +2193,8 @@ class Zetterling(Pair):
     state:
 
     .. math::
-        U(r) = A \\frac{\\exp{(\\alpha r)\\cos{(2 k_F r)}}}{r^3}
-              + B \\left( \\frac{\\sigma}{r} \\right)^n
+        U(r) = A \frac{\exp{(\alpha r)\cos{(2 k_F r)}}}{r^3}
+              + B \left( \frac{\sigma}{r} \right)^n
 
     The potential was introduced in `F. H. M. Zetterling, M. Dzugutov, and S. Lidin
     2001`_.
