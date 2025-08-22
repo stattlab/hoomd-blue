@@ -84,7 +84,7 @@ class Dipole(AnisotropicPair):
                 - \frac{(\vec{\mu_i}\cdot \vec{r_{ji}})q_j}{r^3}
             \right) \\
         U_{ee} &= A e^{-\kappa r} \frac{q_i q_j}{r}
-        \end{split} \\
+        \end{split}
 
     Note:
        All units are documented electronic dipole moments. However, `Dipole`
