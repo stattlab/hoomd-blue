@@ -157,7 +157,7 @@ class YLZ(AnisotropicPair):
     interaction with an orientation-dependent modulation function :math:`\psi`.
     The isotropic term consists of:
 
-    1. A 2–4 Lennard-Jones potential truncated at its minimum :math:`r_{min}`.
+    1. A 2,4-Lennard-Jones potential truncated at its minimum :math:`r_{min}`.
     2. A cosine potential defined between :math:`r_{min}` and :math:`r_{cut}`.
 
 
