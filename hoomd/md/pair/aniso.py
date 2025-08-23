@@ -153,9 +153,9 @@ class YLZ(AnisotropicPair):
         nlist (hoomd.md.nlist.NeighborList): Neighbor list
         default_r_cut (float): Default cutoff radius :math:`[\mathrm{length}]`.
 
-    The YLZ potential is an anisotropic potential used most often to model fluidized membranes by combining an isotropic pair
-    interaction with an orientation-dependent modulation function :math:`\psi`.
-    The isotropic term consists of:
+    The modulation function :math:`\psi` creates torques to align the
+    orientation of a pair of particles as function of their axis of
+    symmetry :math:`\mu` in their local reference frame.
 
     1. A 2,4-Lennard-Jones potential truncated at its minimum :math:`r_{min}`.
     2. A cosine potential defined between :math:`r_{min}` and :math:`r_{cut}`.
