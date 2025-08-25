@@ -72,6 +72,7 @@ void export_PotentialPairZetterling(pybind11::module& m);
 void export_AnisoPotentialPairALJ2D(pybind11::module& m);
 void export_AnisoPotentialPairALJ3D(pybind11::module& m);
 void export_AnisoPotentialPairDipole(pybind11::module& m);
+void export_AnisoPotentialPairYLZ(pybind11::module& m);
 void export_AnisoPotentialPairGB(pybind11::module& m);
 void export_AnisoPotentialPairPatchyExpandedGaussian(pybind11::module& m);
 ;
@@ -233,6 +234,7 @@ void export_PotentialPairZetterlingGPU(pybind11::module& m);
 void export_AnisoPotentialPairALJ2DGPU(pybind11::module& m);
 void export_AnisoPotentialPairALJ3DGPU(pybind11::module& m);
 void export_AnisoPotentialPairDipoleGPU(pybind11::module& m);
+void export_AnisoPotentialPairYLZGPU(pybind11::module& m);
 void export_AnisoPotentialPairGBGPU(pybind11::module& m);
 
 void export_AnisoPotentialPairPatchyExpandedGaussianGPU(pybind11::module& m);
@@ -382,6 +384,7 @@ PYBIND11_MODULE(_md, m)
     export_AnisoPotentialPairALJ2D(m);
     export_AnisoPotentialPairALJ3D(m);
     export_AnisoPotentialPairDipole(m);
+    export_AnisoPotentialPairYLZ(m);
     export_AnisoPotentialPairGB(m);
     export_AnisoPotentialPairPatchyExpandedGaussian(m);
     export_AnisoPotentialPairPatchyExpandedLJ(m);
@@ -481,6 +484,7 @@ PYBIND11_MODULE(_md, m)
     export_AnisoPotentialPairALJ2DGPU(m);
     export_AnisoPotentialPairALJ3DGPU(m);
     export_AnisoPotentialPairDipoleGPU(m);
+    export_AnisoPotentialPairYLZGPU(m);
     export_AnisoPotentialPairGBGPU(m);
 
     export_AnisoPotentialPairPatchyExpandedGaussianGPU(m);
