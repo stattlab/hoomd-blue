@@ -61,7 +61,7 @@ class PYBIND11_EXPORT VolumeConservationMeshForceCompute : public MeshForceCompu
     //! Get ghost particle fields requested by this pair potential
     /*! \param timestep Current time step
      */
-    virtual CommFlags getRequestedCommFlags(uint64_t timestep)
+    CommFlags getRequestedCommFlags(uint64_t timestep) override
         {
         CommFlags flags = CommFlags(0);
         flags[comm_flag::tag] = 1;

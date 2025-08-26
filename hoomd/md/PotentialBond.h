@@ -56,7 +56,7 @@ template<class evaluator, class Bonds> class PotentialBond : public MeshForceCom
 
 #ifdef ENABLE_MPI
     //! Get ghost particle fields requested by this pair potential
-    virtual CommFlags getRequestedCommFlags(uint64_t timestep);
+    CommFlags getRequestedCommFlags(uint64_t timestep) override;
 #endif
 
     protected:

@@ -1,13 +1,13 @@
 // Copyright (c) 2009-2025 The Regents of the University of Michigan.
 // Part of HOOMD-blue, released under the BSD 3-Clause License.
 
-#include "MeshForceCompute.h"
-#include "TriangleAreaConservationMeshParameters.h"
+#include "hoomd/ForceCompute.h"
+#include "hoomd/MeshDefinition.h"
 
 #include <memory>
 
-/*! \file TriangleAreaConservationMeshForceCompute.h
-    \brief Declares a class for computing triangle area conservation forces
+/*! \file SurfaceTensionForceCompute.h
+    \brief Declares a class for computing surface tension forces
 */
 
 #ifdef __HIPCC__
@@ -16,30 +16,55 @@
 
 #include <pybind11/pybind11.h>
 
-#ifndef __TRIANGLEAREACONSERVATIONMESHFORCECOMPUTE_H__
-#define __TRIANGLEAREACONSERVATIONMESHFORCECOMPUTE_H__
+#ifndef __SURFACETENSIONMESHFORCECOMPUTE_H__
+#define __SURFACETENSIONMESHFORCECOMPUTE_H__
 
 namespace hoomd
     {
 namespace md
     {
+struct surface_tension_params
+    {
+    Scalar k;
 
-//! Computes triangle area conservation forces on the mesh
-/*! Triangle Area Conservation forces are computed on every triangle in a mesh.
+#ifndef __HIPCC__
+    surface_tension_params() : k(0){ }
+
+    surface_tension_params(pybind11::dict params)
+        : sigma(params["k"].cast<Scalar>())
+        {
+        }
+
+    pybind11::dict asDict()
+        {
+        pybind11::dict v;
+        v["k"] = k;
+        return v;
+        }
+#endif
+    }
+#ifdef SINGLE_PRECISION
+    __attribute__((aligned(8)));
+#else
+    __attribute__((aligned(16)));
+#endif
+
+//! Computes surface tension forces on the mesh
+/*! Surface tension forces are computed on every triangle in a mesh.
     \ingroup computes
 */
-class PYBIND11_EXPORT TriangleAreaConservationMeshForceCompute : public MeshForceCompute
+class PYBIND11_EXPORT SurfaceTensionMeshForceCompute : public ForceCompute
     {
     public:
     //! Constructs the compute
-    TriangleAreaConservationMeshForceCompute(std::shared_ptr<SystemDefinition> sysdef,
+    SurfaceTensionMeshForceCompute(std::shared_ptr<SystemDefinition> sysdef,
                                              std::shared_ptr<MeshDefinition> meshdef);
 
     //! Destructor
-    virtual ~TriangleAreaConservationMeshForceCompute();
+    virtual ~SurfaceTensionMeshForceCompute();
 
     //! Set the parameters
-    virtual void setParams(unsigned int type, const triangle_area_conservation_param_t& params);
+    virtual void setParams(unsigned int type, Scalar sigma);
 
     virtual void setParamsPython(std::string type, pybind11::dict params);
 
@@ -56,7 +81,7 @@ class PYBIND11_EXPORT TriangleAreaConservationMeshForceCompute : public MeshForc
     //! Get ghost particle fields requested by this pair potential
     /*! \param timestep Current time step
      */
-    CommFlags getRequestedCommFlags(uint64_t timestep) override
+    virtual CommFlags getRequestedCommFlags(uint64_t timestep)
         {
         CommFlags flags = CommFlags(0);
         flags[comm_flag::tag] = 1;
@@ -66,23 +91,20 @@ class PYBIND11_EXPORT TriangleAreaConservationMeshForceCompute : public MeshForc
 #endif
 
     protected:
-    GPUArray<triangle_area_conservation_param_t> m_params; //!< Parameters
+    GPUArray<Scalar> m_params;                   //!< Parameters
     GPUArray<Scalar> m_area;                               //!< memory space for area
 
-    //! Actually compute the forces
-    void computeForces(uint64_t timestep) override;
+    std::shared_ptr<MeshDefinition>
+        m_mesh_data; //!< Mesh data to use in computing area conservation energy
 
-    Scalar energyDiff(unsigned int idx_a,
-                      unsigned int idx_b,
-                      unsigned int idx_c,
-                      unsigned int idx_d,
-                      unsigned int type_id) override;
+    //! Actually compute the forces
+    virtual void computeForces(uint64_t timestep);
     };
 
 namespace detail
     {
-//! Exports the TriangleAreaConservationMeshForceCompute class to python
-void export_TriangleAreaConservationMeshForceCompute(pybind11::module& m);
+//! Exports the SurfaceTensionMeshForceCompute class to python
+void export_SurfaceTensionMeshForceCompute(pybind11::module& m);
 
     } // end namespace detail
     } // end namespace md
