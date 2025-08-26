@@ -84,6 +84,8 @@ void export_AnisoPotentialPairPatchyMie(pybind11::module& m);
 void export_AnisoPotentialPairPatchyYukawa(pybind11::module& m);
 void export_AnisoPotentialPairPatchyTable(pybind11::module& m);
 
+void export_MeshForceCompute(pybind11::module& m);
+
 void export_PotentialBondHarmonic(pybind11::module& m);
 void export_PotentialBondFENE(pybind11::module& m);
 void export_PotentialBondTether(pybind11::module& m);
@@ -92,7 +94,6 @@ void export_PotentialMeshBondHarmonic(pybind11::module& m);
 void export_PotentialMeshBondFENE(pybind11::module& m);
 void export_PotentialMeshBondTether(pybind11::module& m);
 
-void export_MeshForceCompute(pybind11::module& m);
 void export_BendingRigidityMeshForceCompute(pybind11::module& m);
 void export_HelfrichMeshForceCompute(pybind11::module& m);
 void export_VolumeConservationMeshForceCompute(pybind11::module& m);
@@ -401,6 +402,8 @@ PYBIND11_MODULE(_md, m)
     export_PotentialPairDPDThermoDPD(m);
     export_PotentialPairDPDThermoLJ(m);
 
+    export_MeshForceCompute(m);
+
     export_PotentialBondHarmonic(m);
     export_PotentialBondFENE(m);
     export_PotentialBondTether(m);
@@ -409,7 +412,6 @@ PYBIND11_MODULE(_md, m)
     export_PotentialMeshBondFENE(m);
     export_PotentialMeshBondTether(m);
 
-    export_MeshForceCompute(m);
     export_BendingRigidityMeshForceCompute(m);
     export_HelfrichMeshForceCompute(m);
     export_VolumeConservationMeshForceCompute(m);
