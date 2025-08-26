@@ -12,7 +12,7 @@
 #include <iostream>
 
 #include <pybind11/stl_bind.h>
-PYBIND11_MAKE_OPAQUE(std::vector<std::shared_ptr<hoomd::ForceCompute>>);
+PYBIND11_MAKE_OPAQUE(std::vector<std::shared_ptr<hoomd::md::MeshForceCompute>>);
 
 using namespace std;
 
@@ -394,7 +394,8 @@ namespace detail
     {
 void export_MeshDynamicBondUpdater(pybind11::module& m)
     {
-    pybind11::bind_vector<std::vector<std::shared_ptr<ForceCompute>>>(m, "ForceComputeList");
+    pybind11::bind_vector<std::vector<std::shared_ptr<MeshForceCompute>>>(m,
+                                                                          "MeshForceComputeList");
     pybind11::class_<MeshDynamicBondUpdater, Updater, std::shared_ptr<MeshDynamicBondUpdater>>(
         m,
         "MeshDynamicBondUpdater")

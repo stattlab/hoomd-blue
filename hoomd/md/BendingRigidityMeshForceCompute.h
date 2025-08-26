@@ -3,7 +3,6 @@
 
 #include "MeshForceCompute.h"
 
-
 #include <memory>
 
 /*! \file BendingRigidityMeshForceCompute.h
@@ -83,7 +82,7 @@ class PYBIND11_EXPORT BendingRigidityMeshForceCompute : public MeshForceCompute
 #endif
 
     protected:
-    GPUArray<Scalar> m_params;                   //!< Parameters
+    GPUArray<Scalar> m_params; //!< Parameters
 
     //! Actually compute the forces
     virtual void computeForces(uint64_t timestep);

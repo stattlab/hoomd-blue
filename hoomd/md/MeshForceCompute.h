@@ -64,7 +64,6 @@ class PYBIND11_EXPORT MeshForceCompute : public ForceCompute
                                       unsigned int type_id) { };
 
     protected:
-
     std::shared_ptr<MeshDefinition> m_mesh_data; //!< Mesh data to use in computing helfich energy
     };
 

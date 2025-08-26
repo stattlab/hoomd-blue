@@ -31,7 +31,9 @@ namespace detail
     {
 void export_MeshForceCompute(pybind11::module& m)
     {
-    pybind11::class_<MeshForceCompute, ForceCompute, std::shared_ptr<MeshForceCompute>>(m, "MeshForceCompute")
+    pybind11::class_<MeshForceCompute, ForceCompute, std::shared_ptr<MeshForceCompute>>(
+        m,
+        "MeshForceCompute")
         .def(pybind11::init<std::shared_ptr<SystemDefinition>, std::shared_ptr<MeshDefinition>>());
     }
     } // end namespace detail

@@ -75,7 +75,7 @@ template<class evaluator, class Bonds> class PotentialBond : public MeshForceCom
 
 template<class evaluator, class Bonds>
 PotentialBond<evaluator, Bonds>::PotentialBond(std::shared_ptr<SystemDefinition> sysdef)
-    : MeshForceCompute(sysdef,NULL)
+    : MeshForceCompute(sysdef, NULL)
     {
     m_exec_conf->msg->notice(5) << "Constructing PotentialBond<" << evaluator::getName() << ">"
                                 << std::endl;
@@ -92,7 +92,7 @@ PotentialBond<evaluator, Bonds>::PotentialBond(std::shared_ptr<SystemDefinition>
 template<class evaluator, class Bonds>
 PotentialBond<evaluator, Bonds>::PotentialBond(std::shared_ptr<SystemDefinition> sysdef,
                                                std::shared_ptr<MeshDefinition> meshdef)
-    : MeshForceCompute(sysdef,meshdef)
+    : MeshForceCompute(sysdef, meshdef)
     {
     m_exec_conf->msg->notice(5) << "Constructing PotentialMeshBond<" << evaluator::getName() << ">"
                                 << std::endl;

@@ -60,7 +60,7 @@ class PYBIND11_EXPORT HelfrichMeshForceCompute : public MeshForceCompute
 #endif
 
     protected:
-    GPUArray<Scalar> m_params;                   //!< Parameters
+    GPUArray<Scalar> m_params; //!< Parameters
 
     GPUArray<Scalar3>
         m_sigma_dash; //! sum of the distances weighted by the bending angle over all neighbors

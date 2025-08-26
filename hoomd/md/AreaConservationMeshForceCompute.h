@@ -73,7 +73,7 @@ class PYBIND11_EXPORT AreaConservationMeshForceCompute : public MeshForceCompute
     GPUArray<area_conservation_param_t> m_params; //!< Parameters
     GPUArray<Scalar> m_area;                      //!< memory space for area
     Scalar m_area_diff;
-    bool m_ignore_type;                          //! ignore type to calculate global area if true
+    bool m_ignore_type; //! ignore type to calculate global area if true
 
     //! Actually compute the forces
     virtual void computeForces(uint64_t timestep);

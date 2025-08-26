@@ -25,7 +25,7 @@ VolumeConservationMeshForceCompute::VolumeConservationMeshForceCompute(
     std::shared_ptr<SystemDefinition> sysdef,
     std::shared_ptr<MeshDefinition> meshdef,
     bool ignore_type)
-    : MeshForceCompute(sysdef,meshdef), m_ignore_type(ignore_type)
+    : MeshForceCompute(sysdef, meshdef), m_ignore_type(ignore_type)
     {
     m_exec_conf->msg->notice(5) << "Constructing VolumeConservationMeshForceCompute" << endl;
 

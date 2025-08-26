@@ -24,7 +24,7 @@ namespace md
 TriangleAreaConservationMeshForceCompute::TriangleAreaConservationMeshForceCompute(
     std::shared_ptr<SystemDefinition> sysdef,
     std::shared_ptr<MeshDefinition> meshdef)
-    : MeshForceCompute(sysdef,meshdef)
+    : MeshForceCompute(sysdef, meshdef)
     {
     m_exec_conf->msg->notice(5) << "Constructing TriangleAreaConservationhMeshForceCompute" << endl;
 
