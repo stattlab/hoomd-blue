@@ -399,7 +399,53 @@ class HarmonicAveragedThermodynamicQuantities(Compute):
         return self._cpp_obj.pressure
 
 
+
+class ThermoSLLOD(Compute):
+    """SLLOD-corrected thermodynamic quantities.
+
+    Removes affine velocity profile before computing thermodynamic properties.
+    """
+
+    def __init__(self, filter, shear_rate):
+        super().__init__()
+        self._filter = filter
+        self.shear_rate = shear_rate
+
+    def _attach_hook(self):
+        if isinstance(self._simulation.device, hoomd.device.CPU):
+            thermo_cls = _md.ComputeThermoSLLOD
+        else:
+            thermo_cls = _md.ComputeThermoSLLODGPU
+        group = self._simulation.state._get_group(self._filter)
+        self._cpp_obj = thermo_cls(self._simulation.state._cpp_sys_def, group, self.shear_rate)
+
+    @log(requires_run=True)
+    def pressure(self):
+        self._cpp_obj.compute(self._simulation.timestep)
+        return self._cpp_obj.pressure
+
+    @log(requires_run=True)
+    def pressure_tensor(self):
+        self._cpp_obj.compute(self._simulation.timestep)
+        return self._cpp_obj.pressure_tensor
+
+    @log(requires_run=True)
+    def kinetic_energy(self):
+        self._cpp_obj.compute(self._simulation.timestep)
+        return self._cpp_obj.kinetic_energy
+
+    @log(requires_run=True)
+    def potential_energy(self):
+        self._cpp_obj.compute(self._simulation.timestep)
+        return self._cpp_obj.potential_energy
+
+    @log(requires_run=True)
+    def kinetic_temperature(self):
+        self._cpp_obj.compute(self._simulation.timestep)
+        return self._cpp_obj.kinetic_temperature
+
 __all__ = [
     "HarmonicAveragedThermodynamicQuantities",
     "ThermodynamicQuantities",
+    "ThermoSLLOD"
 ]
