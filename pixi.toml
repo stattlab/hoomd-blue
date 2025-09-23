@@ -20,9 +20,6 @@ pybind11 = "*"
 pytest = "*"
 rowan = "*"
 sybil = "*"
-tbb = "*"
-tbb-devel = "*"
-
 
 [feature.py310.dependencies]
 python = "3.10.*"
