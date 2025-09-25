@@ -310,7 +310,7 @@ class _HOOMDBaseObject(_HOOMDGetSetAttrBase, _DependencyRelation, metaclass=Logg
         if self._use_count > 1:
             if simulation != self._simulation:
                 raise hoomd.error.SimulationDefinitionError(
-                    f"Cannot add {self} to multiple simulations simultaneously."
+                    f"Cannot add {self} to the simulation. It has been attached to a different simulation previously."
                 )
             return
         self._simulation = simulation
@@ -547,9 +547,6 @@ class Operation(AutotunedObject):
         + inspect.cleandoc(AutotunedObject._doc_inherited)
     )
 
-    def __init__(self):
-        self._allow_if_updater = False
-
 
 class TriggeredOperation(Operation):
     """Operations that execute on timesteps determined by a trigger.
@@ -597,7 +594,6 @@ class TriggeredOperation(Operation):
         trigger_param = ParameterDict(trigger=hoomd.trigger.Trigger)
         self._param_dict.update(trigger_param)
         self.trigger = trigger
-        super().__init__()
 
 
 class Updater(TriggeredOperation):
