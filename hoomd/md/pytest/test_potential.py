@@ -1141,6 +1141,7 @@ def test_setting_to_new_sim(simulation_factory, two_particle_snapshot_factory):
     with pytest.raises(RuntimeError):
         sim1.operations.integrator.forces.append(lj)
 
+
 @pytest.mark.filterwarnings("always")
 def test_setting_nlist(simulation_factory, two_particle_snapshot_factory):
     """Test neighbor list cannot be spread between multiple simulations."""
