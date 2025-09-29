@@ -61,8 +61,8 @@ void ComputeThermoSLLODGPU::removeFlowField()
     ArrayHandle< unsigned int > d_index_array(m_group->getIndexArray(), access_location::device, access_mode::read);
 
     // perform the removal of the flow field on the GPU
-    kernel::gpu_remove_flow_field(d_vel.data,
-                    d_pos.data,
+    kernel::gpu_remove_flow_field(d_pos.data,
+                    d_vel.data,
                     d_index_array.data,
                     m_shear_rate,
                     group_size
@@ -91,8 +91,8 @@ void ComputeThermoSLLODGPU::addFlowField()
     ArrayHandle< unsigned int > d_index_array(m_group->getIndexArray(), access_location::device, access_mode::read);
 
     // perform the removal of the flow field on the GPU
-    kernel::gpu_add_flow_field(d_vel.data,
-                    d_pos.data,
+    kernel::gpu_add_flow_field(d_pos.data,
+                    d_vel.data,
                     d_index_array.data,
                     m_shear_rate,
                     group_size
@@ -117,6 +117,8 @@ void ComputeThermoSLLODGPU::computeProperties()
     //before doing any calculations of thermodynamic quantities, remove imposed flow
     removeFlowField();
 
+    if (m_exec_conf->isCUDAErrorCheckingEnabled())
+    CHECK_CUDA_ERROR();
     {
     assert(m_pdata);
 
