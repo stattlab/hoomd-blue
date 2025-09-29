@@ -61,36 +61,36 @@ __global__ void gpu_nvt_sllod_rescale_step_one_kernel(Scalar4* d_pos,
         Scalar3 pos = make_scalar3(postype.x, postype.y, postype.z);
 
         Scalar4 velmass = d_vel[idx];
-        Scalar3 vel = make_scalar3(velmass.x, velmass.y, velmass.z);
+        Scalar3 v = make_scalar3(velmass.x, velmass.y, velmass.z);
         Scalar3 accel = d_accel[idx];
 
         // remove flow field
-        vel.x -= shear_rate * pos.y;
+        v.x -= shear_rate * pos.y;
 
         // rescale velocity
-        vel *= rescale_factor;
+        v *= rescale_factor;
 
         // apply velocity correction
         if (vel_correction == true)
             {
-            vel.x -= Scalar(0.5) * shear_rate * vel.y * deltaT;
+            v.x -= Scalar(0.5) * shear_rate * v.y * deltaT;
             }
 
         // add flow field
-        vel.x += shear_rate * pos.y;
+        v.x += shear_rate * pos.y;
 
         // update velocity
-        vel += Scalar(0.5) * accel * deltaT;
+        v += Scalar(0.5) * accel * deltaT;
 
         if (limit)
             {
-            Scalar displacement = sqrtf(dot(vel, vel));
+            Scalar displacement = sqrtf(dot(v, v));
             if (displacement * deltaT > maximum_displacement)
-                vel = vel * maximum_displacement / displacement * deltaT;
+                v = v * maximum_displacement / displacement * deltaT;
             }
 
         // update position
-        pos += vel * deltaT;
+        pos += v * deltaT;
 
         // read in the image flags
         int3 image = d_image[idx];
@@ -108,11 +108,11 @@ __global__ void gpu_nvt_sllod_rescale_step_one_kernel(Scalar4* d_pos,
 
         if (pos.y > global_hi_y) // crossed pbc in +y
             {
-            vel.x -= boundary_shear_velocity; // Scalar(2.0)*m_shear_rate*global_hi.y;
+            v.x -= boundary_shear_velocity; // Scalar(2.0)*m_shear_rate*global_hi.y;
             }
         else if (pos.y < global_lo_y) // crossed pbc in -y
             {
-            vel.x += boundary_shear_velocity; //-= Scalar(2.0)*m_shear_rate*global_lo.y;
+            v.x += boundary_shear_velocity; //-= Scalar(2.0)*m_shear_rate*global_lo.y;
             }
 
         // particles might have moved outside of the box. Wrap them back
@@ -120,7 +120,7 @@ __global__ void gpu_nvt_sllod_rescale_step_one_kernel(Scalar4* d_pos,
 
         // write out the results
         d_pos[idx] = make_scalar4(pos.x, pos.y, pos.z, postype.w);
-        d_vel[idx] = make_scalar4(vel.x, vel.y, vel.z, velmass.w);
+        d_vel[idx] = make_scalar4(v.x, v.y, v.z, velmass.w);
         d_image[idx] = image;
         }
     }
@@ -225,12 +225,12 @@ __global__ void gpu_nvt_sllod_rescale_step_two_kernel(Scalar4* d_vel,
         Scalar4 net_force = d_net_force[idx];
         Scalar3 accel = make_scalar3(net_force.x, net_force.y, net_force.z);
 
-        Scalar4 vel = d_vel[idx];
-        Scalar3 v = make_scalar3(vel.x, vel.y, vel.z);
+        Scalar4 velmass = d_vel[idx];
+        Scalar3 v = make_scalar3(velmass.x, velmass.y, velmass.z);
 
         Scalar4 pos = d_pos[idx];
 
-        Scalar mass = vel.w;
+        Scalar mass = velmass.w;
         accel = accel / mass;
 
         Scalar3 v_del_u = make_scalar3(0.0, 0.0, 0.0);
@@ -247,14 +247,14 @@ __global__ void gpu_nvt_sllod_rescale_step_two_kernel(Scalar4* d_vel,
         if (vel_correction == true)
             {
             // SLLOD correction to velocity: shear rate tensor dotted with velocity
-            v.x -= Scalar(0.5) * shear_rate * vel.y * deltaT;
+            v.x -= Scalar(0.5) * shear_rate * v.y * deltaT;
             }
 
         // add flow field
         v.x += shear_rate * pos.y;
 
         // save
-        d_vel[idx] = make_scalar4(v.x, v.y, v.z, vel.w);
+        d_vel[idx] = make_scalar4(v.x, v.y, v.z, velmass.w);
 
         // since we calculate the acceleration, we need to write it for the next step
         d_accel[idx] = accel;
