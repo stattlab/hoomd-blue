@@ -79,9 +79,9 @@ void hoomd::md::TwoStepConstantVolumeSLLOD::integrateStepOne(uint64_t timestep)
 
             // apply sllod velocity correction
             if(m_vel_correction==true)
-            {
-            v.x -= Scalar(0.5)*m_shear_rate*v.y*m_deltaT;
-            }
+                {
+                v.x -= Scalar(0.5)*m_shear_rate*v.y*m_deltaT;
+                }
 
             // add flow field
             v.x += m_shear_rate*pos.y;
