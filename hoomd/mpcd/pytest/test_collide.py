@@ -309,11 +309,8 @@ class TestCollisionMethod:
 
     @pytest.mark.parametrize(
         "embedded_filter_flags",
-        [
-            ("constituent",),
-            ("constituent", "free"),
-        ],
-        ids=["Non-participatory", "Participatory"],
+        [("B", "D"), ("B", "D", "C"), ("B", "C")],
+        ids=["Non-participatory", "Participatory", "Constituent-non-participatory"],
     )
     def test_rigid_collide_free(
         self,
@@ -324,7 +321,7 @@ class TestCollisionMethod:
         embedded_filter_flags,
     ):
         def_rigid = {
-            "constituent_types": ["B", "B", "B", "B"],
+            "constituent_types": ["B", "B", "B", "D"],
             "positions": np.array(
                 [
                     [1, 0, -1 / (2 ** (1.0 / 2.0))],
@@ -350,7 +347,7 @@ class TestCollisionMethod:
         # create simulation
         total_mass = properties_rigid["mass"][0]
         initial_snap = two_particle_snapshot_factory(
-            particle_types=["A", "B", "C"], L=21
+            particle_types=["A", "B", "C", "D"], L=21
         )
         if initial_snap.communicator.rank == 0:
             # put a free particle that doesn't participate in collision on top of
@@ -375,9 +372,11 @@ class TestCollisionMethod:
         intermed_snap = sim.state.get_snapshot()
         if intermed_snap.communicator.rank == 0:
             # add mass of constituents
-            flags = (
+            flags = np.logical_or(
                 intermed_snap.particles.typeid
-                == intermed_snap.particles.types.index("B")
+                == intermed_snap.particles.types.index("B"),
+                intermed_snap.particles.typeid
+                == intermed_snap.particles.types.index("D"),
             )
             intermed_snap.particles.mass[flags] = properties_rigid["mass"][1:]
             intermed_snap.wrap()
@@ -395,7 +394,7 @@ class TestCollisionMethod:
         sim.operations.integrator.cell_list.shift = False
         sim.operations.integrator.collision_method = cls(
             period=1,
-            embedded_particles=hoomd.filter.Rigid(flags=embedded_filter_flags),
+            embedded_particles=hoomd.filter.Type(embedded_filter_flags),
             **init_args,
         )
 
@@ -404,7 +403,7 @@ class TestCollisionMethod:
         new_snap = sim.state.get_snapshot()
         if new_snap.communicator.rank == 0:
             # check if the free particle participated in collisions
-            participated_flag = "free" in embedded_filter_flags
+            participated_flag = "C" in embedded_filter_flags
             free_flag = new_snap.particles.typeid == new_snap.particles.types.index("C")
             assert np.array_equiv(
                 new_snap.particles.velocity[free_flag], [0.0, 1.0, 0.0]
@@ -417,8 +416,9 @@ class TestCollisionMethod:
             central_flag = new_snap.particles.typeid == new_snap.particles.types.index(
                 "A"
             )
-            constit_flag = new_snap.particles.typeid == new_snap.particles.types.index(
-                "B"
+            constit_flag = np.logical_or(
+                new_snap.particles.typeid == new_snap.particles.types.index("B"),
+                new_snap.particles.typeid == new_snap.particles.types.index("D"),
             )
 
             new_velo_central = new_snap.particles.velocity[central_flag]
