@@ -142,6 +142,25 @@ class CollisionMethod(Operation):
             :class:`~hoomd.mpcd.stream.StreamingMethod` if one is attached to
             the :class:`~hoomd.mpcd.Integrator`.
 
+        kT (hoomd.variant.variant_like): Temperature of the thermostat
+            :math:`[\mathrm{energy}]`.
+
+            This temperature determines the distribution used to generate the
+            random numbers.
+
+            .. rubric:: Examples:
+
+            Constant temperature.
+
+            .. code-block:: python
+
+                andersen_thermostat.kT = 1.0
+
+            Variable temperature.
+
+            .. code-block:: python
+
+                andersen_thermostat.kT = hoomd.variant.Ramp(1.0, 2.0, 0, 100)
     """
 
     __doc__ = inspect.cleandoc(__doc__).replace(
@@ -235,28 +254,6 @@ class AndersenThermostat(CollisionMethod):
     ----------
 
     **Members defined in** `AndersenThermostat`:
-
-    Attributes:
-        kT (hoomd.variant.variant_like): Temperature of the thermostat
-            :math:`[\mathrm{energy}]`.
-
-            This temperature determines the distribution used to generate the
-            random numbers.
-
-            .. rubric:: Examples:
-
-            Constant temperature.
-
-            .. code-block:: python
-
-                andersen_thermostat.kT = 1.0
-
-            Variable temperature.
-
-            .. code-block:: python
-
-                andersen_thermostat.kT = hoomd.variant.Ramp(1.0, 2.0, 0, 100)
-
     """
 
     __doc__ = inspect.cleandoc(__doc__).replace(
@@ -362,23 +359,6 @@ class StochasticRotationDynamics(CollisionMethod):
             .. code-block:: python
 
                 srd.angle = 130
-
-        kT (hoomd.variant.variant_like): Temperature for the collision
-            thermostat :math:`[\mathrm{energy}]`.
-
-            .. rubric:: Examples:
-
-            Constant temperature.
-
-            .. code-block:: python
-
-                srd.kT = 1.0
-
-            Variable temperature.
-
-            .. code-block:: python
-
-                srd.kT = hoomd.variant.Ramp(1.0, 2.0, 0, 100)
 
     """
 
