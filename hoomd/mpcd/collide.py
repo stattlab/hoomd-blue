@@ -126,7 +126,13 @@ class CollisionMethod(Operation):
             :class:`~hoomd.md.methods.ConstantVolume` with no thermostat (NVE).
             It is generally **not** a good idea to use a thermostat because the
             MPCD particles themselves already act as a heat bath for the
-            embedded particles. If using rigid bodies, thermostat is required.
+            embedded particles.
+
+            When embedding particles in a rigid body, it is required that constituent
+            particles have a combined mass equal to the mass of the central particle
+            and that the center of mass of the rigid body is located at the central
+            particle. It is **not** recommended to include the central particle of a
+            rigid body in the embedding particles.
 
             Warning:
                 Embedding particles that are part of a rigid body is not available
@@ -146,6 +152,10 @@ class CollisionMethod(Operation):
 
             This temperature determines the distribution used to generate the
             random numbers.
+
+            Warning:
+                Setting kT is required if embedded_particles contains particles
+                from rigid bodies.
 
             .. rubric:: Examples:
 
