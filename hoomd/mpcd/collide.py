@@ -126,12 +126,11 @@ class CollisionMethod(Operation):
             :class:`~hoomd.md.methods.ConstantVolume` with no thermostat (NVE).
             It is generally **not** a good idea to use a thermostat because the
             MPCD particles themselves already act as a heat bath for the
-            embedded particles.
+            embedded particles. If using rigid bodies, thermostat is required.
 
             Warning:
-                Do not embed particles that are part of a rigid body. Momentum
-                will not be correctly transferred to the body. Support for this
-                is planned in future.
+                Embedding particles that are part of a rigid body is not available
+                if using domain decomposition. Support for this is planned in future.
 
         period (int): Number of integration steps between collisions
             (*read only*).
