@@ -130,7 +130,7 @@ class CollisionMethod(Operation):
 
             Warning:
                 Embedding particles that are part of a rigid body is not available
-                if using domain decomposition. Support for this is planned in future.
+                when using domain decomposition. Support for this is planned in future.
 
         period (int): Number of integration steps between collisions
             (*read only*).
