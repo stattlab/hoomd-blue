@@ -193,6 +193,7 @@ class TestCollisionMethod:
         ],
         ids=["dimer", "cross", "uneven-mass"],
     )
+    @pytest.mark.serial
     def test_rigid_collide(
         self,
         one_particle_snapshot_factory,
@@ -312,6 +313,7 @@ class TestCollisionMethod:
         [("B", "D"), ("B", "D", "C"), ("B", "C")],
         ids=["Non-participatory", "Participatory", "Constituent-non-participatory"],
     )
+    @pytest.mark.serial
     def test_rigid_collide_free(
         self,
         two_particle_snapshot_factory,
@@ -522,6 +524,7 @@ class TestCollisionMethod:
     ],
     ids=["thermostat_error", "summation_error", "zero_mass_error", "center_loc_error"],
 )
+@pytest.mark.serial
 def test_rigid_mass_errors(
     small_snap, simulation_factory, def_rigid, masses, init_args
 ):
