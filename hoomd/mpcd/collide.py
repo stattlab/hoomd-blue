@@ -13,6 +13,7 @@ transport coefficients.
 
     simulation = hoomd.util.make_example_simulation(mpcd_types=["A"])
     simulation.operations.integrator = hoomd.mpcd.Integrator(dt=0.1)
+    collision_method = hoomd.mpcd.collide.AndersenThermostat(period=1, kT=1.0)
 
 """
 
@@ -163,13 +164,13 @@ class CollisionMethod(Operation):
 
             .. code-block:: python
 
-                andersen_thermostat.kT = 1.0
+                collision_method.kT = 1.0
 
             Variable temperature.
 
             .. code-block:: python
 
-                andersen_thermostat.kT = hoomd.variant.Ramp(1.0, 2.0, 0, 100)
+                collision_method.kT = hoomd.variant.Ramp(1.0, 2.0, 0, 100)
     """
 
     __doc__ = inspect.cleandoc(__doc__).replace(
