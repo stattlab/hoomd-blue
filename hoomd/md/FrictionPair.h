@@ -38,17 +38,18 @@ namespace md
 
 //! Template class for computing frictional contacts
 /*! <b>Overview:</b>
-    FrictionPair is modeled after AnisoPotentialPair and computes frictional pair forces (and torques)
-   between all particles in the simulation. It employs the use of a neighbor list to limit the number of computations done to
-   only those particles with the cutoff radius of each other. The computation of the force (and torque) is
-   not performed directly by this class, but by an friction_evaluator class (e.g. EvaluatorPairFrictionLJBase)
-   which is passed in as a template parameter so the computations are performed as efficiently as
-   possible.      
-    
+    FrictionPair is modeled after AnisoPotentialPair and computes frictional pair forces (and
+   torques) between all particles in the simulation. It employs the use of a neighbor list to limit
+   the number of computations done to only those particles with the cutoff radius of each other. The
+   computation of the force (and torque) is not performed directly by this class, but by an
+   friction_evaluator class (e.g. EvaluatorPairFrictionLJBase) which is passed in as a template
+   parameter so the computations are performed as efficiently as possible.
+
     <b>Implementation details</b>
-     FrictionPair is accessing the velocity, angular momentum, diameter, and moment of inertia of all particles. 
-    It is used to calculate the relative velocity between the particles dv and the angular velocity angvel_i/j of each particle. This 
-    information is passed to the friction_evaluator class for the calculation of frictional pair force (and torque). 
+     FrictionPair is accessing the velocity, angular momentum, diameter, and moment of inertia of
+   all particles. It is used to calculate the relative velocity between the particles dv and the
+   angular velocity angvel_i/j of each particle. This information is passed to the
+   friction_evaluator class for the calculation of frictional pair force (and torque).
 */
 
 template<class friction_evaluator> class FrictionPair : public ForceCompute
@@ -163,7 +164,7 @@ template<class friction_evaluator> class FrictionPair : public ForceCompute
     GPUArray<Scalar> m_rcutsq;    //!< Cutoff radius squared per type pair
     std::vector<param_type, hoomd::detail::managed_allocator<param_type>>
         m_params; //!< Pair parameters per type pair
-    
+
     /// Track whether we have attached to the Simulation object
     bool m_attached = true;
 
@@ -630,7 +631,7 @@ template<class T> void export_FrictionPair(pybind11::module& m, const std::strin
         .def("getParams", &FrictionPair<T>::getParamsPython)
         .def("setRCut", &FrictionPair<T>::setRCutPython)
         .def("getRCut", &FrictionPair<T>::getRCut)
-        .def_property("mode", &FrictionPair<T>::getShiftMode, &FrictionPair<T>::setShiftModePython)
+        .def_property("mode", &FrictionPair<T>::getShiftMode, &FrictionPair<T>::setShiftModePython);
     }
 
     } // end namespace detail

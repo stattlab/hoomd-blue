@@ -2,30 +2,31 @@
 # Part of HOOMD-blue, released under the BSD 3-Clause License.
 
 r"""Frictional pair force classes apply a force, and torque on every
-particle in the simulation state. The following general expression 
-for Markovian tangential friction forces is implemented for 
-interactions between two spherical particles and is discussed in detail in 
-`Hofmann, Dormann, Liebchen, and Schmid 2025`_. For two particles :math:`i` and :math:`j` with 
-radii :math:`R_{i,j}`, center positions :math:`\mathbf{r}_{i,j}`, angular 
-velocities :math:`\mathbf{\omega}_{i,j}`, and translational velocities 
-:math:`\mathbf{v}_{i,j}`, their surface velocities at the contact point are given by 
+particle in the simulation state. The following general expression
+for Markovian tangential friction forces is implemented for
+interactions between two spherical particles and is discussed in detail in
+`Hofmann, Dormann, Liebchen, and Schmid 2025`_. For two particles :math:`i` and
+:math:`j` with radii :math:`R_{i,j}`, center positions :math:`\mathbf{r}_{i,j}`,
+angular velocities :math:`\mathbf{\omega}_{i,j}`, and translational velocities
+:math:`\mathbf{v}_{i,j}`, their surface velocities at the contact point are given by
 
-.. _Hofmann, Dormann, Liebchen, and Schmid 2025: https://doi.org/10.48550/arXiv.2507.16388
+.. _Hofmann, Dormann, Liebchen, and Schmid 2025:
+https://doi.org/10.48550/arXiv.2507.16388
 
 .. math::
 
     \mathbf{u}_i &= \mathbf{v}_i+\mathbf{\omega}_i \times \mathbf{\hat{r}}_{ij}R_i \\
     \mathbf{u}_j &= \mathbf{v}_j-\mathbf{\omega}_j \times \mathbf{\hat{r}}_{ij}R_j \, ,
 
-where :math:`\mathbf{\hat{r}}_{ij}=\mathbf{r}_{ij}/r_{i,j}`. With these expressions, 
-we calculate the relative tangential velocity :math:`\mathbf{u}^\perp_{i,j}` at the 
+where :math:`\mathbf{\hat{r}}_{ij}=\mathbf{r}_{ij}/r_{i,j}`. With these expressions,
+we calculate the relative tangential velocity :math:`\mathbf{u}^\perp_{i,j}` at the
 contact point
 
 .. math::
 
-    \mathbf{u}^\perp_{i,j} =  \mathbf{P}(\mathbf{\hat{r}}_{ij})(\mathbf{v}_j-\mathbf{v}_i) 
-                            -(\mathbf{\omega}_iR_i+\mathbf{\omega}_jR_j) \times 
-                            \mathbf{\hat{r}}_{ij}\, ,
+    \mathbf{u}^\perp_{i,j} =  \mathbf{P}(\mathbf{\hat{r}}_{ij})(\mathbf{v}_j
+                            -\mathbf{v}_i) -(\mathbf{\omega}_iR_i+\mathbf{\omega}_jR_j)
+                            \times \mathbf{\hat{r}}_{ij}\, ,
 
 wit the projection operator :math:`\mathbf{P}(\mathbf{\hat{r}}_{ij})=1
 -\mathbf{\hat{r}}_{ij}\mathbf{\hat{r}}_{ij}`. We model the tangential
@@ -33,21 +34,22 @@ friction force at the contact point very general as
 
 .. math::
 
-    \mathbf{F}^\mathrm{f,contact}_i = -\mathbf{F}^\mathrm{f,contact}_j = f(u^\perp_{i,j},r_{i,j})
-                                \mathbf{\hat{u}}^\perp_{i,j}
+    \mathbf{F}^\mathrm{f,contact}_i = -\mathbf{F}^\mathrm{f,contact}_j = f(u^\perp_{i,j}
+                                        ,r_{i,j})\mathbf{\hat{u}}^\perp_{i,j}
 
 with :math:`\mathbf{\hat{u}}^\perp_{i,j}=\mathbf{u}^\perp_{i,j}/u^\perp_{i,j}`, where
-:math:`f(u^\perp_{i,j},r_{i,j})` is an arbitrary function. The surface force 
-:math:`\mathbf{F}^\mathrm{f,contact}_i` generates a center-of-mass force and torque 
+:math:`f(u^\perp_{i,j},r_{i,j})` is an arbitrary function. The surface force
+:math:`\mathbf{F}^\mathrm{f,contact}_i` generates a center-of-mass force and torque
 acting on particle :math:`i`,
 
 .. math::
 
     \mathbf{F}^\mathrm{f}_{ij} &= \mathbf{F}^\mathrm{f,contact}_i \\
-    \mathbf{\tau}^\mathrm{f}_{ij} &= R_i\mathbf{\hat{r}}_{ij} \times \mathbf{F}^\mathrm{f,contact}_i\, ,
+    \mathbf{\tau}^\mathrm{f}_{ij} &= R_i\mathbf{\hat{r}}_{ij} \times
+    \mathbf{F}^\mathrm{f,contact}_i\, ,
 
 which is a pair friction force and torque resulting from the friction with the particle
-:math:`k`. 
+:math:`k`.
 
 The functional form of :math:`f(u^\perp_{i,j},r_{i,j})` specifies the frictional model.
 
@@ -55,9 +57,6 @@ The functional form of :math:`f(u^\perp_{i,j},r_{i,j})` specifies the frictional
 parameter.
 
 """
-
-import json
-
 
 from hoomd.md.pair.pair import Pair
 from hoomd.data.parameterdicts import TypeParameterDict
@@ -80,6 +79,7 @@ class FrictionalPair(Pair):
     def __init__(self, nlist, default_r_cut=None, mode="none"):
         super().__init__(nlist, default_r_cut, 0.0, mode)
 
+
 class FrictionLJConstant(FrictionalPair):
     r"""Constant frictional model pair force with the LJ conservative force.
 
@@ -88,17 +88,18 @@ class FrictionLJConstant(FrictionalPair):
         default_r_cut (float): Default cutoff radius :math:`[\mathrm{length}]`.
 
     `FrictionLJConstant` computes the frictional interaction
-    between pairs of particles with a constant friction or Coulomb friction model as described in
-    `Hofmann, Dormann, Liebchen, and Schmid 2025`_.
+    between pairs of particles with a constant friction or Coulomb friction model
+    as described in `Hofmann, Dormann, Liebchen, and Schmid 2025`_.
 
-    .. _Hofmann, Dormann, Liebchen, and Schmid 2025: https://doi.org/10.48550/arXiv.2507.16388
+    .. _Hofmann, Dormann, Liebchen, Schmid 2025:
+    https://doi.org/10.48550/arXiv.2507.16388
 
     The constant friction model is defined by the function
 
-    .. math:: 
+    .. math::
 
         f_\mathrm{C}(u,r) = w(r)\kappa_\mathrm{f}\, .
-    
+
     And a repulsive Weeks-Chandler-Anderson (WCA) potential
 
     .. math::
@@ -107,45 +108,56 @@ class FrictionLJConstant(FrictionalPair):
         \frac{\sigma}{r} \right)^{12} - \left( \frac{\sigma}{r}
         \right)^{6} \right] \\
         w(r)&=-\frac{\mathrm{d}}{\mathrm{d}r}U_\mathrm{WCA}(r)
-        
-    Since the frictional force results from coarse-graining the microscopic equations of motion,
-    a corresponding pairwise noise that satisfies a fluctuation-dissipation relation must be applied.
-    For this a stochastic force and torque is added
-       
+
+    Since the frictional force results from coarse-graining the microscopic equations
+    of motion, a corresponding pairwise noise that satisfies a fluctuation-dissipation
+    relation must be applied. For this a stochastic force and torque is added
+
     .. math::
 
-        D_\mathrm{C}(u,r) &= \frac{w(r)\kappa_\mathrm{f}\sqrt{\pi}}{\sqrt{2k_\mathrm{B}T\nu}}
-                                \mathrm{e}^{\frac{u^2}{2k_\mathrm{B}T\nu}}\mathrm{Erfc}\big(\frac{u}
+        D_\mathrm{C}(u,r) &= \frac{w(r)\kappa_\mathrm{f}\sqrt{\pi}}{\sqrt{2k_\mathrm{B}
+                                T\nu}}\mathrm{e}^{\frac{u^2}{2k_\mathrm{B}T\nu}}
+                                \mathrm{Erfc}\big(\frac{u}
                                 {\sqrt{2k_\mathrm{B}T\nu}} \big) \\
-        \mathbf{F}^\mathrm{R}_{ij} = -\mathbf{F}^\mathrm{R}_{ji} &= \sqrt{D_\mathrm{C}(u^\perp_{ij},r_{ij})} 
-                                      \Big[\mathbf{P}(\mathbf{\hat{r}}_{ij})\mathbf{\xi}^\mathrm{f}_{ij} 
-                                      - \mathbf{\hat{r}}_{ij} \times \mathbf{N}^\mathrm{f}_{ij}\Big] \\
-        \frac{\mathbf{\tau}^\mathrm{R}_{ij}}{R_i} = \frac{\mathbf{\tau}^\mathrm{R}_{ji}}{R_j} &= \sqrt{D_\mathrm{C}(u^\perp_{ij},r_{ij})} 
-                                      \Big[\mathbf{\hat{r}}_{ij} \times \mathbf{\xi}^\mathrm{f}_{ij}+\mathbf{P}
-                                      (\mathbf{e}_{ij})\mathbf{N}^\mathrm{f}_{ij}\Big]\, ,                                
+        \mathbf{F}^\mathrm{R}_{ij} = -\mathbf{F}^\mathrm{R}_{ji} &= \sqrt{D_\mathrm{C}
+                                    (u^\perp_{ij},r_{ij})}\Big[\mathbf{P}
+                                    (\mathbf{\hat{r}}_{ij})\mathbf{\xi}^\mathrm{f}_{ij}
+                                    - \mathbf{\hat{r}}_{ij} \times \mathbf{N}^\mathrm{f}
+                                    _{ij}\Big] \\
+                                    \frac{\mathbf{\tau}^\mathrm{R}_{ij}}{R_i} =
+                                    \frac{\mathbf{\tau}^\mathrm{R}_{ji}}{R_j} &=
+                                    \sqrt{D_\mathrm{C}(u^\perp_{ij},r_{ij})}\Big[
+                                    \mathbf{\hat{r}}_{ij} \times
+                                    \mathbf{\xi}^\mathrm{f}_{ij}+\mathbf{P}
+                                    (\mathbf{e}_{ij})\mathbf{N}^\mathrm{f}_{ij}\Big]\, ,
 
-    where :math:`\nu=(1/m_i+1/m_j)+(R_i^2/\mathbf{I}_i+R_j^2/\mathbf{I}_j))`, and :math:`\mathbf{\xi}^\mathrm{f}_{ij}` and :math:`\mathbf{N}^\mathrm{f}_{ij}` are three dimensional
-    Gaussian white noise vectors with correlations
+    where :math:`\nu=(1/m_i+1/m_j)+(R_i^2/\mathbf{I}_i+R_j^2/\mathbf{I}_j))`,
+    and :math:`\mathbf{\xi}^\mathrm{f}_{ij}` and :math:`\mathbf{N}^\mathrm{f}_{ij}`
+    are three dimensional Gaussian white noise vectors with correlations
 
     .. math::
 
-        \langle \mathbf{\xi}^\mathrm{f}_{ij}(t) \mathbf{\xi}^\mathrm{f}_{kl}(t') \rangle &= \mathbf{1}k_\mathrm{B}T
-                                                (\delta_{ik}\delta_{jl}-\delta_{il}\delta_{jk})\delta(t-t') \\
-        \langle \mathbf{N}^\mathrm{f}_{ij}(t) \mathbf{N}^\mathrm{f}_{kl}(t') \rangle &= \mathbf{1}k_\mathrm{B}T
-                                                (\delta_{ik}\delta_{jl}+\delta_{il}\delta_{jk})\delta(t-t')\, .
+        \langle \mathbf{\xi}^\mathrm{f}_{ij}(t) \mathbf{\xi}^\mathrm{f}_{kl}(t')
+                                                \rangle &= \mathbf{1}k_\mathrm{B}T
+                                                (\delta_{ik}\delta_{jl}-\delta_{il}
+                                                \delta_{jk})\delta(t-t') \\
+        \langle \mathbf{N}^\mathrm{f}_{ij}(t) \mathbf{N}^\mathrm{f}_{kl}(t') \rangle &=
+                                                \mathbf{1}k_\mathrm{B}T(\delta_{ik}
+                                                \delta_{jl}+\delta_{il}\delta_{jk})
+                                                \delta(t-t')\, .
 
     .. rubric :: Example:
 
     .. code-block:: python
 
-        constant_lj = hoomd.md.pair.friction.FrictionLJConstant(nlist=cell, 
+        constant_lj = hoomd.md.pair.friction.FrictionLJConstant(nlist=cell,
                                                                 default_r_cut=3)
-        
+
         constant_lj_params = {'epsilon':1, 'sigma':1, 'kappa_f':3, 'kT':1}
 
         constant_lj.params.default = constant_lj_params
         simulation.operations.integrator.forces = [constant_lj]
-    
+
     {inherited}
     """
 
@@ -175,14 +187,15 @@ class FrictionLJCoulombNewton(FrictionalPair):
     between pairs of particles with a Coulomb-Newton friction model as described in
     `Hofmann, Dormann, Liebchen, and Schmid 2025`_.
 
-    .. _Hofmann, Dormann, Liebchen, and Schmid 2025: https://doi.org/10.48550/arXiv.2507.16388
+    .. _Hofmann, Dormann, Liebchen, and Schmid 2025:
+    https://doi.org/10.48550/arXiv.2507.16388
 
     The Coulomb-Newton friction model is defined by the function
 
-    .. math:: 
+    .. math::
 
         f_\mathrm{CN}(u,r) = \mathrm{min}[\gamma_\mathrm{f}u,w(r)\kappa_\mathrm{f}]\, .
-    
+
     And a repulsive Weeks-Chandler-Anderson (WCA) potential
 
     .. math::
@@ -191,51 +204,73 @@ class FrictionLJCoulombNewton(FrictionalPair):
         \frac{\sigma}{r} \right)^{12} - \left( \frac{\sigma}{r}
         \right)^{6} \right] \\
         w(r)&=-\frac{\mathrm{d}}{\mathrm{d}r}U_\mathrm{WCA}(r)
-        
-    Since the frictional force results from coarse-graining the microscopic equations of motion,
-    a corresponding pairwise noise that satisfies a fluctuation-dissipation relation must be applied.
-    For this a stochastic force and torque is added
-       
+
+    Since the frictional force results from coarse-graining the microscopic equations
+    of motion, a corresponding pairwise noise that satisfies a fluctuation-dissipation
+    relation must be applied. For this a stochastic force and torque is added
+
     .. math::
 
         D_\mathrm{CN}(u,r) &= \begin{cases}
-                                \frac{w(r)\kappa_\mathrm{f}\sqrt{\pi}}{\sqrt{2k_\mathrm{B}T\nu}}
-                                \mathrm{e}^{\frac{u^2}{2k_\mathrm{B}T\nu}}\mathrm{Erfc}\big(\frac{u}
-                                {\sqrt{2k_\mathrm{B}T\nu}} \big)  & ,\, u\ge \frac{w(r)\kappa_\mathrm{f}}{\gamma_\mathrm{f}} \\
-                                \gamma_\mathrm{f}\left(1-\mathrm{e}^{\left(u^2-(\frac{w(r)\kappa_\mathrm{f}}{\gamma_\mathrm{f}})^2\right)
-                                /2k_\mathrm{B}T\nu} \right) + \frac{w(r)\kappa_\mathrm{f}\sqrt{\pi}}{\sqrt{2k_\mathrm{B}T\nu}}
-                                \mathrm{e}^\frac{u^2}{2k_\mathrm{B}T\nu}\mathrm{Erfc}\left(\frac{w(r)\kappa_\mathrm{f}/\gamma_\mathrm{f}}{\sqrt{2k_\mathrm{B}T\nu}}\right)  
-                                &,\, u < \frac{w(r)\kappa_\mathrm{f}}{\gamma_\mathrm{f}}
+                                \frac{w(r)\kappa_\mathrm{f}\sqrt{\pi}}
+                                {\sqrt{2k_\mathrm{B}T\nu}}\mathrm{e}^{\frac{u^2}
+                                {2k_\mathrm{B}T\nu}}\mathrm{Erfc}\big(\frac{u}
+                                {\sqrt{2k_\mathrm{B}T\nu}} \big)  & ,\, u\ge
+                                \frac{w(r)\kappa_\mathrm{f}}{\gamma_\mathrm{f}} \\
+                                \gamma_\mathrm{f}\left(1-\mathrm{e}^{\left(u^2
+                                -(\frac{w(r)\kappa_\mathrm{f}}{\gamma_\mathrm{f}})^2
+                                \right)/2k_\mathrm{B}T\nu} \right) + \frac{w(r)
+                                \kappa_\mathrm{f}\sqrt{\pi}}{\sqrt{2k_\mathrm{B}T\nu}}
+                                \mathrm{e}^\frac{u^2}{2k_\mathrm{B}T\nu}\mathrm{Erfc}
+                                \left(\frac{w(r)\kappa_\mathrm{f}/\gamma_\mathrm{f}}
+                                {\sqrt{2k_\mathrm{B}T\nu}}\right) &,\, u < \frac{w(r)
+                                \kappa_\mathrm{f}}{\gamma_\mathrm{f}}
                              \end{cases} \\
-        \mathbf{F}^\mathrm{R}_{ij} = -\mathbf{F}^\mathrm{R}_{ji} &= \sqrt{D_\mathrm{CN}(u^\perp_{ij},r_{ij})} 
-                                      \Big[\mathbf{P}(\mathbf{\hat{r}}_{ij})\mathbf{\xi}^\mathrm{f}_{ij} 
-                                      - \mathbf{\hat{r}}_{ij} \times \mathbf{N}^\mathrm{f}_{ij}\Big] \\
-        \frac{\mathbf{\tau}^\mathrm{R}_{ij}}{R_i} = \frac{\mathbf{\tau}^\mathrm{R}_{ji}}{R_j} &= \sqrt{D_\mathrm{CN}(u^\perp_{ij},r_{ij})} 
-                                      \Big[\mathbf{\hat{r}}_{ij} \times \mathbf{\xi}^\mathrm{f}_{ij}+\mathbf{P}
-                                      (\mathbf{e}_{ij})\mathbf{N}^\mathrm{f}_{ij}\Big]\, ,                                
+        \mathbf{F}^\mathrm{R}_{ij} = -\mathbf{F}^\mathrm{R}_{ji} &= \sqrt{D_\mathrm{CN}
+                                        (u^\perp_{ij},r_{ij})}\Big[\mathbf{P}
+                                        (\mathbf{\hat{r}}_{ij})
+                                        \mathbf{\xi}^\mathrm{f}_{ij} -
+                                        \mathbf{\hat{r}}_{ij} \times
+                                        \mathbf{N}^\mathrm{f}_{ij}\Big] \\
+        \frac{\mathbf{\tau}^\mathrm{R}_{ij}}{R_i} = \frac{\mathbf{\tau}^\mathrm{R}_{ji}}
+                                        {R_j} &= \sqrt{D_\mathrm{CN}
+                                        (u^\perp_{ij},r_{ij})}\Big[\mathbf{\hat{r}}_{ij}
+                                        \times \mathbf{\xi}^\mathrm{f}_{ij}+\mathbf{P}
+                                        (\mathbf{e}_{ij})\mathbf{N}^\mathrm{f}_{ij}
+                                        \Big]\, ,
 
-    where :math:`\nu=(1/m_i+1/m_j)+(R_i^2/\mathbf{I}_i+R_j^2/\mathbf{I}_j))`, and :math:`\mathbf{\xi}^\mathrm{f}_{ij}` and :math:`\mathbf{N}^\mathrm{f}_{ij}` are three dimensional
-    Gaussian white noise vectors with correlations
+    where :math:`\nu=(1/m_i+1/m_j)+(R_i^2/\mathbf{I}_i+R_j^2/\mathbf{I}_j))`, and
+    :math:`\mathbf{\xi}^\mathrm{f}_{ij}` and :math:`\mathbf{N}^\mathrm{f}_{ij}` are
+    three dimensional Gaussian white noise vectors with correlations
 
     .. math::
 
-        \langle \mathbf{\xi}^\mathrm{f}_{ij}(t) \mathbf{\xi}^\mathrm{f}_{kl}(t') \rangle &= \mathbf{1}k_\mathrm{B}T
-                                                (\delta_{ik}\delta_{jl}-\delta_{il}\delta_{jk})\delta(t-t') \\
-        \langle \mathbf{N}^\mathrm{f}_{ij}(t) \mathbf{N}^\mathrm{f}_{kl}(t') \rangle &= \mathbf{1}k_\mathrm{B}T
-                                                (\delta_{ik}\delta_{jl}+\delta_{il}\delta_{jk})\delta(t-t')\, .
+        \langle \mathbf{\xi}^\mathrm{f}_{ij}(t) \mathbf{\xi}^\mathrm{f}_{kl}(t')
+                                                \rangle &= \mathbf{1}k_\mathrm{B}T
+                                                (\delta_{ik}\delta_{jl}-\delta_{il}
+                                                \delta_{jk})\delta(t-t') \\
+        \langle \mathbf{N}^\mathrm{f}_{ij}(t) \mathbf{N}^\mathrm{f}_{kl}(t') \rangle &=
+                                                \mathbf{1}k_\mathrm{B}T
+                                                (\delta_{ik}\delta_{jl}+\delta_{il}
+                                                \delta_{jk})\delta(t-t')\, .
 
     .. rubric :: Example:
 
     .. code-block:: python
 
-        coulombNewton_lj = hoomd.md.pair.friction.FrictionLJCoulombNewton(nlist=cell, 
+        coulombNewton_lj = hoomd.md.pair.friction.FrictionLJCoulombNewton(nlist=cell,
                                                                 default_r_cut=3)
-        
-        coulombNewton_lj_params = {'epsilon':1, 'sigma':1, 'gamma_f:1', 'kappa_f':3, 'kT':1}
+
+        coulombNewton_lj_params = { 'epsilon':1,
+                                    'sigma':1,
+                                    'gamma_f:1',
+                                    'kappa_f':3,
+                                    'kT':1
+                                }
 
         coulombNewton_lj.params.default = coulombNewton_lj_params
         simulation.operations.integrator.forces = [coulombNewton_lj]
-    
+
     {inherited}
     """
 
@@ -270,11 +305,12 @@ class FrictionLJLinear(FrictionalPair):
     between pairs of particles with a linear friction model as described in
     `Hofmann, Dormann, Liebchen, and Schmid 2025`_.
 
-    .. _Hofmann, Dormann, Liebchen, and Schmid 2025: https://doi.org/10.48550/arXiv.2507.16388
+    .. _Hofmann, Dormann, Liebchen, and Schmid 2025:
+    https://doi.org/10.48550/arXiv.2507.16388
 
     The linear friction model is defined by the function
 
-    .. math:: 
+    .. math::
 
         f_\mathrm{l}(u,r) = w(r)\gamma_\mathrm{f}u\, .
 
@@ -286,38 +322,48 @@ class FrictionLJLinear(FrictionalPair):
         \frac{\sigma}{r} \right)^{12} - \left( \frac{\sigma}{r}
         \right)^{6} \right] \\
         w(r)&=-\frac{\mathrm{d}}{\mathrm{d}r}U_\mathrm{WCA}(r)
-        
-    Since the frictional force results from coarse-graining the microscopic equations of motion,
-    a corresponding pairwise noise that satisfies a fluctuation-dissipation relation must be applied.
-    For this a stochastic force and torque is added
-        
+
+    Since the frictional force results from coarse-graining the microscopic equations
+    of motion, a corresponding pairwise noise that satisfies a fluctuation-dissipation
+    relation must be applied. For this a stochastic force and torque is added
+
     .. math::
 
         D_\mathrm{l}(u,r) &= w(r)\gamma_\mathrm{f} \\
-        \mathbf{F}^\mathrm{R}_{ij} = -\mathbf{F}^\mathrm{R}_{ji} &= \sqrt{D_\mathrm{l}(u^\perp_{ij},r_{ij})} 
-                                        \Big[\mathbf{P}(\mathbf{\hat{r}}_{ij})\mathbf{\xi}^\mathrm{f}_{ij} 
-                                        - \mathbf{\hat{r}}_{ij} \times \mathbf{N}^\mathrm{f}_{ij}\Big] \\
-        \frac{\mathbf{\tau}^\mathrm{R}_{ij}}{R_i} = \frac{\mathbf{\tau}^\mathrm{R}_{ji}}{R_j} &= \sqrt{D_\mathrm{l}(u^\perp_{ij},r_{ij})} 
-                                        \Big[\mathbf{\hat{r}}_{ij} \times \mathbf{\xi}^\mathrm{f}_{ij}+\mathbf{P}
-                                        (\mathbf{e}_{ij})\mathbf{N}^\mathrm{f}_{ij}\Big]\, ,                                
+        \mathbf{F}^\mathrm{R}_{ij} = -\mathbf{F}^\mathrm{R}_{ji} &= \sqrt{D_\mathrm{l}
+                                    (u^\perp_{ij},r_{ij})}\Big[\mathbf{P}
+                                    (\mathbf{\hat{r}}_{ij})\mathbf{\xi}^\mathrm{f}_{ij}
+                                    - \mathbf{\hat{r}}_{ij} \times
+                                    \mathbf{N}^\mathrm{f}_{ij}\Big] \\
+        \frac{\mathbf{\tau}^\mathrm{R}_{ij}}{R_i} = \frac{\mathbf{\tau}^\mathrm{R}_{ji}}
+                                        {R_j} &= \sqrt{D_\mathrm{l}
+                                        (u^\perp_{ij},r_{ij})}\Big[\mathbf{\hat{r}}_{ij}
+                                        \times \mathbf{\xi}^\mathrm{f}_{ij}+\mathbf{P}
+                                        (\mathbf{e}_{ij})\mathbf{N}^\mathrm{f}_{ij}
+                                        \Big]\, ,
 
-    where :math:`\nu=(1/m_i+1/m_j)+(R_i^2/\mathbf{I}_i+R_j^2/\mathbf{I}_j))`, and :math:`\mathbf{\xi}^\mathrm{f}_{ij}` and :math:`\mathbf{N}^\mathrm{f}_{ij}` are three dimensional
-    Gaussian white noise vectors with correlations
+    where :math:`\nu=(1/m_i+1/m_j)+(R_i^2/\mathbf{I}_i+R_j^2/\mathbf{I}_j))`, and
+    :math:`\mathbf{\xi}^\mathrm{f}_{ij}` and :math:`\mathbf{N}^\mathrm{f}_{ij}` are
+    three dimensional Gaussian white noise vectors with correlations
 
     .. math::
 
-        \langle \mathbf{\xi}^\mathrm{f}_{ij}(t) \mathbf{\xi}^\mathrm{f}_{kl}(t') \rangle &= \mathbf{1}k_\mathrm{B}T
-                                                (\delta_{ik}\delta_{jl}-\delta_{il}\delta_{jk})\delta(t-t') \\
-        \langle \mathbf{N}^\mathrm{f}_{ij}(t) \mathbf{N}^\mathrm{f}_{kl}(t') \rangle &= \mathbf{1}k_\mathrm{B}T
-                                                (\delta_{ik}\delta_{jl}+\delta_{il}\delta_{jk})\delta(t-t')\, .
+        \langle \mathbf{\xi}^\mathrm{f}_{ij}(t) \mathbf{\xi}^\mathrm{f}_{kl}(t')
+                                                \rangle &= \mathbf{1}k_\mathrm{B}T
+                                                (\delta_{ik}\delta_{jl}-\delta_{il}
+                                                \delta_{jk})\delta(t-t') \\
+        \langle \mathbf{N}^\mathrm{f}_{ij}(t) \mathbf{N}^\mathrm{f}_{kl}(t') \rangle &=
+                                                 \mathbf{1}k_\mathrm{B}T(\delta_{ik}
+                                                 \delta_{jl}+\delta_{il}\delta_{jk})
+                                                 \delta(t-t')\, .
 
     .. rubric :: Example:
 
     .. code-block:: python
 
-        linear_lj = hoomd.md.pair.friction.FrictionLJLinear(nlist=cell, 
+        linear_lj = hoomd.md.pair.friction.FrictionLJLinear(nlist=cell,
                                                                 default_r_cut=3)
-        
+
         linear_lj_params = {'epsilon':1, 'sigma':1, 'kT':1}
 
         linear_lj.params.default = linear_lj_params

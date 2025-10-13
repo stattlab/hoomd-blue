@@ -75,7 +75,7 @@ struct a_pair_args_t
           dim(_dim), seed(_seed), timestep(_timestep), deltaT(_deltaT), d_n_neigh(_d_n_neigh),
           d_nlist(_d_nlist), d_head_list(_d_head_list), d_rcutsq(_d_rcutsq), ntypes(_ntypes),
           block_size(_block_size), shift_mode(_shift_mode), compute_virial(_compute_virial),
-          threads_per_particle(_threads_per_particle), 
+          threads_per_particle(_threads_per_particle),
           devprop(_devprop) { };
 
     Scalar4* d_force;                //!< Force to write out
@@ -198,7 +198,7 @@ gpu_compute_pair_friction_forces_kernel(Scalar4* d_force,
     typename evaluator::param_type* s_params = (typename evaluator::param_type*)(&s_data[0]);
     Scalar* s_rcutsq
         = (Scalar*)(&s_data[num_typ_parameters * sizeof(typename evaluator::param_type)]);
-    
+
     // load in the per type pair parameters
     for (unsigned int cur_offset = 0; cur_offset < num_typ_parameters; cur_offset += blockDim.x)
         {
@@ -496,7 +496,7 @@ struct FrictionPairForceComputeKernel
 
             Index2D typpair_idx(pair_args.ntypes);
             size_t shared_bytes = (2 * sizeof(Scalar) + sizeof(typename evaluator::param_type))
-                                      * typpair_idx.getNumElements();
+                                  * typpair_idx.getNumElements();
 
             unsigned int max_block_size;
             hipFuncAttributes attr;
