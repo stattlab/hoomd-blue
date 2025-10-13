@@ -150,6 +150,7 @@ class FrictionLJConstant(FrictionalPair):
 
     .. code-block:: python
 
+        cell = hoomd.md.nlist.Cell(buffer=0.4)
         constant_lj = hoomd.md.pair.friction.FrictionLJConstant(nlist=cell,
                                                                 default_r_cut=3)
 
@@ -258,6 +259,7 @@ class FrictionLJCoulombNewton(FrictionalPair):
 
     .. code-block:: python
 
+        cell = hoomd.md.nlist.Cell(buffer=0.4)
         coulombNewton_lj = hoomd.md.pair.friction.FrictionLJCoulombNewton(nlist=cell,
                                                                 default_r_cut=3)
 
@@ -361,6 +363,7 @@ class FrictionLJLinear(FrictionalPair):
 
     .. code-block:: python
 
+        cell = hoomd.md.nlist.Cell(buffer=0.4)
         linear_lj = hoomd.md.pair.friction.FrictionLJLinear(nlist=cell,
                                                                 default_r_cut=3)
 
