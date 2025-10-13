@@ -154,8 +154,6 @@ template<class evaluator> void FrictionPairGPU<evaluator>::computeForces(uint64_
     unsigned int block_size = this->m_tuner->getParam()[0];
     unsigned int threads_per_particle = this->m_tuner->getParam()[1];
 
-    bool first = true;
-
     kernel::gpu_compute_pair_friction_forces<evaluator>(
         kernel::a_pair_args_t(d_force.data,
                               d_torque.data,
@@ -186,8 +184,7 @@ template<class evaluator> void FrictionPairGPU<evaluator>::computeForces(uint64_
                               this->m_shift_mode,
                               flags[pdata_flag::pressure_tensor],
                               threads_per_particle,
-                              this->m_exec_conf->dev_prop,
-                              first),
+                              this->m_exec_conf->dev_prop),
         this->m_params.data())
 
     this->m_tuner->end();

@@ -265,12 +265,13 @@ class FrictionLJCoulombNewton(FrictionalPair):
 
     .. code-block:: python
 
-        coulombNewton_lj = hoomd.md.pair.friction.FrictionLJCoulombNewton(nlist=neighbor_list,
+        coulombNewton_lj = hoomd.md.pair.friction.FrictionLJCoulombNewton(
+                                                                nlist=neighbor_list,
                                                                 default_r_cut=3)
 
         coulombNewton_lj_params = { 'epsilon':1,
                                     'sigma':1,
-                                    'gamma_f:1',
+                                    'gamma_f':1,
                                     'kappa_f':3,
                                     'kT':1
                                 }
