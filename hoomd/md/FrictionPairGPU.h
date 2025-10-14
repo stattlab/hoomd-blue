@@ -185,9 +185,9 @@ template<class evaluator> void FrictionPairGPU<evaluator>::computeForces(uint64_
                               flags[pdata_flag::pressure_tensor],
                               threads_per_particle,
                               this->m_exec_conf->dev_prop),
-        this->m_params.data())
+        this->m_params.data());
 
-        this->m_tuner->end();
+    this->m_tuner->end();
 
     if (this->m_exec_conf->isCUDAErrorCheckingEnabled())
         CHECK_CUDA_ERROR();
