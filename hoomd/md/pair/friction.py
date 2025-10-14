@@ -372,7 +372,7 @@ class FrictionLJLinear(FrictionalPair):
         linear_lj = hoomd.md.pair.friction.FrictionLJLinear(nlist=neighbor_list,
                                                                 default_r_cut=3)
 
-        linear_lj_params = {'epsilon':1, 'sigma':1, 'kT':1}
+        linear_lj_params = {'epsilon':1, 'sigma':1, 'gamma_f':1, 'kT':1}
 
         linear_lj.params.default = linear_lj_params
         simulation.operations.integrator.forces = [linear_lj]
