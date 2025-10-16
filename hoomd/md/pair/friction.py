@@ -151,7 +151,7 @@ class FrictionLJConstant(FrictionalPair):
                                                 \delta_{jl}+\delta_{il}\delta_{jk})
                                                 \delta(t-t')\, .
 
-    .. rubric :: Example:
+    .. rubric:: Example:
 
     .. code-block:: python
 
@@ -258,7 +258,7 @@ class FrictionLJCoulombNewton(FrictionalPair):
                                                 (\delta_{ik}\delta_{jl}+\delta_{il}
                                                 \delta_{jk})\delta(t-t')\, .
 
-    .. rubric :: Example:
+    .. rubric:: Example:
 
     .. code-block:: python
 
@@ -357,7 +357,7 @@ class FrictionLJLinear(FrictionalPair):
                                                  \delta_{jl}+\delta_{il}\delta_{jk})
                                                  \delta(t-t')\, .
 
-    .. rubric :: Example:
+    .. rubric:: Example:
 
     .. code-block:: python
 
