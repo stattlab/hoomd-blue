@@ -64,6 +64,8 @@ parameter.
         integrate_rotational_dof = True)
 """
 
+import inspect
+
 from hoomd.md.pair.pair import Pair
 from hoomd.data.parameterdicts import TypeParameterDict
 from hoomd.data.typeparam import TypeParameter
@@ -79,7 +81,8 @@ class FrictionalPair(Pair):
         for `isinstance` or `issubclass` checks.
     """
 
-    __doc__ += Pair._doc_inherited
+    __doc__ = inspect.cleandoc(__doc__) + "\n\n" + inspect.cleandoc(Pair._doc_inherited)
+
     _accepted_modes = ("none", "shift")
 
     def __init__(self, nlist, default_r_cut=None, mode="none"):
@@ -167,7 +170,9 @@ class FrictionLJConstant(FrictionalPair):
     """
 
     _cpp_class_name = "FrictionPairFrictionLJConstant"
-    __doc__ = __doc__.replace("{inherited}", FrictionalPair._doc_inherited)
+    __doc__ = inspect.cleandoc(__doc__).replace(
+        "{inherited}", inspect.cleandoc(FrictionalPair._doc_inherited)
+    )
 
     def __init__(self, nlist, default_r_cut=None):
         super().__init__(nlist, default_r_cut, "none")
@@ -276,7 +281,9 @@ class FrictionLJCoulombNewton(FrictionalPair):
     """
 
     _cpp_class_name = "FrictionPairFrictionLJCoulombNewton"
-    __doc__ = __doc__.replace("{inherited}", FrictionalPair._doc_inherited)
+    __doc__ = inspect.cleandoc(__doc__).replace(
+        "{inherited}", inspect.cleandoc(FrictionalPair._doc_inherited)
+    )
 
     def __init__(self, nlist, default_r_cut=None):
         super().__init__(nlist, default_r_cut, "none")
@@ -373,7 +380,9 @@ class FrictionLJLinear(FrictionalPair):
     """
 
     _cpp_class_name = "FrictionPairFrictionLJLinear"
-    __doc__ = __doc__.replace("{inherited}", FrictionalPair._doc_inherited)
+    __doc__ = inspect.cleandoc(__doc__).replace(
+        "{inherited}", inspect.cleandoc(FrictionalPair._doc_inherited)
+    )
 
     def __init__(self, nlist, default_r_cut=None):
         super().__init__(nlist, default_r_cut, "none")
