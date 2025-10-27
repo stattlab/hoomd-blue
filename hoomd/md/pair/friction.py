@@ -14,8 +14,10 @@ angular velocities :math:`\mathbf{\omega}_{i,j}`, and translational velocities
 
 .. math::
 
+    \begin{align*}
     \mathbf{u}_i &= \mathbf{v}_i+\mathbf{\omega}_i \times \mathbf{\hat{r}}_{ij}R_i \\
     \mathbf{u}_j &= \mathbf{v}_j-\mathbf{\omega}_j \times \mathbf{\hat{r}}_{ij}R_j \, ,
+    \end{align*}
 
 where :math:`\mathbf{\hat{r}}_{ij}=\mathbf{r}_{ij}/r_{i,j}`. With these expressions,
 we calculate the relative tangential velocity :math:`\mathbf{u}^\perp_{i,j}` at the
@@ -43,9 +45,11 @@ acting on particle :math:`i`,
 
 .. math::
 
+    \begin{align*}
     \mathbf{F}^\mathrm{f}_{ij} &= \mathbf{F}^\mathrm{f,contact}_i \\
     \mathbf{\tau}^\mathrm{f}_{ij} &= R_i\mathbf{\hat{r}}_{ij} \times
     \mathbf{F}^\mathrm{f,contact}_i\, ,
+    \end{align*}
 
 which is a pair friction force and torque resulting from the friction with the particle
 :math:`k`.
@@ -112,10 +116,12 @@ class FrictionLJConstant(FrictionalPair):
 
     .. math::
 
+        \begin{align*}
         U_\mathrm{WCA}(r) &= 4 \varepsilon \left[ \left(
         \frac{\sigma}{r} \right)^{12} - \left( \frac{\sigma}{r}
         \right)^{6} \right] \\
         w(r)&=-\frac{\mathrm{d}}{\mathrm{d}r}U_\mathrm{WCA}(r)
+        \end{align*}
 
     Since the frictional force results from coarse-graining the microscopic equations
     of motion, a corresponding pairwise noise that satisfies a fluctuation-dissipation
@@ -123,6 +129,7 @@ class FrictionLJConstant(FrictionalPair):
 
     .. math::
 
+        \begin{align*}
         D_\mathrm{C}(u,r) &= \frac{w(r)\kappa_\mathrm{f}\sqrt{\pi}}{\sqrt{2k_\mathrm{B}
                                 T\nu}}\mathrm{e}^{\frac{u^2}{2k_\mathrm{B}T\nu}}
                                 \mathrm{Erfc}\big(\frac{u}
@@ -138,6 +145,7 @@ class FrictionLJConstant(FrictionalPair):
                                     \mathbf{\hat{r}}_{ij} \times
                                     \mathbf{\xi}^\mathrm{f}_{ij}+\mathbf{P}
                                     (\mathbf{e}_{ij})\mathbf{N}^\mathrm{f}_{ij}\Big]\, ,
+        \end{align*}
 
     where :math:`\nu=(1/m_i+1/m_j)+(R_i^2/\mathbf{I}_i+R_j^2/\mathbf{I}_j))`,
     and :math:`\mathbf{\xi}^\mathrm{f}_{ij}` and :math:`\mathbf{N}^\mathrm{f}_{ij}`
@@ -145,6 +153,7 @@ class FrictionLJConstant(FrictionalPair):
 
     .. math::
 
+        \begin{align*}
         \langle \mathbf{\xi}^\mathrm{f}_{ij}(t) \mathbf{\xi}^\mathrm{f}_{kl}(t')
                                                 \rangle &= \mathbf{1}k_\mathrm{B}T
                                                 (\delta_{ik}\delta_{jl}-\delta_{il}
@@ -153,6 +162,7 @@ class FrictionLJConstant(FrictionalPair):
                                                 \mathbf{1}k_\mathrm{B}T(\delta_{ik}
                                                 \delta_{jl}+\delta_{il}\delta_{jk})
                                                 \delta(t-t')\, .
+        \end{align*}
 
     .. rubric:: Example:
 
@@ -209,10 +219,12 @@ class FrictionLJCoulombNewton(FrictionalPair):
 
     .. math::
 
+        \begin{align*}
         U_\mathrm{WCA}(r) &= 4 \varepsilon \left[ \left(
         \frac{\sigma}{r} \right)^{12} - \left( \frac{\sigma}{r}
         \right)^{6} \right] \\
         w(r)&=-\frac{\mathrm{d}}{\mathrm{d}r}U_\mathrm{WCA}(r)
+        \end{align*}
 
     Since the frictional force results from coarse-graining the microscopic equations
     of motion, a corresponding pairwise noise that satisfies a fluctuation-dissipation
@@ -220,6 +232,7 @@ class FrictionLJCoulombNewton(FrictionalPair):
 
     .. math::
 
+        \begin{align*}
         D_\mathrm{CN}(u,r) &= \begin{cases}
                                 \frac{w(r)\kappa_\mathrm{f}\sqrt{\pi}}
                                 {\sqrt{2k_\mathrm{B}T\nu}}\mathrm{e}^{\frac{u^2}
@@ -247,6 +260,7 @@ class FrictionLJCoulombNewton(FrictionalPair):
                                         \times \mathbf{\xi}^\mathrm{f}_{ij}+\mathbf{P}
                                         (\mathbf{e}_{ij})\mathbf{N}^\mathrm{f}_{ij}
                                         \Big]\, ,
+        \end{align*}
 
     where :math:`\nu=(1/m_i+1/m_j)+(R_i^2/\mathbf{I}_i+R_j^2/\mathbf{I}_j))`, and
     :math:`\mathbf{\xi}^\mathrm{f}_{ij}` and :math:`\mathbf{N}^\mathrm{f}_{ij}` are
@@ -254,6 +268,7 @@ class FrictionLJCoulombNewton(FrictionalPair):
 
     .. math::
 
+        \begin{align*}
         \langle \mathbf{\xi}^\mathrm{f}_{ij}(t) \mathbf{\xi}^\mathrm{f}_{kl}(t')
                                                 \rangle &= \mathbf{1}k_\mathrm{B}T
                                                 (\delta_{ik}\delta_{jl}-\delta_{il}
@@ -262,6 +277,7 @@ class FrictionLJCoulombNewton(FrictionalPair):
                                                 \mathbf{1}k_\mathrm{B}T
                                                 (\delta_{ik}\delta_{jl}+\delta_{il}
                                                 \delta_{jk})\delta(t-t')\, .
+        \end{align*}
 
     .. rubric:: Example:
 
@@ -325,10 +341,12 @@ class FrictionLJLinear(FrictionalPair):
 
     .. math::
 
+        \begin{align*}
         U_\mathrm{WCA}(r) &= 4 \varepsilon \left[ \left(
         \frac{\sigma}{r} \right)^{12} - \left( \frac{\sigma}{r}
         \right)^{6} \right] \\
         w(r)&=-\frac{\mathrm{d}}{\mathrm{d}r}U_\mathrm{WCA}(r)
+        \end{align*}
 
     Since the frictional force results from coarse-graining the microscopic equations
     of motion, a corresponding pairwise noise that satisfies a fluctuation-dissipation
@@ -336,6 +354,7 @@ class FrictionLJLinear(FrictionalPair):
 
     .. math::
 
+        \begin{align*}
         D_\mathrm{l}(u,r) &= w(r)\gamma_\mathrm{f} \\
         \mathbf{F}^\mathrm{R}_{ij} = -\mathbf{F}^\mathrm{R}_{ji} &= \sqrt{D_\mathrm{l}
                                     (u^\perp_{ij},r_{ij})}\Big[\mathbf{P}
@@ -348,6 +367,7 @@ class FrictionLJLinear(FrictionalPair):
                                         \times \mathbf{\xi}^\mathrm{f}_{ij}+\mathbf{P}
                                         (\mathbf{e}_{ij})\mathbf{N}^\mathrm{f}_{ij}
                                         \Big]\, ,
+        \end{align*}
 
     where :math:`\nu=(1/m_i+1/m_j)+(R_i^2/\mathbf{I}_i+R_j^2/\mathbf{I}_j))`, and
     :math:`\mathbf{\xi}^\mathrm{f}_{ij}` and :math:`\mathbf{N}^\mathrm{f}_{ij}` are
@@ -355,6 +375,7 @@ class FrictionLJLinear(FrictionalPair):
 
     .. math::
 
+        \begin{align*}
         \langle \mathbf{\xi}^\mathrm{f}_{ij}(t) \mathbf{\xi}^\mathrm{f}_{kl}(t')
                                                 \rangle &= \mathbf{1}k_\mathrm{B}T
                                                 (\delta_{ik}\delta_{jl}-\delta_{il}
@@ -363,6 +384,7 @@ class FrictionLJLinear(FrictionalPair):
                                                  \mathbf{1}k_\mathrm{B}T(\delta_{ik}
                                                  \delta_{jl}+\delta_{il}\delta_{jk})
                                                  \delta(t-t')\, .
+        \end{align*}
 
     .. rubric:: Example:
 
