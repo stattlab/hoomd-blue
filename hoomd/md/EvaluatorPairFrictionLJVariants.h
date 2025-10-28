@@ -47,11 +47,11 @@ class EvaluatorPairFrictionLJLinear
 #endif
     };
 
-class EvaluatorPairFrictionLJConstant
-    : public EvaluatorPairFrictionLJBase<EvaluatorPairFrictionLJConstant>
+class EvaluatorPairFrictionLJCoulomb
+    : public EvaluatorPairFrictionLJBase<EvaluatorPairFrictionLJCoulomb>
     {
     public:
-    using EvaluatorPairFrictionLJBase<EvaluatorPairFrictionLJConstant>::EvaluatorPairFrictionLJBase;
+    using EvaluatorPairFrictionLJBase<EvaluatorPairFrictionLJCoulomb>::EvaluatorPairFrictionLJBase;
 
     HOSTDEVICE void eval_factors(Scalar& factor_f, Scalar& factor_r, Scalar w, Scalar du)
         {
@@ -69,7 +69,7 @@ class EvaluatorPairFrictionLJConstant
 #ifndef __HIPCC__
     static std::string getName()
         {
-        return "FrictionLJConstant";
+        return "FrictionLJCoulomb";
         }
 #endif
     };

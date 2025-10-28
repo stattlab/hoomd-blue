@@ -17,9 +17,9 @@ void export_FrictionPairFrictionLJLinear(pybind11::module& m)
     export_FrictionPair<EvaluatorPairFrictionLJLinear>(m, "FrictionPairFrictionLJLinear");
     }
 
-void export_FrictionPairFrictionLJConstant(pybind11::module& m)
+void export_FrictionPairFrictionLJCoulomb(pybind11::module& m)
     {
-    export_FrictionPair<EvaluatorPairFrictionLJConstant>(m, "FrictionPairFrictionLJConstant");
+    export_FrictionPair<EvaluatorPairFrictionLJCoulomb>(m, "FrictionPairFrictionLJCoulomb");
     }
 
 void export_FrictionPairFrictionLJCoulombNewton(pybind11::module& m)

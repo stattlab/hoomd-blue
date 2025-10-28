@@ -17,9 +17,9 @@ gpu_compute_pair_friction_forces<EvaluatorPairFrictionLJLinear>(
     const EvaluatorPairFrictionLJLinear::param_type* d_param);
 
 template hipError_t __attribute__((visibility("default")))
-gpu_compute_pair_friction_forces<EvaluatorPairFrictionLJConstant>(
+gpu_compute_pair_friction_forces<EvaluatorPairFrictionLJCoulomb>(
     const a_pair_args_t& pair_args,
-    const EvaluatorPairFrictionLJConstant::param_type* d_param);
+    const EvaluatorPairFrictionLJCoulomb::param_type* d_param);
 
 template hipError_t __attribute__((visibility("default")))
 gpu_compute_pair_friction_forces<EvaluatorPairFrictionLJCoulombNewton>(

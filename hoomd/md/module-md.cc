@@ -85,7 +85,7 @@ void export_AnisoPotentialPairPatchyYukawa(pybind11::module& m);
 void export_AnisoPotentialPairPatchyTable(pybind11::module& m);
 
 void export_FrictionPairFrictionLJLinear(pybind11::module& m);
-void export_FrictionPairFrictionLJConstant(pybind11::module& m);
+void export_FrictionPairFrictionLJCoulomb(pybind11::module& m);
 void export_FrictionPairFrictionLJCoulombNewton(pybind11::module& m);
 void export_MeshForceCompute(pybind11::module& m);
 
@@ -254,7 +254,7 @@ void export_AnisoPotentialPairPatchyYukawaGPU(pybind11::module& m);
 void export_AnisoPotentialPairPatchyTableGPU(pybind11::module& m);
 
 void export_FrictionPairFrictionLJLinearGPU(pybind11::module& m);
-void export_FrictionPairFrictionLJConstantGPU(pybind11::module& m);
+void export_FrictionPairFrictionLJCoulombGPU(pybind11::module& m);
 void export_FrictionPairFrictionLJCoulombNewtonGPU(pybind11::module& m);
 
 void export_PotentialBondHarmonicGPU(pybind11::module& m);
@@ -407,7 +407,7 @@ PYBIND11_MODULE(_md, m)
     export_AnisoPotentialPairPatchyTable(m);
 
     export_FrictionPairFrictionLJLinear(m);
-    export_FrictionPairFrictionLJConstant(m);
+    export_FrictionPairFrictionLJCoulomb(m);
     export_FrictionPairFrictionLJCoulombNewton(m);
 
     export_PotentialPairDPDThermoDPD(m);
@@ -505,7 +505,7 @@ PYBIND11_MODULE(_md, m)
     export_AnisoPotentialPairGBGPU(m);
 
     export_FrictionPairFrictionLJLinearGPU(m);
-    export_FrictionPairFrictionLJConstantGPU(m);
+    export_FrictionPairFrictionLJCoulombGPU(m);
     export_FrictionPairFrictionLJCoulombNewtonGPU(m);
 
     export_AnisoPotentialPairPatchyExpandedGaussianGPU(m);

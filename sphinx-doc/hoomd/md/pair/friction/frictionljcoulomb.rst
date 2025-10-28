@@ -1,8 +1,8 @@
-FrictionLJConstant
-==================
+FrictionLJCoulomb
+=================
 
 .. py:currentmodule:: hoomd.md.pair.friction
 
-.. autoclass:: FrictionLJConstant
+.. autoclass:: FrictionLJCoulomb
    :members:
    :show-inheritance:

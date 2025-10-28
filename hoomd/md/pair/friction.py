@@ -93,20 +93,20 @@ class FrictionalPair(Pair):
         super().__init__(nlist, default_r_cut, 0.0, mode)
 
 
-class FrictionLJConstant(FrictionalPair):
-    r"""Constant frictional model pair force with the LJ conservative force.
+class FrictionLJCoulomb(FrictionalPair):
+    r"""Coulomb frictional model pair force with the LJ conservative force.
 
     Args:
         nlist (hoomd.md.nlist.NeighborList): Neighbor list
         default_r_cut (float): Default cutoff radius :math:`[\mathrm{length}]`.
 
-    `FrictionLJConstant` computes the frictional interaction
-    between pairs of particles with a constant friction or Coulomb friction model
+    `FrictionLJCoulomb` computes the frictional interaction
+    between pairs of particles with a Coulomb friction model
     as described in `Hofmann et. al. 2025`_.
 
     .. _Hofmann et. al. 2025: https://doi.org/10.48550/arXiv.2507.16388
 
-    The constant friction model is defined by the function
+    The Coulomb friction model is defined by the function
 
     .. math::
 
@@ -168,18 +168,18 @@ class FrictionLJConstant(FrictionalPair):
 
     .. code-block:: python
 
-        constant_lj = hoomd.md.pair.friction.FrictionLJConstant(nlist=neighbor_list,
+        coulomb_lj = hoomd.md.pair.friction.FrictionLJCoulomb(nlist=neighbor_list,
                                                                 default_r_cut=3)
 
-        constant_lj_params = {'epsilon':1, 'sigma':1, 'kappa_f':3, 'kT':1}
+        coulomb_lj_params = {'epsilon':1, 'sigma':1, 'kappa_f':3, 'kT':1}
 
-        constant_lj.params.default = constant_lj_params
-        simulation.operations.integrator.forces = [constant_lj]
+        coulomb_lj.params.default = coulomb_lj_params
+        simulation.operations.integrator.forces = [coulomb_lj]
 
     {inherited}
     """
 
-    _cpp_class_name = "FrictionPairFrictionLJConstant"
+    _cpp_class_name = "FrictionPairFrictionLJCoulomb"
     __doc__ = inspect.cleandoc(__doc__).replace(
         "{inherited}", inspect.cleandoc(FrictionalPair._doc_inherited)
     )
@@ -419,7 +419,7 @@ class FrictionLJLinear(FrictionalPair):
 
 
 __all__ = [
-    "FrictionLJConstant",
+    "FrictionLJCoulomb",
     "FrictionLJCoulombNewton",
     "FrictionLJLinear",
     "FrictionalPair",

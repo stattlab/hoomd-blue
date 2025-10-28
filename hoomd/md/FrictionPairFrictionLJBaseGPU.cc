@@ -16,9 +16,9 @@ void export_FrictionPairFrictionLJLinearGPU(pybind11::module& m)
     export_FrictionPairGPU<EvaluatorPairFrictionLJLinear>(m, "FrictionPairFrictionLJLinearGPU");
     }
 
-void export_FrictionPairFrictionLJConstantGPU(pybind11::module& m)
+void export_FrictionPairFrictionLJCoulombGPU(pybind11::module& m)
     {
-    export_FrictionPairGPU<EvaluatorPairFrictionLJConstant>(m, "FrictionPairFrictionLJConstantGPU");
+    export_FrictionPairGPU<EvaluatorPairFrictionLJCoulomb>(m, "FrictionPairFrictionLJCoulombGPU");
     }
 
 void export_FrictionPairFrictionLJCoulombNewtonGPU(pybind11::module& m)
