@@ -64,7 +64,6 @@ struct a_pair_args_t
                   const Scalar* _d_rcutsq,
                   const unsigned int _ntypes,
                   const unsigned int _block_size,
-                  const unsigned int _shift_mode,
                   const unsigned int _compute_virial,
                   const unsigned int _threads_per_particle,
                   const hipDeviceProp_t& _devprop)
@@ -74,7 +73,7 @@ struct a_pair_args_t
           d_moment_inertia(_d_moment_inertia), d_tag(_d_tag), box(_box), third_law(_third_law),
           dim(_dim), seed(_seed), timestep(_timestep), deltaT(_deltaT), d_n_neigh(_d_n_neigh),
           d_nlist(_d_nlist), d_head_list(_d_head_list), d_rcutsq(_d_rcutsq), ntypes(_ntypes),
-          block_size(_block_size), shift_mode(_shift_mode), compute_virial(_compute_virial),
+          block_size(_block_size), compute_virial(_compute_virial),
           threads_per_particle(_threads_per_particle), devprop(_devprop) { };
 
     Scalar4* d_force;                //!< Force to write out
@@ -104,7 +103,6 @@ struct a_pair_args_t
     const Scalar* d_rcutsq;      //!< Device array listing r_cut squared per particle type pair
     const unsigned int ntypes;   //!< Number of particle types in the simulation
     const unsigned int block_size;           //!< Block size to execute
-    const unsigned int shift_mode;           //!< The potential energy shift mode
     const unsigned int compute_virial;       //!< Flag to indicate if virials should be computed
     const unsigned int threads_per_particle; //!< Number of threads to launch per particle
     const hipDeviceProp_t& devprop;          //!< CUDA device properties
@@ -151,8 +149,7 @@ struct a_pair_args_t
 
     Certain options are controlled via template parameters to avoid the performance hit when they
    are not enabled. \tparam evaluator EvaluatorPair class to evaluate V(r) and -delta V(r)/r \tparam
-   shift_mode 0: No energy shifting is done. 1: V(r) is shifted to be 0 at rcut. 2: XPLOR switching
-   is enabled (See Pair for a discussion on what that entails) \tparam compute_virial When
+   No energy shifting is done. \tparam compute_virial When
    non-zero, the virial tensor is computed. When zero, the virial tensor is not computed.
 
     <b>Implementation details</b>
@@ -160,7 +157,7 @@ struct a_pair_args_t
     Each thread will calculate the total force on one particle.
     The neighborlist is arranged in columns so that reads are fully coalesced when doing this.
 */
-template<class evaluator, unsigned int shift_mode, unsigned int compute_virial, int tpp>
+template<class evaluator, unsigned int compute_virial, int tpp>
 __global__ void
 gpu_compute_pair_friction_forces_kernel(Scalar4* d_force,
                                         Scalar4* d_torque,
@@ -346,12 +343,6 @@ gpu_compute_pair_friction_forces_kernel(Scalar4* d_force,
                 Scalar rcutsq = s_rcutsq[typpair];
                 const typename evaluator::param_type& param = s_params[typpair];
 
-                // design specifies that energies are shifted if
-                // 1) shift mode is set to shift
-                bool energy_shift = false;
-                if (shift_mode == 1)
-                    energy_shift = true;
-
                 // evaluate the potential
                 Scalar3 jforce = {Scalar(0), Scalar(0), Scalar(0)};
                 Scalar3 torquei = {Scalar(0), Scalar(0), Scalar(0)};
@@ -469,7 +460,6 @@ gpu_compute_pair_friction_forces_kernel(Scalar4* d_force,
 //! Friction pair force compute kernel launcher
 /*!
  * \tparam evaluator EvaluatorPair class to evaluate V(r) and -delta V(r)/r
- * \tparam shift_mode 0: No energy shifting is done. 1: V(r) is shifted to be 0 at rcut.
  * \tparam compute_virial When non-zero, the virial tensor is computed. When zero, the virial tensor
  * is not computed. \tparam tpp Number of threads to use per particle, must be power of 2 and
  * smaller than warp size
@@ -477,7 +467,7 @@ gpu_compute_pair_friction_forces_kernel(Scalar4* d_force,
  * Partial function template specialization is not allowed in C++, so instead we have to wrap this
  * with a struct that we are allowed to partially specialize.
  */
-template<class evaluator, unsigned int shift_mode, unsigned int compute_virial, int tpp>
+template<class evaluator, unsigned int compute_virial, int tpp>
 struct FrictionPairForceComputeKernel
     {
     //! Launcher for the pair force kernel
@@ -501,12 +491,10 @@ struct FrictionPairForceComputeKernel
 
             unsigned int max_block_size;
             hipFuncAttributes attr;
-            hipFuncGetAttributes(&attr,
-                                 reinterpret_cast<const void*>(
-                                     &gpu_compute_pair_friction_forces_kernel<evaluator,
-                                                                              shift_mode,
-                                                                              compute_virial,
-                                                                              tpp>));
+            hipFuncGetAttributes(
+                &attr,
+                reinterpret_cast<const void*>(
+                    &gpu_compute_pair_friction_forces_kernel<evaluator, compute_virial, tpp>));
             int max_threads = attr.maxThreadsPerBlock;
             // number of threads has to be multiple of warp size
             max_block_size = max_threads - max_threads % gpu_friction_pair_force_max_tpp;
@@ -537,54 +525,51 @@ struct FrictionPairForceComputeKernel
             block_size = block_size < max_block_size ? block_size : max_block_size;
             dim3 grid(N / (block_size / tpp) + 1, 1, 1);
 
-            hipLaunchKernelGGL((gpu_compute_pair_friction_forces_kernel<evaluator,
-                                                                        shift_mode,
-                                                                        compute_virial,
-                                                                        tpp>),
-                               dim3(grid),
-                               dim3(block_size),
-                               shared_bytes,
-                               0,
-                               pair_args.d_force,
-                               pair_args.d_torque,
-                               pair_args.d_virial,
-                               pair_args.virial_pitch,
-                               N,
-                               pair_args.d_pos,
-                               pair_args.d_vel,
-                               pair_args.d_charge,
-                               pair_args.d_orientation,
-                               pair_args.d_angmom,
-                               pair_args.d_diameter,
-                               pair_args.d_moment_inertia,
-                               pair_args.d_tag,
-                               pair_args.box,
-                               pair_args.third_law,
-                               pair_args.dim,
-                               pair_args.seed,
-                               pair_args.timestep,
-                               pair_args.deltaT,
-                               pair_args.d_n_neigh,
-                               pair_args.d_nlist,
-                               pair_args.d_head_list,
-                               params,
-                               pair_args.d_rcutsq,
-                               pair_args.ntypes,
-                               max_extra_bytes);
+            hipLaunchKernelGGL(
+                (gpu_compute_pair_friction_forces_kernel<evaluator, compute_virial, tpp>),
+                dim3(grid),
+                dim3(block_size),
+                shared_bytes,
+                0,
+                pair_args.d_force,
+                pair_args.d_torque,
+                pair_args.d_virial,
+                pair_args.virial_pitch,
+                N,
+                pair_args.d_pos,
+                pair_args.d_vel,
+                pair_args.d_charge,
+                pair_args.d_orientation,
+                pair_args.d_angmom,
+                pair_args.d_diameter,
+                pair_args.d_moment_inertia,
+                pair_args.d_tag,
+                pair_args.box,
+                pair_args.third_law,
+                pair_args.dim,
+                pair_args.seed,
+                pair_args.timestep,
+                pair_args.deltaT,
+                pair_args.d_n_neigh,
+                pair_args.d_nlist,
+                pair_args.d_head_list,
+                params,
+                pair_args.d_rcutsq,
+                pair_args.ntypes,
+                max_extra_bytes);
             }
         else
             {
-            FrictionPairForceComputeKernel<evaluator, shift_mode, compute_virial, tpp / 2>::launch(
-                pair_args,
-                N,
-                params);
+            FrictionPairForceComputeKernel<evaluator, compute_virial, tpp / 2>::launch(pair_args,
+                                                                                       N,
+                                                                                       params);
             }
         }
     };
 
 //! Template specialization to do nothing for the tpp = 0 case
-template<class evaluator, unsigned int shift_mode, unsigned int compute_virial>
-struct FrictionPairForceComputeKernel<evaluator, shift_mode, compute_virial, 0>
+template<class evaluator, unsigned int compute_virial>
+struct FrictionPairForceComputeKernel<evaluator, compute_virial, 0>
     {
     static void launch(const a_pair_args_t& pair_args,
                        unsigned int N,
@@ -612,51 +597,17 @@ hipError_t gpu_compute_pair_friction_forces(const a_pair_args_t& pair_args,
     // run the kernel
     if (pair_args.compute_virial)
         {
-        switch (pair_args.shift_mode)
-            {
-        case 0:
-            {
-            FrictionPairForceComputeKernel<evaluator, 0, 1, gpu_friction_pair_force_max_tpp>::
-                launch(pair_args, pair_args.N, d_params);
-            break;
-            }
-        case 1:
-            {
-            FrictionPairForceComputeKernel<evaluator,
-                                           1 && evaluator::implementsEnergyShift(),
-                                           1,
-                                           gpu_friction_pair_force_max_tpp>::launch(pair_args,
-                                                                                    pair_args.N,
-                                                                                    d_params);
-            break;
-            }
-        default:
-            return hipErrorUnknown;
-            }
+        FrictionPairForceComputeKernel<evaluator, 1, gpu_friction_pair_force_max_tpp>::launch(
+            pair_args,
+            pair_args.N,
+            d_params);
         }
     else
         {
-        switch (pair_args.shift_mode)
-            {
-        case 0:
-            {
-            FrictionPairForceComputeKernel<evaluator, 0, 0, gpu_friction_pair_force_max_tpp>::
-                launch(pair_args, pair_args.N, d_params);
-            break;
-            }
-        case 1:
-            {
-            FrictionPairForceComputeKernel<evaluator,
-                                           1 && evaluator::implementsEnergyShift(),
-                                           0,
-                                           gpu_friction_pair_force_max_tpp>::launch(pair_args,
-                                                                                    pair_args.N,
-                                                                                    d_params);
-            break;
-            }
-        default:
-            return hipErrorUnknown;
-            }
+        FrictionPairForceComputeKernel<evaluator, 0, gpu_friction_pair_force_max_tpp>::launch(
+            pair_args,
+            pair_args.N,
+            d_params);
         }
     return hipSuccess;
     }

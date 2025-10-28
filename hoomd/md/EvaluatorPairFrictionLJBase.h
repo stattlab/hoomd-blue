@@ -156,12 +156,6 @@ template<class Derived> class EvaluatorPairFrictionLJBase
         return true;
         }
 
-    /// Whether the potential implements the energy_shift parameter
-    HOSTDEVICE static bool constexpr implementsEnergyShift()
-        {
-        return false;
-        }
-
     // Seed, Timestep, and the particle ids are necessary for the correlation of the pair noise
     // (equation 26 and 27 of manuscript)
     HOSTDEVICE void
@@ -209,18 +203,12 @@ template<class Derived> class EvaluatorPairFrictionLJBase
     //! Evaluate the force and energy
     /*! \param force Output parameter to write the computed force.
         \param pair_eng Output parameter to write the computed pair energy.
-        \param energy_shift If true, the potential must be shifted so that
-            V(r) is continuous at the cutoff.
         \param torque_i The torque exerted on the i^th particle.
         \param torque_j The torque exerted on the j^th particle.
         \return True if they are evaluated or false if they are not because
             we are beyond the cutoff.
     */
-    HOSTDEVICE bool evaluate(Scalar3& force,
-                             Scalar& pair_eng,
-                             bool energy_shift,
-                             Scalar3& torque_i,
-                             Scalar3& torque_j)
+    HOSTDEVICE bool evaluate(Scalar3& force, Scalar& pair_eng, Scalar3& torque_i, Scalar3& torque_j)
         {
         vec3<Scalar> rvec(dr);
         vec3<Scalar> w_i(angvel_i);

@@ -83,30 +83,9 @@ template<class friction_evaluator> class FrictionPair : public ForceCompute
     /// Validate that types are within Ntypes
     virtual void validateTypes(unsigned int typ1, unsigned int typ2, std::string action);
 
-    //! Shifting modes that can be applied to the energy
-    enum energyShiftMode
-        {
-        no_shift = 0,
-        shift,
-        };
-
-    //! Set the mode to use for shifting the energy
-    void setShiftMode(energyShiftMode mode)
-        {
-        m_shift_mode = mode;
-        }
-
     void setShiftModePython(std::string mode)
         {
-        if (mode == "none")
-            {
-            m_shift_mode = no_shift;
-            }
-        else if (mode == "shift")
-            {
-            m_shift_mode = shift;
-            }
-        else
+        if (mode != "none")
             {
             throw std::runtime_error("Invalid energy shift mode.");
             }
@@ -115,15 +94,7 @@ template<class friction_evaluator> class FrictionPair : public ForceCompute
     /// Get the mode used for the energy shifting
     std::string getShiftMode()
         {
-        switch (m_shift_mode)
-            {
-        case no_shift:
-            return "none";
-        case shift:
-            return "shift";
-        default:
-            return "";
-            }
+        return "none";
         }
 
     virtual void notifyDetach()
@@ -159,9 +130,8 @@ template<class friction_evaluator> class FrictionPair : public ForceCompute
 
     protected:
     std::shared_ptr<NeighborList> m_nlist; //!< The neighborlist to use for the computation
-    energyShiftMode m_shift_mode; //!< Store the mode with which to handle the energy shift at r_cut
-    Index2D m_typpair_idx;        //!< Helper class for indexing per type pair arrays
-    GPUArray<Scalar> m_rcutsq;    //!< Cutoff radius squared per type pair
+    Index2D m_typpair_idx;                 //!< Helper class for indexing per type pair arrays
+    GPUArray<Scalar> m_rcutsq;             //!< Cutoff radius squared per type pair
     std::vector<param_type, hoomd::detail::managed_allocator<param_type>>
         m_params; //!< Pair parameters per type pair
 
@@ -181,8 +151,7 @@ template<class friction_evaluator> class FrictionPair : public ForceCompute
 template<class friction_evaluator>
 FrictionPair<friction_evaluator>::FrictionPair(std::shared_ptr<SystemDefinition> sysdef,
                                                std::shared_ptr<NeighborList> nlist)
-    : ForceCompute(sysdef), m_nlist(nlist), m_shift_mode(no_shift),
-      m_typpair_idx(m_pdata->getNTypes())
+    : ForceCompute(sysdef), m_nlist(nlist), m_typpair_idx(m_pdata->getNTypes())
     {
     m_exec_conf->msg->notice(5) << "Constructing FrictionPair<" << friction_evaluator::getName()
                                 << ">" << std::endl;
@@ -473,12 +442,6 @@ void FrictionPair<friction_evaluator>::computeForces(uint64_t timestep)
                 unsigned int typpair_idx = m_typpair_idx(typei, typej);
                 const param_type& param = m_params[typpair_idx];
                 Scalar rcutsq = h_rcutsq.data[typpair_idx];
-
-                // design specifies that energies are shifted if
-                // shift mode is set to shift
-                bool energy_shift = false;
-                if (m_shift_mode == shift)
-                    energy_shift = true;
 
                 // compute the force and potential energy
                 Scalar3 force = make_scalar3(0.0, 0.0, 0.0);

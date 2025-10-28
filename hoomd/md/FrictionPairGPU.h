@@ -181,7 +181,6 @@ template<class evaluator> void FrictionPairGPU<evaluator>::computeForces(uint64_
                               d_rcutsq.data,
                               this->m_pdata->getNTypes(),
                               block_size,
-                              this->m_shift_mode,
                               flags[pdata_flag::pressure_tensor],
                               threads_per_particle,
                               this->m_exec_conf->dev_prop),

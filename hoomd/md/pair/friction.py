@@ -56,8 +56,7 @@ which is a pair friction force and torque resulting from the friction with the p
 
 The functional form of :math:`f(u^\perp_{i,j},r_{i,j})` specifies the frictional model.
 
-`FrictionalPair` does not support the ``'xplor'`` shifting mode or the ``r_on``
-parameter.
+`FrictionalPair` does not support any shifting modes.
 
 .. invisible-code-block: python
 
@@ -87,7 +86,7 @@ class FrictionalPair(Pair):
 
     __doc__ = inspect.cleandoc(__doc__) + "\n\n" + inspect.cleandoc(Pair._doc_inherited)
 
-    _accepted_modes = ("none", "shift")
+    _accepted_modes = "none"
 
     def __init__(self, nlist, default_r_cut=None, mode="none"):
         super().__init__(nlist, default_r_cut, 0.0, mode)
