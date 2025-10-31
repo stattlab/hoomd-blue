@@ -4,6 +4,14 @@ Change Log
 5.x
 ---
 
+6.0.0 (not released)
+^^^^^^^^^^^^^^^^^^^^
+
+*Added*
+
+* Add thermodynamically consistent frictional contact forces: ``hoomd.md.pair.friction``
+  (`#2116 <https://github.com/glotzerlab/hoomd-blue/pull/2116>`__).
+
 5.4.0 (2025-09-26)
 ^^^^^^^^^^^^^^^^^^^^
 
