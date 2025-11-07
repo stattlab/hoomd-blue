@@ -117,7 +117,7 @@ def test_2d_free_volume(simulation_factory):
 
 
 def test_free_volume_export_name_matches_integrator(
-    simulation_factory, two_particle_snapshot_factory, valid_args
+    device, simulation_factory, two_particle_snapshot_factory, valid_args
 ):
     integrator = valid_args[0]
     args = valid_args[1]
