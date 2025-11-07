@@ -135,3 +135,4 @@ The following people have contributed to HOOMD-blue:
 * Domagoj Fijan, University of Michigan
 * Cristina Butu, Columbia University
 * Kay Hofmann, Johannes Gutenberg University Mainz
+* Shuo-Lin Weng, Texas A&M University

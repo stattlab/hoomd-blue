@@ -11,6 +11,10 @@ Change Log
 
 * Add thermodynamically consistent frictional contact forces: ``hoomd.md.pair.friction``
   (`#2116 <https://github.com/glotzerlab/hoomd-blue/pull/2116>`__).
+*Fixed*
+
+* Use the provided alpha parameter in ``make_pppm_coulomb_forces``
+  (`#2153 <https://github.com/glotzerlab/hoomd-blue/pull/2153>`__).
 
 5.4.0 (2025-09-26)
 ^^^^^^^^^^^^^^^^^^^^
