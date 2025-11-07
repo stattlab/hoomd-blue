@@ -132,7 +132,9 @@ def test_free_volume_export_name_matches_integrator(
             inner_mc.shape["A"] = args["shapes"][i]
             args["shapes"][i] = inner_mc.shape["A"].to_base()
 
-    if integrator == hoomd.hpmc.integrate.Sphinx and isinstance(device, hoomd.device.GPU):
+    if integrator == hoomd.hpmc.integrate.Sphinx and isinstance(
+        device, hoomd.device.GPU
+    ):
         pytest.skip("Sphinx does not build on the GPU by default.")
 
     mc = integrator()
