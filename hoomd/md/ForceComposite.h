@@ -87,7 +87,7 @@ class PYBIND11_EXPORT ForceComposite : public MolecularForceCompute
 
 #ifdef ENABLE_MPI
     //! Get ghost particle fields requested by this pair potential
-    virtual CommFlags getRequestedCommFlags(uint64_t timestep);
+    CommFlags getRequestedCommFlags(uint64_t timestep) override;
 #endif
 
     /// Update the constituent particles of a composite particle using the position, velocity
