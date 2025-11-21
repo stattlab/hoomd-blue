@@ -4,6 +4,19 @@ Change Log
 6.x
 ---
 
+Next release
+^^^^^^^^^^^^^^^^^^^^
+
+*Added*
+
+*Changed*
+
+*Deprecated*
+
+*Removed*
+
+*Fixed*
+
 6.0.0 (2025-11-21)
 ^^^^^^^^^^^^^^^^^^^^
 
