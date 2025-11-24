@@ -239,7 +239,8 @@ class Integrator(_DynamicIntegrator):
 
     - `hoomd.md.constrain`
 
-    Example:
+    .. rubric:: Example:
+
     .. code-block:: python
     
         cell = hoomd.md.nlist.Cell(buffer=0.4)
