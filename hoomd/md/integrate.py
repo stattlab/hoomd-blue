@@ -251,7 +251,7 @@ class Integrator(_DynamicIntegrator):
                 filter=hoomd.filter.All(), 
                 thermostat=None,
                 )
-            integrator = hoomd.md.Integrator(dt=dt=0.005, 
+            integrator = hoomd.md.Integrator(dt=0.005, 
                                             methods=[nve], 
                                             forces=[lj],
                                             )
