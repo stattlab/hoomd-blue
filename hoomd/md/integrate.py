@@ -239,13 +239,21 @@ class Integrator(_DynamicIntegrator):
 
     - `hoomd.md.constrain`
 
+    Example:
     .. code-block:: python
     
+        nlist = hoomd.md.nlist.Cell()
+        lj = hoomd.md.pair.LJ(nlist=nlist)
+        lj.params.default = dict(epsilon=1.0, sigma=1.0)
+        lj.r_cut[('A', 'A')] = 2**(1/6)
         nve = hoomd.md.methods.ConstantVolume(
             filter=hoomd.filter.All(), 
             thermostat=None,
             )
-        integrator.methods.append (nve)
+        integrator = hoomd.md.Integrator(dt=self.delta_t, 
+                                        methods=[nve], 
+                                        forces=[lj],
+                                        )
 
 
     {inherited}
