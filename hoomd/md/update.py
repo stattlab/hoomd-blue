@@ -40,11 +40,13 @@ class ZeroMomentum(Updater):
     Note:
         `ZeroMomentum` executes on the CPU even when using a GPU device.
 
-    Examples::
+    .. rubric:: Example:
 
-        zero_momentum = hoomd.md.update.ZeroMomentum(
-            hoomd.trigger.Periodic(100)
-        )
+    .. code-block:: python
+    
+            zero_momentum = hoomd.md.update.ZeroMomentum(
+                hoomd.trigger.Periodic(100)
+            )
     """
 
     __doc__ = (
