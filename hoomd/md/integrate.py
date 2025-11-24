@@ -245,7 +245,7 @@ class Integrator(_DynamicIntegrator):
         cell = hoomd.md.nlist.Cell(buffer=0.4)
         lj = hoomd.md.pair.LJ(nlist=cell)       
         lj.params[('A', 'A')]  = dict(epsilon=1.0, sigma=1.0)
-        lj.r_cut[('A', 'A')] = 2**(1/6)
+        lj.r_cut[('A', 'A')] = 2.5
         nve = hoomd.md.methods.ConstantVolume(
             filter=hoomd.filter.All(), 
             thermostat=None,
