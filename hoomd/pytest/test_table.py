@@ -240,6 +240,7 @@ def test_invalid_permutations(device, combination):
     for category in combination - {"string", "scalar"}:
         assert category in str(ve.value)
 
+
 def test_nan_is_ok():
     # Ensure that NaN value doesn't cause table writer to error
     sim = hoomd.util.make_example_simulation()
