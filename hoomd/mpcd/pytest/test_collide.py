@@ -225,7 +225,7 @@ class TestCollisionMethod:
             initial_snap.particles.velocity[:] = [velo_rigid]
             initial_snap.particles.angmom[:] = [angmom_rigid]
 
-            # place the mpcd particles on top of constituents
+            # place the mpcd particles on top of constituents, accounting for PBCs
             positions = np.add(def_rigid["positions"], pos_rigid)
             positions[positions < -11 * 0.5] = positions[positions < -11 * 0.5] + 11
             positions[positions > 11 * 0.5] = positions[positions > 11 * 0.5] - 11
