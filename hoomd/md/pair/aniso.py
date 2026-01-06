@@ -108,7 +108,7 @@ class Dipole(AnisotropicPair):
         keys:
 
         * ``A`` (`float`, **required**) - :math:`A` - electrostatic energy
-          scale (*default*: 1.0)
+          scale
           :math:`[\mathrm{energy} \cdot \mathrm{length} \cdot
           \mathrm{charge}^{-2}]`
         * ``kappa`` (`float`, **required**) - :math:`\kappa` - inverse
