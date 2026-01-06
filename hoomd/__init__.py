@@ -34,7 +34,6 @@ See Also:
 import sys
 import pathlib
 import os
-import signal
 
 __all__ = []
 

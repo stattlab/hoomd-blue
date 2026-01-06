@@ -20,9 +20,8 @@ from hoomd.logging import Logger, LoggerCategories
 from hoomd.operation import Writer
 import numpy as np
 import json
-import atexit
-import weakref
 import inspect
+
 
 def _array_to_strings(value):
     if isinstance(value, np.ndarray):
