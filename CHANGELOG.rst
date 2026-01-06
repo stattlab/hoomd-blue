@@ -17,7 +17,7 @@ Next release
 
 *Removed*
 
-* `SIGTERM` handler (#2209).
+* ``SIGTERM`` handler (#2209).
 
 *Fixed*
 
