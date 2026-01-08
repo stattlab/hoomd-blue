@@ -567,7 +567,7 @@ class Ewald(Pair):
 
         * ``kappa`` (`float`, **required**) - Splitting parameter
           :math:`\kappa` :math:`[\mathrm{length}^{-1}]`
-        * ``alpha`` (`float`, **required**) - Debye screening length
+        * ``alpha`` (`float`) - Debye screening length
           :math:`\alpha` :math:`[\mathrm{length}^{-1}]`
 
         Type: `TypeParameter` [`tuple` [``particle_type``, ``particle_type``],
