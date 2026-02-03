@@ -47,6 +47,10 @@ __global__ void draw_velocities_constituent_particles(Scalar3* d_linmom_accum,
         }
 
     const Scalar mass_const = d_velocity[idx].w;
+    if (mass_const == 0.0)
+        {
+        return;
+        }
     const unsigned int tag = d_tag[idx];
     // draw random velocities from normal distribution
     hoomd::RandomGenerator rng(hoomd::Seed(hoomd::RNGIdentifier::CollisionMethod, timestep, seed),
@@ -167,6 +171,10 @@ __global__ void apply_thermalized_velocity_vectors(const Scalar3* d_angmom_accum
 
     // get velocities and masses
     Scalar4 vel_constituent = d_velocity[idx];
+    if (vel_constituent.w == 0.0)
+        {
+        return;
+        }
     const Scalar4 thermal_vel_mass = d_alt_vel[idx];
     vec3<Scalar> thermal_vel(thermal_vel_mass);
 
