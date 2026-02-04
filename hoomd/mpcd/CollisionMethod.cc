@@ -577,8 +577,9 @@ void mpcd::CollisionMethod::finishThermalizeConstituentParticles(uint64_t timest
 
         // get velocities and masses
         Scalar4 vel_constituent = h_velocity.data[idx];
-        if (vel_constituent.w == 0.0)
+        if (vel_constituent.w == Scalar(0))
             {
+            // constituents with zero mass don't get thermalized
             continue;
             }
         const Scalar4 thermal_vel_mass = h_alt_vel.data[idx];
