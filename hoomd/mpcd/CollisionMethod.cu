@@ -50,7 +50,7 @@ __global__ void draw_velocities_constituent_particles(Scalar3* d_linmom_accum,
     // don't thermalize particles with zero mass
     if (mass_const == Scalar(0))
         {
-        continue;
+        return;
         }
     const unsigned int tag = d_tag[idx];
     // draw random velocities from normal distribution
