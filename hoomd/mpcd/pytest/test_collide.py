@@ -535,6 +535,7 @@ def test_rigid_mass_errors(
         sim.run(1)
 
 
+@pytest.mark.serial
 def test_rigid_nonparticipatory_zero_mass(small_snap, simulation_factory):
     # create simulation
     initial_snap = small_snap
