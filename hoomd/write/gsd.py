@@ -437,13 +437,8 @@ class GSD(Writer):
 
             gsd.flush()
         """
-        if not self._attached:
-            raise RuntimeError(
-                "The GSD file is unavailable until the"
-                "simulation runs for 0 or more steps."
-            )
-
-        self._cpp_obj.flush()
+        if self._attached:
+            self._cpp_obj.flush()
 
 
 def _iterable_is_incomplete(iterable):
