@@ -21,6 +21,7 @@ from hoomd.operation import Writer
 import numpy as np
 import json
 import inspect
+import weakref
 
 
 def _array_to_strings(value):
@@ -371,6 +372,7 @@ class GSD(Writer):
         )
 
         self._cpp_obj.log_writer = self.logger
+        self._finalizer = weakref.finalize(self, self.flush)
 
     @staticmethod
     def write(state, filename, filter=All(), mode="wb", logger=None):
