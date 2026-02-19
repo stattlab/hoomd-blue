@@ -4,6 +4,19 @@ Change Log
 Recent releases
 ---------------
 
+Next release
+^^^^^^^^^^^^^^^^^^^^
+
+*Added*
+
+*Changed*
+
+*Deprecated*
+
+*Removed*
+
+*Fixed*
+
 6.1.1 (2026-02-19)
 ^^^^^^^^^^^^^^^^^^^^
 
