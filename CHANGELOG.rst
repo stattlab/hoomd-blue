@@ -7,14 +7,6 @@ Recent releases
 Next release
 ^^^^^^^^^^^^^^^^^^^^
 
-*Added*
-
-*Changed*
-
-*Deprecated*
-
-*Removed*
-
 *Fixed*
 
 * Divide by zero with MPCD if rigid body has constituent with zero mass (#2228).
