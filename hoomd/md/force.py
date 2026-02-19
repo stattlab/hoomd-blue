@@ -1,4 +1,4 @@
-# Copyright (c) 2009-2025 The Regents of the University of Michigan.
+# Copyright (c) 2009-2026 The Regents of the University of Michigan.
 # Part of HOOMD-blue, released under the BSD 3-Clause License.
 
 """Apply forces to particles."""
@@ -75,8 +75,6 @@ class Force(Compute):
 
     {inherited}
 
-    ----------
-
     **Members defined in** `Force`:
     """
 
@@ -87,7 +85,6 @@ class Force(Compute):
     _doc_inherited = (
         Compute._doc_inherited
         + """
-    ----------
 
     **Members inherited from**
     `Force <hoomd.md.force.Force>`:
@@ -141,6 +138,7 @@ class Force(Compute):
 
     def __init__(self):
         self._in_context_manager = False
+        super().__init__()
 
     @log(requires_run=True)
     def energy(self):
@@ -375,7 +373,6 @@ class Custom(Force):
 
     {inherited}
 
-    ----------
 
     **Members defined in** `Custom`:
     """
@@ -414,8 +411,11 @@ class Active(Force):
 
     .. math::
 
-        \vec{F}_i = \mathbf{q}_i \vec{f}_i \mathbf{q}_i^* \\
-        \vec{\tau}_i = \mathbf{q}_i \vec{u}_i \mathbf{q}_i^*,
+        \vec{F}_i = \mathbf{q}_i \vec{f}_i \mathbf{q}_i^*
+
+    .. math::
+
+        \vec{\tau}_i = \mathbf{q}_i \vec{u}_i \mathbf{q}_i^*
 
     where :math:`\vec{f}_i` is the active force in the local particle
     coordinate system (set by type `active_force`) and :math:`\vec{u}_i`
@@ -435,13 +435,12 @@ class Active(Force):
     .. code-block:: python
 
             all = hoomd.filter.All()
-            active = hoomd.md.force.Active(
-                filter=hoomd.filter.All()
-                )
-            active.active_force['A','B'] = (1,0,0)
-            active.active_torque['A','B'] = (0,0,0)
+            active = hoomd.md.force.Active(filter=hoomd.filter.All())
+            active.active_force["A", "B"] = (1, 0, 0)
+            active.active_torque["A", "B"] = (0, 0, 0)
             rotational_diffusion_updater = active.create_diffusion_updater(
-                trigger=10)
+                trigger=10
+            )
             sim.operations += rotational_diffusion_updater
 
     Note:
@@ -449,7 +448,6 @@ class Active(Force):
 
     {inherited}
 
-    ----------
 
     **Members defined in** `Active`:
 
@@ -580,7 +578,6 @@ class ActiveOnManifold(Active):
 
     {inherited}
 
-    ----------
 
     **Members defined in** `ActiveOnManifold`:
 
@@ -667,8 +664,6 @@ class Constant(Force):
         The energy and virial associated with the constant force are 0.
 
     {inherited}
-
-    ----------
 
     **Members defined in** `Constant`:
 

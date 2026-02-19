@@ -1,4 +1,4 @@
-# Copyright (c) 2009-2025 The Regents of the University of Michigan.
+# Copyright (c) 2009-2026 The Regents of the University of Michigan.
 # Part of HOOMD-blue, released under the BSD 3-Clause License.
 
 r"""Mesh bending force classes apply a force and virial to every mesh vertex
@@ -57,8 +57,6 @@ class BendingRigidity(MeshPotential):
 
     {inherited}
 
-    ----------
-
     **Members defined in** `BendingRigidity`:
 
     Attributes:
@@ -103,7 +101,7 @@ class Helfrich(MeshPotential):
     with the area of the dual cell of vertex i
     :math:`\sigma_i=(\sum_{j \in \mathrm{Neigh}(i)}\sigma_{ij})/4`, the
     length of the bond in the dual lattice  :math:`\sigma_{ij}=
-    r_{ij}(\text{cot}\theta_1+\text{cot}\theta_2)/2` and the angles
+    l_{ij}(\text{cot}\theta_1+\text{cot}\theta_2)/2` and the angles
     :math:`\theta_1` and :math:`\theta_2` opposite to the shared bond of
     vertex :math:`i` and :math:`j`.
 
@@ -125,7 +123,6 @@ class Helfrich(MeshPotential):
 
     {inherited}
 
-    ----------
 
     **Members defined in** `Helfrich`:
 
