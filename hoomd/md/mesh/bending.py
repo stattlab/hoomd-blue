@@ -96,11 +96,11 @@ class Helfrich(MeshPotential):
 
         U(i) = \frac{1}{2} k \frac{1}{\sigma_i}\left( \sum_{j \in
         \mathrm{Neigh}(i)} \frac{\sigma_{ij}}{l_{ij}} (\mathbf{r}_j
-        - \mathbf{r}_k) \right)^2
+        - \mathbf{r}_i) \right)^2
 
     with the area of the dual cell of vertex i
-    :math:`\sigma_i=(\sum_{j \in \mathrm{Neigh}(i)}\sigma_{ij})/4`, the
-    length of the bond in the dual lattice  :math:`\sigma_{ij}=
+    :math:`\sigma_i=(\sum_{j \in \mathrm{Neigh}(i)}\sigma_{ij}\cdot l_{ij})/4`,
+    the length of the bond in the dual lattice  :math:`\sigma_{ij}=
     l_{ij}(\text{cot}\theta_1+\text{cot}\theta_2)/2` and the angles
     :math:`\theta_1` and :math:`\theta_2` opposite to the shared bond of
     vertex :math:`i` and :math:`j`.
