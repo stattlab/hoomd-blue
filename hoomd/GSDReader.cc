@@ -26,10 +26,21 @@ namespace hoomd
 GSDReader::GSDReader(std::shared_ptr<const ExecutionConfiguration> exec_conf,
                      const std::string& name,
                      const uint64_t frame,
-                     bool from_end)
+                     bool from_end,
+                     std::string precision)
     : m_exec_conf(exec_conf), m_timestep(0), m_name(name), m_frame(frame)
     {
-    m_snapshot = std::shared_ptr<SnapshotSystemData<float>>(new SnapshotSystemData<float>);
+    if (precision == "double")
+        {
+        m_snapshot_double = std::make_shared<SnapshotSystemData<double>>();
+        m_snapshot = m_snapshot_double;
+        }
+    else
+        {
+        m_snapshot_float = std::make_shared<SnapshotSystemData<float>>();
+        m_snapshot = m_snapshot_float;
+        }
+    m_precision = precision;
 
 #ifdef ENABLE_MPI
     // if we are not the root processor, do not perform file I/O
@@ -188,132 +199,251 @@ void GSDReader::readHeader()
 
     uint8_t dim = 3;
     readChunk(&dim, m_frame, "configuration/dimensions", 1);
-    m_snapshot->dimensions = dim;
 
     float box[6] = {1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f};
     readChunk(&box, m_frame, "configuration/box", 6 * 4);
-    // Set Lz, xz, and yz to 0 for 2D boxes. Needed for working with hoomd v 2 GSD files.
-    if (dim == 2)
+    if (m_precision == "double")
         {
-        box[2] = 0;
-        box[4] = 0;
-        box[5] = 0;
-        }
-    m_snapshot->global_box = std::make_shared<BoxDim>(BoxDim(box[0], box[1], box[2]));
-    m_snapshot->global_box->setTiltFactors(box[3], box[4], box[5]);
+        auto snap = std::static_pointer_cast<SnapshotSystemData<double>>(m_snapshot_double);
+        snap->dimensions = dim;
+        
+        float box[6] = {1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f};
+        readChunk(&box, m_frame, "configuration/box", 6 * 4);
+        if (dim == 2)
+            {
+            box[2] = 0;
+            box[4] = 0;
+            box[5] = 0;
+            }
+        snap->global_box = std::make_shared<BoxDim>(BoxDim(box[0], box[1], box[2]));
+        snap->global_box->setTiltFactors(box[3], box[4], box[5]);
 
-    unsigned int N = 0;
-    readChunk(&N, m_frame, "particles/N", 4);
-    if (N == 0)
-        {
-        std::ostringstream s;
-        s << "Cannot read a file with 0 particles.";
-        throw runtime_error(s.str());
+        unsigned int N = 0;
+        readChunk(&N, m_frame, "particles/N", 4);
+        if (N == 0)
+            {
+            std::ostringstream s;
+            s << "Cannot read a file with 0 particles.";
+            throw runtime_error(s.str());
+            }
+        snap->particle_data.resize(N);
         }
-    m_snapshot->particle_data.resize(N);
+    else
+        {
+        auto snap = std::static_pointer_cast<SnapshotSystemData<float>>(m_snapshot_float);
+        snap->dimensions = dim;
+        
+        float box[6] = {1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f};
+        readChunk(&box, m_frame, "configuration/box", 6 * 4);
+        if (dim == 2)
+            {
+            box[2] = 0;
+            box[4] = 0;
+            box[5] = 0;
+            }
+        snap->global_box = std::make_shared<BoxDim>(BoxDim(box[0], box[1], box[2]));
+        snap->global_box->setTiltFactors(box[3], box[4], box[5]);
+
+        unsigned int N = 0;
+        readChunk(&N, m_frame, "particles/N", 4);
+        if (N == 0)
+            {
+            std::ostringstream s;
+            s << "Cannot read a file with 0 particles.";
+            throw runtime_error(s.str());
+            }
+        snap->particle_data.resize(N);
+        }
     }
 
 /*! Read the same data chunks for particles
  */
 void GSDReader::readParticles()
     {
-    unsigned int N = m_snapshot->particle_data.size;
-    m_snapshot->particle_data.type_mapping = readTypes(m_frame, "particles/types");
-
-    // the snapshot already has default values, if a chunk is not found, the value
-    // is already at the default, and the failed read is not a problem
-    readChunk(m_snapshot->particle_data.type.data(), m_frame, "particles/typeid", N * 4, N);
-    readChunk(m_snapshot->particle_data.mass.data(), m_frame, "particles/mass", N * 4, N);
-    readChunk(m_snapshot->particle_data.charge.data(), m_frame, "particles/charge", N * 4, N);
-    readChunk(m_snapshot->particle_data.diameter.data(), m_frame, "particles/diameter", N * 4, N);
-    readChunk(m_snapshot->particle_data.body.data(), m_frame, "particles/body", N * 4, N);
-    readChunk(m_snapshot->particle_data.inertia.data(),
-              m_frame,
-              "particles/moment_inertia",
-              N * 12,
-              N);
-    readChunk(m_snapshot->particle_data.pos.data(), m_frame, "particles/position", N * 12, N);
-    readChunk(m_snapshot->particle_data.orientation.data(),
-              m_frame,
-              "particles/orientation",
-              N * 16,
-              N);
-    readChunk(m_snapshot->particle_data.vel.data(), m_frame, "particles/velocity", N * 12, N);
-    readChunk(m_snapshot->particle_data.angmom.data(), m_frame, "particles/angmom", N * 16, N);
-    readChunk(m_snapshot->particle_data.image.data(), m_frame, "particles/image", N * 12, N);
+    if (m_precision == "double")
+        {
+        auto snap = std::static_pointer_cast<SnapshotSystemData<double>>(m_snapshot_double);
+        unsigned int N = snap->particle_data.size;
+        snap->particle_data.type_mapping = readTypes(m_frame, "particles/types");
+        
+        size_t scalar_bytes = 8;  // double
+        size_t vec3_bytes = 24;   // 3 * 8
+        size_t quat_bytes = 32;   // 4 * 8
+        
+        readChunk(snap->particle_data.charge.data(), m_frame, "particles/charge", N * scalar_bytes, N);
+        readChunk(snap->particle_data.type.data(), m_frame, "particles/typeid", N * 4, N);
+        readChunk(snap->particle_data.mass.data(), m_frame, "particles/mass", N * scalar_bytes, N);
+        readChunk(snap->particle_data.diameter.data(), m_frame, "particles/diameter", N * scalar_bytes, N);
+        readChunk(snap->particle_data.body.data(), m_frame, "particles/body", N * 4, N);
+        readChunk(snap->particle_data.inertia.data(), m_frame, "particles/moment_inertia", N * vec3_bytes, N);
+        readChunk(snap->particle_data.pos.data(), m_frame, "particles/position", N * vec3_bytes, N);
+        readChunk(snap->particle_data.orientation.data(), m_frame, "particles/orientation", N * quat_bytes, N);
+        readChunk(snap->particle_data.vel.data(), m_frame, "particles/velocity", N * vec3_bytes, N);
+        readChunk(snap->particle_data.angmom.data(), m_frame, "particles/angmom", N * quat_bytes, N);
+        readChunk(snap->particle_data.image.data(), m_frame, "particles/image", N * 12, N);
+        }
+    else
+        {
+        auto snap = std::static_pointer_cast<SnapshotSystemData<float>>(m_snapshot_float);
+        unsigned int N = snap->particle_data.size;
+        snap->particle_data.type_mapping = readTypes(m_frame, "particles/types");
+        
+        size_t scalar_bytes = 4;  // float
+        size_t vec3_bytes = 12;   // 3 * 4
+        size_t quat_bytes = 16;   // 4 * 4
+        
+        readChunk(snap->particle_data.charge.data(), m_frame, "particles/charge", N * scalar_bytes, N);
+        readChunk(snap->particle_data.type.data(), m_frame, "particles/typeid", N * 4, N);
+        readChunk(snap->particle_data.mass.data(), m_frame, "particles/mass", N * scalar_bytes, N);
+        readChunk(snap->particle_data.diameter.data(), m_frame, "particles/diameter", N * scalar_bytes, N);
+        readChunk(snap->particle_data.body.data(), m_frame, "particles/body", N * 4, N);
+        readChunk(snap->particle_data.inertia.data(), m_frame, "particles/moment_inertia", N * vec3_bytes, N);
+        readChunk(snap->particle_data.pos.data(), m_frame, "particles/position", N * vec3_bytes, N);
+        readChunk(snap->particle_data.orientation.data(), m_frame, "particles/orientation", N * quat_bytes, N);
+        readChunk(snap->particle_data.vel.data(), m_frame, "particles/velocity", N * vec3_bytes, N);
+        readChunk(snap->particle_data.angmom.data(), m_frame, "particles/angmom", N * quat_bytes, N);
+        readChunk(snap->particle_data.image.data(), m_frame, "particles/image", N * 12, N);
+        }
     }
 
 /*! Read the same data chunks for topology
  */
 void GSDReader::readTopology()
     {
-    unsigned int N = 0;
-    m_snapshot->bond_data.type_mapping = readTypes(m_frame, "bonds/types");
-    readChunk(&N, m_frame, "bonds/N", 4);
-    if (N > 0)
+    if (m_precision == "double")
         {
-        m_snapshot->bond_data.resize(N);
-        readChunk(m_snapshot->bond_data.type_id.data(), m_frame, "bonds/typeid", N * 4, N);
-        readChunk(m_snapshot->bond_data.groups.data(), m_frame, "bonds/group", N * 8, N);
-        }
-
-    N = 0;
-    m_snapshot->angle_data.type_mapping = readTypes(m_frame, "angles/types");
-    readChunk(&N, m_frame, "angles/N", 4);
-    if (N > 0)
-        {
-        m_snapshot->angle_data.resize(N);
-        readChunk(m_snapshot->angle_data.type_id.data(), m_frame, "angles/typeid", N * 4, N);
-        readChunk(m_snapshot->angle_data.groups.data(), m_frame, "angles/group", N * 12, N);
-        }
-
-    N = 0;
-    m_snapshot->dihedral_data.type_mapping = readTypes(m_frame, "dihedrals/types");
-    readChunk(&N, m_frame, "dihedrals/N", 4);
-    if (N > 0)
-        {
-        m_snapshot->dihedral_data.resize(N);
-        readChunk(m_snapshot->dihedral_data.type_id.data(), m_frame, "dihedrals/typeid", N * 4, N);
-        readChunk(m_snapshot->dihedral_data.groups.data(), m_frame, "dihedrals/group", N * 16, N);
-        }
-
-    N = 0;
-    m_snapshot->improper_data.type_mapping = readTypes(m_frame, "impropers/types");
-    readChunk(&N, m_frame, "impropers/N", 4);
-    if (N > 0)
-        {
-        m_snapshot->improper_data.resize(N);
-        readChunk(m_snapshot->improper_data.type_id.data(), m_frame, "impropers/typeid", N * 4, N);
-        readChunk(m_snapshot->improper_data.groups.data(), m_frame, "impropers/group", N * 16, N);
-        }
-
-    N = 0;
-    readChunk(&N, m_frame, "constraints/N", 4);
-    if (N > 0)
-        {
-        m_snapshot->constraint_data.resize(N);
-        std::vector<float> data(N);
-        readChunk(&data[0], m_frame, "constraints/value", N * 4, N);
-        for (unsigned int i = 0; i < N; i++)
-            m_snapshot->constraint_data.val[i] = Scalar(data[i]);
-
-        readChunk(m_snapshot->constraint_data.groups.data(),
-                  m_frame,
-                  "constraints/group",
-                  N * 8,
-                  N);
-        }
-
-    if (m_handle.header.schema_version >= gsd_make_version(1, 1))
-        {
-        N = 0;
-        m_snapshot->pair_data.type_mapping = readTypes(m_frame, "pairs/types");
-        readChunk(&N, m_frame, "pairs/N", 4);
+        auto snap = std::static_pointer_cast<SnapshotSystemData<double>>(m_snapshot_double);
+        unsigned int N = 0;
+        snap->bond_data.type_mapping = readTypes(m_frame, "bonds/types");
+        readChunk(&N, m_frame, "bonds/N", 4);
         if (N > 0)
             {
-            m_snapshot->pair_data.resize(N);
-            readChunk(m_snapshot->pair_data.type_id.data(), m_frame, "pairs/typeid", N * 4, N);
-            readChunk(m_snapshot->pair_data.groups.data(), m_frame, "pairs/group", N * 8, N);
+            snap->bond_data.resize(N);
+            readChunk(snap->bond_data.type_id.data(), m_frame, "bonds/typeid", N * 4, N);
+            readChunk(snap->bond_data.groups.data(), m_frame, "bonds/group", N * 8, N);
+            }
+
+        N = 0;
+        snap->angle_data.type_mapping = readTypes(m_frame, "angles/types");
+        readChunk(&N, m_frame, "angles/N", 4);
+        if (N > 0)
+            {
+            snap->angle_data.resize(N);
+            readChunk(snap->angle_data.type_id.data(), m_frame, "angles/typeid", N * 4, N);
+            readChunk(snap->angle_data.groups.data(), m_frame, "angles/group", N * 12, N);
+            }
+
+        N = 0;
+        snap->dihedral_data.type_mapping = readTypes(m_frame, "dihedrals/types");
+        readChunk(&N, m_frame, "dihedrals/N", 4);
+        if (N > 0)
+            {
+            snap->dihedral_data.resize(N);
+            readChunk(snap->dihedral_data.type_id.data(), m_frame, "dihedrals/typeid", N * 4, N);
+            readChunk(snap->dihedral_data.groups.data(), m_frame, "dihedrals/group", N * 16, N);
+            }
+
+        N = 0;
+        snap->improper_data.type_mapping = readTypes(m_frame, "impropers/types");
+        readChunk(&N, m_frame, "impropers/N", 4);
+        if (N > 0)
+            {
+            snap->improper_data.resize(N);
+            readChunk(snap->improper_data.type_id.data(), m_frame, "impropers/typeid", N * 4, N);
+            readChunk(snap->improper_data.groups.data(), m_frame, "impropers/group", N * 16, N);
+            }
+
+        N = 0;
+        readChunk(&N, m_frame, "constraints/N", 4);
+        if (N > 0)
+            {
+            snap->constraint_data.resize(N);
+            std::vector<float> data(N);
+            readChunk(&data[0], m_frame, "constraints/value", N * 4, N);
+            for (unsigned int i = 0; i < N; i++)
+                snap->constraint_data.val[i] = Scalar(data[i]);
+            readChunk(snap->constraint_data.groups.data(), m_frame, "constraints/group", N * 8, N);
+            }
+
+        if (m_handle.header.schema_version >= gsd_make_version(1, 1))
+            {
+            N = 0;
+            snap->pair_data.type_mapping = readTypes(m_frame, "pairs/types");
+            readChunk(&N, m_frame, "pairs/N", 4);
+            if (N > 0)
+                {
+                snap->pair_data.resize(N);
+                readChunk(snap->pair_data.type_id.data(), m_frame, "pairs/typeid", N * 4, N);
+                readChunk(snap->pair_data.groups.data(), m_frame, "pairs/group", N * 8, N);
+                }
+            }
+        }
+    else
+        {
+        auto snap = std::static_pointer_cast<SnapshotSystemData<float>>(m_snapshot_float);
+        unsigned int N = 0;
+        snap->bond_data.type_mapping = readTypes(m_frame, "bonds/types");
+        readChunk(&N, m_frame, "bonds/N", 4);
+        if (N > 0)
+            {
+            snap->bond_data.resize(N);
+            readChunk(snap->bond_data.type_id.data(), m_frame, "bonds/typeid", N * 4, N);
+            readChunk(snap->bond_data.groups.data(), m_frame, "bonds/group", N * 8, N);
+            }
+
+        N = 0;
+        snap->angle_data.type_mapping = readTypes(m_frame, "angles/types");
+        readChunk(&N, m_frame, "angles/N", 4);
+        if (N > 0)
+            {
+            snap->angle_data.resize(N);
+            readChunk(snap->angle_data.type_id.data(), m_frame, "angles/typeid", N * 4, N);
+            readChunk(snap->angle_data.groups.data(), m_frame, "angles/group", N * 12, N);
+            }
+
+        N = 0;
+        snap->dihedral_data.type_mapping = readTypes(m_frame, "dihedrals/types");
+        readChunk(&N, m_frame, "dihedrals/N", 4);
+        if (N > 0)
+            {
+            snap->dihedral_data.resize(N);
+            readChunk(snap->dihedral_data.type_id.data(), m_frame, "dihedrals/typeid", N * 4, N);
+            readChunk(snap->dihedral_data.groups.data(), m_frame, "dihedrals/group", N * 16, N);
+            }
+
+        N = 0;
+        snap->improper_data.type_mapping = readTypes(m_frame, "impropers/types");
+        readChunk(&N, m_frame, "impropers/N", 4);
+        if (N > 0)
+            {
+            snap->improper_data.resize(N);
+            readChunk(snap->improper_data.type_id.data(), m_frame, "impropers/typeid", N * 4, N);
+            readChunk(snap->improper_data.groups.data(), m_frame, "impropers/group", N * 16, N);
+            }
+
+        N = 0;
+        readChunk(&N, m_frame, "constraints/N", 4);
+        if (N > 0)
+            {
+            snap->constraint_data.resize(N);
+            std::vector<float> data(N);
+            readChunk(&data[0], m_frame, "constraints/value", N * 4, N);
+            for (unsigned int i = 0; i < N; i++)
+                snap->constraint_data.val[i] = Scalar(data[i]);
+            readChunk(snap->constraint_data.groups.data(), m_frame, "constraints/group", N * 8, N);
+            }
+
+        if (m_handle.header.schema_version >= gsd_make_version(1, 1))
+            {
+            N = 0;
+            snap->pair_data.type_mapping = readTypes(m_frame, "pairs/types");
+            readChunk(&N, m_frame, "pairs/N", 4);
+            if (N > 0)
+                {
+                snap->pair_data.resize(N);
+                readChunk(snap->pair_data.type_id.data(), m_frame, "pairs/typeid", N * 4, N);
+                readChunk(snap->pair_data.groups.data(), m_frame, "pairs/group", N * 8, N);
+                }
             }
         }
     }
@@ -335,7 +465,8 @@ void export_GSDReader(pybind11::module& m)
         .def(pybind11::init<std::shared_ptr<const ExecutionConfiguration>,
                             const string&,
                             const uint64_t,
-                            bool>())
+                            bool,
+                            std::string>())
         .def("getTimeStep", &GSDReader::getTimeStep)
         .def("getSnapshot", &GSDReader::getSnapshot)
         .def("clearSnapshot", &GSDReader::clearSnapshot)
