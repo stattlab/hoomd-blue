@@ -44,6 +44,8 @@ class Burst(GSD):
             emptied after calling `dump` each time. When ``False``, `dump`
             removes frames from the buffer until the ``end`` index. Defaults
             to ``True``.
+        precision (str): Write precision for floating-point data. One of
+                ``'single'`` or ``'double'``. Defaults to ``'single'``.
 
     Warning:
         `Burst` errors when attempting to create a file or writing to one with

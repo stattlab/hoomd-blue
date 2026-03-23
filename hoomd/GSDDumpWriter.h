@@ -275,23 +275,8 @@ class PYBIND11_EXPORT GSDDumpWriter : public Analyzer
     /// Working array to sort local particles by tag
     std::vector<unsigned int> m_index;
 
-    /// Temporary buffers for single-precision writes
-    std::vector<double> m_charge_double;
-    std::vector<float> m_charge_float;
-    std::vector<double> m_mass_double;
-    std::vector<float> m_mass_float;
-    std::vector<double> m_inertia_double;
-    std::vector<float> m_inertia_float;
-    std::vector<double> m_position_double;
-    std::vector<float> m_position_float;
-    std::vector<double> m_orientation_double;
-    std::vector<float> m_orientation_float;
-    std::vector<double> m_velocity_double;
-    std::vector<float> m_velocity_float;
-    std::vector<double> m_angmom_double;
-    std::vector<float> m_angmom_float;
-    std::vector<double> m_diameter_double;
-    std::vector<float> m_diameter_float;
+    /// Temporary buffer for storing single precision values
+    std::vector<float> m_float_buffer;
 
     /// Time of last flush.
     double m_last_flush_time = 0.0;
@@ -309,16 +294,12 @@ class PYBIND11_EXPORT GSDDumpWriter : public Analyzer
     void writeFloatDoubleChunk(const std::string& name,
                                const std::vector<double>& data,
                                uint32_t N,
-                               uint32_t M, // number of components (1 for scalar, 3 for vec3, etc)
-                               std::vector<double>& double_buffer,
-                               std::vector<float>& float_buffer);
+                               uint32_t M); // number of components (1 for scalar, 3 for vec3, etc)
 
     /// Helper to write float/double chunks to vec3 with precision handling
     void writeVec3FloatDoubleChunk(const std::string& name,
                                    const std::vector<vec3<double>>& data,
-                                   uint32_t N,
-                                   std::vector<double>& double_buffer,
-                                   std::vector<float>& float_buffer);
+                                   uint32_t N);
 
     //! Write particle attributes
     void writeAttributes(const GSDFrame& frame);
