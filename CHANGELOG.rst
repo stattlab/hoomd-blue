@@ -7,7 +7,7 @@ Recent releases
 Next release
 ^^^^^^^^^^^^^^^^^^^^
 
-HOOMD-blue 7.0 changes the definition of the rotation trial move size `a`. You will need to
+HOOMD-blue 7.0 changes the definition of the rotation trial move size ``a``. You will need to
 retune any hard-coded or saved values. Here are the distributions of the trial move rotation
 angles in HOOMD-blue 2.0–6.x and in 7.0+ for comparison:
 
