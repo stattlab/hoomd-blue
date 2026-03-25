@@ -85,25 +85,28 @@ DEVICE void move_rotate(quat<Scalar>& orientation, RandomGenerator& rng, Scalar 
         hoomd::NormalDistribution<Scalar> normal(a);
         quat<Scalar> small_rotation = quat<Scalar>();
 
-        while(true) {
+        while (true)
+            {
             vec3<Scalar> s = vec3<Scalar>(normal(rng), normal(rng), normal(rng));
-            Scalar theta = fast::sqrt(dot(s,s));
+            Scalar theta = fast::sqrt(dot(s, s));
 
             // Reject moves with |s| > pi to ensure detailed balance. Otherwise, there
             // is a shorter path between the proposed move and the start (theta - pi),
             // which has a different rejection probability.
-            if (theta > M_PI) {
+            if (theta > M_PI)
+                {
                 continue;
-            }
+                }
 
             // Lift the normally distributed values to SO(3) with the exponential map
             Scalar half_theta = 0.5 * theta;
             Scalar w = fast::cos(half_theta);
 
             Scalar v_factor = fast::sin(half_theta) / theta;
-            if (!isfinite(v_factor)) {
+            if (!isfinite(v_factor))
+                {
                 v_factor = 0.5;
-            }
+                }
 
             vec3<Scalar> v = s * v_factor;
             small_rotation = quat<Scalar>(w, v);

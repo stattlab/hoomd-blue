@@ -57,8 +57,8 @@ UP_TEST(rand_rotate_3d)
             // out << maximum_rotation << "," << theta << "," << "v7.x+" << endl;
 
             // check that all coordinates moved
-            // yes, it is possible that one of the random numbers is zero - if that is the case we can
-            // pick a different seed so that we do not sample that case
+            // yes, it is possible that one of the random numbers is zero - if that is the case we
+            // can pick a different seed so that we do not sample that case
             UP_ASSERT(fabs(delta.s) > 0);
             UP_ASSERT(fabs(delta.v.x) > 0);
             UP_ASSERT(fabs(delta.v.y) > 0);
