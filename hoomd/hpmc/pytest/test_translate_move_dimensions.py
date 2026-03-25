@@ -1,12 +1,10 @@
 # Copyright (c) 2009-2026 The Regents of the University of Michigan.
 # Part of HOOMD-blue, released under the BSD 3-Clause License.
+"""Test hoomd.hpmc.translate_move_dimensions."""
 
 import hoomd
 import pytest
 import numpy as np
-
-
-"""Test hoomd.hpmc.translate_move_dimensions."""
 
 # octahedron vertices
 vertices = [
@@ -22,8 +20,7 @@ vertices = [
 @pytest.fixture
 def sim(device):
     """A small 3D simulation with 4 octahedra on a 2D grid."""
-    cpu = hoomd.device.CPU()
-    simulation = hoomd.Simulation(device=cpu, seed=1)
+    simulation = hoomd.Simulation(device=device, seed=1)
 
     snap = hoomd.Snapshot()
     snap.configuration.box = [6, 6, 6, 0, 0, 0]
@@ -51,15 +48,11 @@ def make_mc(sim, d=0.1, a=0.3):
     return mc
 
 
-# Test default behavior
-
 def test_default_is_none(sim):
     """translate_move_dimensions defaults to None (resolved on attach/use)."""
     mc = make_mc(sim)
     assert mc.translate_move_dimensions is None
 
-
-# Test setter round-trip
 
 @pytest.mark.parametrize("dims", [2, 3])
 def test_set_and_get(sim, dims):
@@ -67,17 +60,11 @@ def test_set_and_get(sim, dims):
     mc.translate_move_dimensions = dims
     assert mc.translate_move_dimensions == dims
 
-
-# Test invalid values raise
-
 @pytest.mark.parametrize("bad", [0, 1, 4, -1])
 def test_invalid_value_raises(sim, bad):
     mc = make_mc(sim)
     with pytest.raises((ValueError, RuntimeError)):
         mc.translate_move_dimensions = bad
-
-
-# Test z must not move when dims=2
 
 def test_z_positions_unchanged(sim):
     """With translate_move_dimensions=2, z coords must never change."""
@@ -95,9 +82,6 @@ def test_z_positions_unchanged(sim):
 
     np.testing.assert_array_equal(z_before, z_after,
         err_msg="z changed despite translate_move_dimensions=2")
-
-
-# Test xy translations still happen when dims=2
 
 def test_xy_positions_do_change(sim):
     """With dims=2, particles should still move in xy."""
@@ -117,8 +101,6 @@ def test_xy_positions_do_change(sim):
         "xy positions never changed. translation moves are broken? Wrong."
 
 
-# Test rotations still work when dims=2
-
 def test_rotations_active_with_dims_2(sim):
     """Rotation moves should still be accepted when translate_move_dimensions=2."""
     mc = make_mc(sim, d=0.0, a=0.4)   # disable translation to isolate
@@ -130,9 +112,6 @@ def test_rotations_active_with_dims_2(sim):
     r_acc, r_rej = mc.rotate_moves
     assert r_acc > 0, \
         "No rotation moves accepted. rotations broken by translate_move_dimensions=2. Wrong."
-
-
-# Test dims=3 should behave identically to the default
 
 def test_dims_3_allows_z_translation(sim):
     """With dims=3, z positions should eventually change."""
