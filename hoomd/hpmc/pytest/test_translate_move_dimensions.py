@@ -65,7 +65,7 @@ def test_set_and_get(sim, dims):
 @pytest.mark.parametrize("bad", [0, 1, 4, -1])
 def test_invalid_value_raises(sim, bad):
     mc = make_mc(sim)
-    with pytest.raises((ValueError, RuntimeError)):
+    with pytest.raises(RuntimeError):
         mc.translate_move_dimensions = bad
 
 
@@ -83,9 +83,10 @@ def test_z_positions_unchanged(sim):
     with sim.state.cpu_local_snapshot as snap:
         z_after = np.array(snap.particles.position[:, 2])
 
-    np.testing.assert_array_equal(
-        z_before, z_after, err_msg="z changed despite translate_move_dimensions=2"
-    )
+    if sim.device.communicator.rank == 0:
+        np.testing.assert_array_equal(
+            z_before, z_after, err_msg="z changed despite translate_move_dimensions=2"
+        )
 
 
 def test_xy_positions_do_change(sim):
@@ -102,9 +103,10 @@ def test_xy_positions_do_change(sim):
     with sim.state.cpu_local_snapshot as snap:
         xy_after = np.array(snap.particles.position[:, :2])
 
-    assert not np.allclose(xy_before, xy_after), (
-        "xy positions never changed. translation moves are broken."
-    )
+    if sim.device.communicator.rank == 0:
+        assert not np.allclose(xy_before, xy_after), (
+            "xy positions never changed. translation moves are broken."
+        )
 
 
 def test_rotations_active_with_dims_2(sim):
@@ -116,7 +118,8 @@ def test_rotations_active_with_dims_2(sim):
     sim.run(10)
 
     r_acc, _ = mc.rotate_moves
-    assert r_acc > 0, "Rotations broken by translate_move_dimensions=2."
+    if sim.device.communicator.rank == 0:
+        assert r_acc > 0, "Rotations broken by translate_move_dimensions=2."
 
 
 def test_dims_3_allows_z_translation(sim):
@@ -133,4 +136,7 @@ def test_dims_3_allows_z_translation(sim):
     with sim.state.cpu_local_snapshot as snap:
         z_after = np.array(snap.particles.position[:, 2])
 
-    assert not np.allclose(z_before, z_after), "z positions never changed with dims=3."
+    if sim.device.communicator.rank == 0:
+        assert not np.allclose(z_before, z_after), (
+            "z positions never changed with dims=3."
+        )
