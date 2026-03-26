@@ -9,7 +9,7 @@ Next release
 
 *Added*
 
-* ``hoomd.hpmc.integrate.HPMCIntegrator.translate_move_dimensions``: Sets the dimensionality of HPMC translation moves, 
+* ``hoomd.hpmc.integrate.HPMCIntegrator.translate_move_dimensions``: Sets the dimensionality of HPMC translation moves,
   enabling interfacial confinement (xy) in 3D simulations.
 
 *Changed*
