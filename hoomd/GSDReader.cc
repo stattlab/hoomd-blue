@@ -133,14 +133,14 @@ bool GSDReader::readChunk(void* data,
         {
         std::ostringstream s;
         s << "Expecting floating point data type in chunk " << name
-          << " but found " << entry->type << ".";
+          << " but found " << (int)entry->type << ".";
             throw runtime_error(s.str());
         }
-    else if (expected_type != entry->type)
+    else if (expected_type != GSD_TYPE_FLOAT && expected_type != entry->type)
         {
         std::ostringstream s;
         s << "Expecting type " << expected_type << " in chunk " << name
-          << " but found " << entry->type << ".";
+          << " but found " << (int)entry->type << ".";
             throw runtime_error(s.str());
         }
     
