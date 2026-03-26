@@ -23,17 +23,18 @@ def sim(device):
     """A small 3D simulation with 4 octahedra on a 2D grid."""
     simulation = hoomd.Simulation(device=device, seed=1)
 
-    snap = hoomd.Snapshot()
-    snap.configuration.box = [6, 6, 6, 0, 0, 0]
-    snap.particles.N = 4
-    snap.particles.types = ["A"]
-    snap.particles.typeid[:] = [0, 0, 0, 0]
-    snap.particles.position[:] = [
-        [-1.5, -1.5, 0],
-        [1.5, -1.5, 0],
-        [-1.5, 1.5, 0],
-        [1.5, 1.5, 0],
-    ]
+    snap = hoomd.Snapshot(device.communicator)
+    if device.communicator.rank == 0:
+        snap.configuration.box = [6, 6, 6, 0, 0, 0]
+        snap.particles.N = 4
+        snap.particles.types = ["A"]
+        snap.particles.typeid[:] = [0, 0, 0, 0]
+        snap.particles.position[:] = [
+            [-1.5, -1.5, 0],
+            [1.5, -1.5, 0],
+            [-1.5, 1.5, 0],
+            [1.5, 1.5, 0],
+        ]
 
     simulation.create_state_from_snapshot(snap)
     return simulation
@@ -72,20 +73,21 @@ def test_invalid_value_raises(sim, bad):
 def test_z_positions_unchanged(sim):
     """With translate_move_dimensions=2, z coords must never change."""
     mc = make_mc(sim, d=0.2, a=0.0)
-    mc.translation_move_probability = 1.0  # just translations.
+    mc.translation_move_probability = 1.0
     mc.translate_move_dimensions = 2
 
-    with sim.state.cpu_local_snapshot as snap:
-        z_before = np.array(snap.particles.position[:, 2])
+    snap_before = sim.state.get_snapshot()
 
     sim.run(10)
 
-    with sim.state.cpu_local_snapshot as snap:
-        z_after = np.array(snap.particles.position[:, 2])
-
+    snap_after = sim.state.get_snapshot()
     if sim.device.communicator.rank == 0:
+        z_before = np.array(snap_before.particles.position[:, 2])
+        z_after = np.array(snap_after.particles.position[:, 2])
         np.testing.assert_array_equal(
-            z_before, z_after, err_msg="z changed despite translate_move_dimensions=2"
+            z_before,
+            z_after,
+            err_msg="z changed despite translate_move_dimensions=2",
         )
 
 
@@ -95,15 +97,14 @@ def test_xy_positions_do_change(sim):
     mc.translation_move_probability = 1.0
     mc.translate_move_dimensions = 2
 
-    with sim.state.cpu_local_snapshot as snap:
-        xy_before = np.array(snap.particles.position[:, :2])
-
+    snap_before = sim.state.get_snapshot()
+    if sim.device.communicator.rank == 0:
+        xy_before = np.array(snap_before.particles.position[:, :2])
     sim.run(10)
 
-    with sim.state.cpu_local_snapshot as snap:
-        xy_after = np.array(snap.particles.position[:, :2])
-
+    snap_after = sim.state.get_snapshot()
     if sim.device.communicator.rank == 0:
+        xy_after = np.array(snap_after.particles.position[:, :2])
         assert not np.allclose(xy_before, xy_after), (
             "xy positions never changed. translation moves are broken."
         )
@@ -128,15 +129,14 @@ def test_dims_3_allows_z_translation(sim):
     mc.translation_move_probability = 1.0
     mc.translate_move_dimensions = 3
 
-    with sim.state.cpu_local_snapshot as snap:
-        z_before = np.array(snap.particles.position[:, 2])
+    snap_before = sim.state.get_snapshot()
 
     sim.run(10)
 
-    with sim.state.cpu_local_snapshot as snap:
-        z_after = np.array(snap.particles.position[:, 2])
-
+    snap_after = sim.state.get_snapshot()
     if sim.device.communicator.rank == 0:
+        z_before = np.array(snap_before.particles.position[:, 2])
+        z_after = np.array(snap_after.particles.position[:, 2])
         assert not np.allclose(z_before, z_after), (
             "z positions never changed with dims=3."
         )
