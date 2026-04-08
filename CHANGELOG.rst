@@ -4,12 +4,12 @@ Change Log
 Recent releases
 ---------------
 
-Next release
+7.0.1 (2026-04-08)
 ^^^^^^^^^^^^^^^^^^^^
 
 *Fixed*
 
-* Fixed external component builds with Eigen 5.x (#2272)
+* Fixed external component builds with Eigen 5.x (#2272).
 
 7.0.0 (2026-04-07)
 ^^^^^^^^^^^^^^^^^^^^
