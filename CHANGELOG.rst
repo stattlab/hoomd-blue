@@ -7,15 +7,9 @@ Recent releases
 Next release
 ^^^^^^^^^^^^^^^^^^^^
 
-*Added*
-
-*Changed*
-
-*Deprecated*
-
-*Removed*
-
 *Fixed*
+
+* Fixed external component builds with Eigen 5.x (#2272)
 
 7.0.0 (2026-04-07)
 ^^^^^^^^^^^^^^^^^^^^
