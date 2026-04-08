@@ -13,10 +13,10 @@ HOOMD-blue 7.0 writes GSD schema 2.0 files. Update your other software for compa
 * Ovito >= 3.15.2
 * gsd-vmd >= 0.6.0
 
-HOOMD-blue 7.0 also changes the definition of the rotation trial move size
-``a``. You will need to retune any hard-coded or saved values. Here are the
-distributions of the trial move rotation angles in HOOMD-blue 2.0–6.x and in
-7.0+ for comparison:
+HOOMD-blue 7.0 also changes the definition of the 3D rotation trial move
+size ``a`` (2D rotation moves are not changed). You will need to retune any
+hard-coded or saved values. Here are the distributions of the trial move
+rotation angles in HOOMD-blue 2.0–6.x and in 7.0+ for comparison:
 
 .. image:: https://github.com/user-attachments/assets/4a713aa9-2ec4-40dc-8363-aaf93e7eca2b
 
@@ -32,7 +32,7 @@ distributions of the trial move rotation angles in HOOMD-blue 2.0–6.x and in
 *Changed*
 
 * Use tabs in binary installation documentation (#2246).
-* Improve the sampling of rotation trial moves (#2264).
+* Improve the sampling of 3D rotation trial moves (#2264).
 
 *Fixed*
 
