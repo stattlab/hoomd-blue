@@ -133,6 +133,59 @@ class Periodic(Dihedral):
         self._add_typeparam(params)
 
 
+class SmoothPeriodic(Dihedral):
+    r"""Periodic smoothed dihedral force.
+
+    `Periodic` computes forces, virials, and energies on all dihedrals in the
+    simulation state with:
+
+    .. math::
+
+        U(\phi) = \frac{1}{2}k \left( 1 + d \cos\left(n \phi - \phi_0 \right)
+               \right)
+
+    .. rubric:: Example:
+
+    .. code-block:: python
+
+            harmonic = hoomd.md.dihedral.SmoothPeriodic()
+            harmonic.params["A-A-A-A"] = dict(k=3.0, d=-1, n=3, phi0=0 , smoothing_on=120,
+                              smoothing_cut=180,smoothing_Vs=0, smoothing_m=2)
+            harmonic.params["A-B-C-D"] = dict(k=100.0, d=1, n=4, phi0=math.pi / 2, smoothing_on=120,
+                              smoothing_cut=180,smoothing_Vs=0, smoothing_m=2)
+
+    {inherited}
+
+    **Members defined in** `SmoothPeriodic`:
+
+    Attributes:
+        params (`TypeParameter` [``dihedral type``, `dict`]):
+            The parameter of the harmonic bonds for each dihedral type. The
+            dictionary has the following keys:
+
+            * ``k`` (`float`, **required**) - potential constant :math:`k`
+              :math:`[\mathrm{energy}]`
+            * ``d`` (`float`, **required**) - sign factor :math:`d`
+            * ``n`` (`int`, **required**) - angle multiplicity factor :math:`n`
+            * ``phi0`` (`float`, **required**) - phase shift :math:`\phi_0`
+              :math:`[\mathrm{radians}]`
+    """
+
+    _cpp_class_name = "SmoothedHarmonicDihedralForceCompute"
+    __doc__ = inspect.cleandoc(__doc__).replace(
+        "{inherited}", inspect.cleandoc(Dihedral._doc_inherited)
+    )
+
+    def __init__(self):
+        super().__init__()
+        params = TypeParameter(
+            "params",
+            "dihedral_types",
+            TypeParameterDict(k=float, d=float, n=int, phi0=float, smoothing_on=float,
+                              smoothing_cut=float,smoothing_Vs=float, smoothing_m=int, len_keys=1),
+        )
+        self._add_typeparam(params)
+
 class Table(Dihedral):
     """Tabulated dihedral force.
 

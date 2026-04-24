@@ -27,6 +27,7 @@ set(_md_sources module-md.cc
                    HalfStepHook.cc
                    HarmonicAngleForceCompute.cc
                    HarmonicDihedralForceCompute.cc
+                   SmoothedHarmonicDihedralForceCompute.cc
                    HarmonicImproperForceCompute.cc
                    HelfrichMeshForceCompute.cc
                    IntegrationMethodTwoStep.cc
@@ -156,6 +157,9 @@ set(_md_headers ActiveForceComputeGPU.h
                 HarmonicDihedralForceComputeGPU.h
                 HarmonicDihedralForceCompute.h
                 HarmonicDihedralForceGPU.cuh
+                SmoothedHarmonicDihedralForceComputeGPU.h
+                SmoothedHarmonicDihedralForceCompute.h
+                SmoothedHarmonicDihedralForceGPU.cuh
                 HarmonicImproperForceComputeGPU.h
                 HarmonicImproperForceCompute.h
                 HarmonicImproperForceGPU.cuh
@@ -171,8 +175,8 @@ set(_md_headers ActiveForceComputeGPU.h
                 ManifoldXYPlane.h
                 ManifoldPrimitive.h
                 ManifoldSphere.h
-		MeshDynamicBondUpdater.h
-		MeshForceCompute.h
+		        MeshDynamicBondUpdater.h
+		        MeshForceCompute.h
                 MolecularForceCompute.cuh
                 MolecularForceCompute.h
                 MuellerPlatheFlowEnum.h
@@ -282,8 +286,9 @@ list(APPEND _md_sources ActiveForceComputeGPU.cc
                            ForceDistanceConstraintGPU.cc
                            HarmonicAngleForceComputeGPU.cc
                            HarmonicDihedralForceComputeGPU.cc
+                           SmoothedHarmonicDihedralForceComputeGPU.cc
                            HarmonicImproperForceComputeGPU.cc
-                  	   HelfrichMeshForceComputeGPU.cc
+                  	      HelfrichMeshForceComputeGPU.cc
                            MolecularForceCompute.cu
                            NeighborListGPU.cc
                            NeighborListGPUBinned.cc
@@ -324,6 +329,7 @@ set(_md_cu_sources ActiveForceComputeGPU.cu
                       ForceDistanceConstraintGPU.cu
                       HarmonicAngleForceGPU.cu
                       HarmonicDihedralForceGPU.cu
+                      SmoothedHarmonicDihedralForceGPU.cu
                       HarmonicImproperForceGPU.cu
             	      HelfrichMeshForceComputeGPU.cu
                       MolecularForceCompute.cu
